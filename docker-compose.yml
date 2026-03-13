@@ -1,0 +1,31 @@
+﻿version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: lbs-postgres
+    environment:
+      POSTGRES_DB: lbs_db
+      POSTGRES_USER: lbs_user
+      POSTGRES_PASSWORD: lbs_password
+    ports:
+      - "5433:5432"
+#  ton PC (localhost:5433)  →→→  conteneur Docker (5432)
+#  Pourquoi localhost au niveau de host ?
+#
+#  Dans pgAdmin (qui est dans un conteneur) → on utilise lbs-postgres
+#  Dans DBeaver/DataGrip (qui est sur ton PC) → on utilise localhost
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: lbs-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@lbs.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5051:80"
+
+  maildev:
+    image: maildev/maildev:latest
+    container_name: lbs-maildev
+    ports:
+      - "1081:1080"
