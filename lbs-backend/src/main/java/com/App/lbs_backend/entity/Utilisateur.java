@@ -13,7 +13,7 @@ public class Utilisateur {
 
     @Column(name = "lbs_util_uuid", length = 50, unique = true, nullable = false)
     private String uuid;
-g
+
     @Column(name = "lbs_util_code", length = 20)
     private String code;
 
@@ -22,7 +22,6 @@ g
 
     @Column(name = "lbs_util_prenom", length = 100)
     private String prenom;
-
 
     @Column(name = "lbs_util_login", length = 50)
     private String login;
