@@ -2,17 +2,12 @@ package com.App.lbs_backend.dto.response;
 
 import java.time.LocalDateTime;
 
-public record ClasseResponse(
+public record MatiereResponse(
         Integer id,
         String uuid,
-        Integer profId,
         String code,
         String libelle,
-        Integer niveauId,
-        Integer capaciteMax,
         Boolean actif,
         LocalDateTime modifierLe,
-        String modifierPar,
-        ProfesseurResponse professeur,
-        NiveauResponse niveau
+        String modifierPar
 ) {}

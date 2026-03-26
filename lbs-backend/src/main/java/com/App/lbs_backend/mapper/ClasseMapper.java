@@ -8,9 +8,11 @@ import org.springframework.stereotype.Component;
 public class ClasseMapper implements Mapper<Classe, ClasseResponse> {
 
     private final ProfesseurMapper professeurMapper;
+    private final NiveauMapper niveauMapper;
 
-    public ClasseMapper(ProfesseurMapper professeurMapper) {
+    public ClasseMapper(ProfesseurMapper professeurMapper, NiveauMapper niveauMapper) {
         this.professeurMapper = professeurMapper;
+        this.niveauMapper = niveauMapper;
     }
 
     @Override
@@ -22,10 +24,13 @@ public class ClasseMapper implements Mapper<Classe, ClasseResponse> {
                 entity.getProfId(),
                 entity.getCode(),
                 entity.getLibelle(),
+                entity.getNiveauId(),
+                entity.getCapaciteMax(),
                 entity.getActif(),
                 entity.getModifierLe(),
                 entity.getModifierPar(),
-                professeurMapper.toResponse(entity.getProfesseur())
+                professeurMapper.toResponse(entity.getProfesseur()),
+                niveauMapper.toResponse(entity.getNiveau())
         );
     }
 }

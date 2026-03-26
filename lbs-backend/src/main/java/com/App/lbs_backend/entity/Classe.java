@@ -24,6 +24,12 @@ public class Classe {
     @Column(name = "lbs_clas_libelle", length = 100)
     private String libelle;
 
+    @Column(name = "lbs_clas_niveau_id")
+    private Integer niveauId;
+
+    @Column(name = "lbs_clas_capacite_max")
+    private Integer capaciteMax;
+
     @Column(name = "lbs_clas_actif")
     private Boolean actif;
 
@@ -37,6 +43,10 @@ public class Classe {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lbs_clas_prof_id", insertable = false, updatable = false)
     private Professeur professeur;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lbs_clas_niveau_id", insertable = false, updatable = false)
+    private Niveau niveau;
 
     @PrePersist
     public void prePersist() {
@@ -64,6 +74,12 @@ public class Classe {
     public String getLibelle() { return libelle; }
     public void setLibelle(String libelle) { this.libelle = libelle; }
 
+    public Integer getNiveauId() { return niveauId; }
+    public void setNiveauId(Integer niveauId) { this.niveauId = niveauId; }
+
+    public Integer getCapaciteMax() { return capaciteMax; }
+    public void setCapaciteMax(Integer capaciteMax) { this.capaciteMax = capaciteMax; }
+
     public Boolean getActif() { return actif; }
     public void setActif(Boolean actif) { this.actif = actif; }
 
@@ -75,4 +91,7 @@ public class Classe {
 
     public Professeur getProfesseur() { return professeur; }
     public void setProfesseur(Professeur professeur) { this.professeur = professeur; }
+
+    public Niveau getNiveau() { return niveau; }
+    public void setNiveau(Niveau niveau) { this.niveau = niveau; }
 }

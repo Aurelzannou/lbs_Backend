@@ -2,17 +2,14 @@ package com.App.lbs_backend.dto.response;
 
 import java.time.LocalDateTime;
 
-public record ClasseResponse(
+public record CoefficientResponse(
         Integer id,
         String uuid,
-        Integer profId,
-        String code,
-        String libelle,
+        Integer matiereId,
         Integer niveauId,
-        Integer capaciteMax,
-        Boolean actif,
+        Double valeur,
         LocalDateTime modifierLe,
         String modifierPar,
-        ProfesseurResponse professeur,
+        MatiereResponse matiere,
         NiveauResponse niveau
 ) {}

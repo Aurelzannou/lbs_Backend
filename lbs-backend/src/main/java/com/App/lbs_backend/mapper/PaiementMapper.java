@@ -7,18 +7,18 @@ import org.springframework.stereotype.Component;
 @Component
 public class PaiementMapper implements Mapper<Paiement, PaiementResponse> {
 
-    private final DossierEleveMapper dossierEleveMapper;
+    private final InscriptionMapper inscriptionMapper;
     private final FraisScolaireMapper fraisScolaireMapper;
     private final ModePaiementMapper modePaiementMapper;
     private final CaisseMapper caisseMapper;
     private final UtilisateurMapper utilisateurMapper;
 
-    public PaiementMapper(DossierEleveMapper dossierEleveMapper,
+    public PaiementMapper(InscriptionMapper inscriptionMapper,
                           FraisScolaireMapper fraisScolaireMapper,
                           ModePaiementMapper modePaiementMapper,
                           CaisseMapper caisseMapper,
                           UtilisateurMapper utilisateurMapper) {
-        this.dossierEleveMapper = dossierEleveMapper;
+        this.inscriptionMapper = inscriptionMapper;
         this.fraisScolaireMapper = fraisScolaireMapper;
         this.modePaiementMapper = modePaiementMapper;
         this.caisseMapper = caisseMapper;
@@ -33,7 +33,7 @@ public class PaiementMapper implements Mapper<Paiement, PaiementResponse> {
                 entity.getUuid(),
                 entity.getCode(),
                 entity.getReference(),
-                entity.getDossierId(),
+                entity.getInscriptionId(),
                 entity.getFraisScolaireId(),
                 entity.getDatePaiement(),
                 entity.getMontant(),
@@ -43,7 +43,7 @@ public class PaiementMapper implements Mapper<Paiement, PaiementResponse> {
                 entity.getObservation(),
                 entity.getModifierLe(),
                 entity.getModifierPar(),
-                dossierEleveMapper.toResponse(entity.getDossier()),
+                inscriptionMapper.toResponse(entity.getInscription()),
                 fraisScolaireMapper.toResponse(entity.getFraisScolaire()),
                 modePaiementMapper.toResponse(entity.getModePaiement()),
                 caisseMapper.toResponse(entity.getCaisse()),

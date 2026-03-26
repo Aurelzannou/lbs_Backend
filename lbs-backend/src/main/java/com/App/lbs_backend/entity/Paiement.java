@@ -22,8 +22,8 @@ public class Paiement {
     @Column(name = "lbs_paie_reference", length = 50)
     private String reference;
 
-    @Column(name = "lbs_paie_dossier_id")
-    private Integer dossierId;
+    @Column(name = "lbs_paie_inscription_id")
+    private Integer inscriptionId;
 
     @Column(name = "lbs_paie_frais_scolaire_id")
     private Integer fraisScolaireId;
@@ -54,8 +54,8 @@ public class Paiement {
 
     // ===== RELATIONS =====
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lbs_paie_dossier_id", insertable = false, updatable = false)
-    private DossierEleve dossier;
+    @JoinColumn(name = "lbs_paie_inscription_id", insertable = false, updatable = false)
+    private Inscription inscription;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lbs_paie_frais_scolaire_id", insertable = false, updatable = false)
@@ -96,8 +96,8 @@ public class Paiement {
     public String getReference() { return reference; }
     public void setReference(String reference) { this.reference = reference; }
 
-    public Integer getDossierId() { return dossierId; }
-    public void setDossierId(Integer dossierId) { this.dossierId = dossierId; }
+    public Integer getInscriptionId() { return inscriptionId; }
+    public void setInscriptionId(Integer inscriptionId) { this.inscriptionId = inscriptionId; }
 
     public Integer getFraisScolaireId() { return fraisScolaireId; }
     public void setFraisScolaireId(Integer fraisScolaireId) { this.fraisScolaireId = fraisScolaireId; }
@@ -126,8 +126,8 @@ public class Paiement {
     public String getModifierPar() { return modifierPar; }
     public void setModifierPar(String modifierPar) { this.modifierPar = modifierPar; }
 
-    public DossierEleve getDossier() { return dossier; }
-    public void setDossier(DossierEleve dossier) { this.dossier = dossier; }
+    public Inscription getInscription() { return inscription; }
+    public void setInscription(Inscription inscription) { this.inscription = inscription; }
 
     public FraisScolaire getFraisScolaire() { return fraisScolaire; }
     public void setFraisScolaire(FraisScolaire fraisScolaire) { this.fraisScolaire = fraisScolaire; }

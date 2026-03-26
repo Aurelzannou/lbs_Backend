@@ -1,0 +1,191 @@
+{
+  "id": "lbs-realm",
+  "realm": "lbs-realm",
+  "displayName": "LBS - Gestion Scolaire",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "ADMIN",
+        "description": "Administrateur système - accès complet"
+      },
+      {
+        "name": "DIRECTEUR",
+        "description": "Direction de l'école"
+      },
+      {
+        "name": "COMPTABLE",
+        "description": "Gestion financière - paiements, caisses, dépenses"
+      },
+      {
+        "name": "ENSEIGNANT",
+        "description": "Professeur"
+      },
+      {
+        "name": "SECRETAIRE",
+        "description": "Secrétariat - actes, dossiers élèves"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "lbs-backend-client",
+      "name": "LBS Backend API",
+      "description": "Client pour le backend Spring Boot",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "lbs-backend-secret-2026",
+      "redirectUris": ["http://localhost:8080/*", "http://localhost:3000/*", "http://localhost:4200/*"],
+      "webOrigins": ["http://localhost:8080", "http://localhost:3000", "http://localhost:4200"],
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": false,
+      "fullScopeAllowed": true,
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "protocolMappers": [
+        {
+          "name": "realm-roles-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "lbs-frontend-client",
+      "name": "LBS Frontend App",
+      "description": "Client public pour le futur frontend",
+      "enabled": true,
+      "publicClient": true,
+      "redirectUris": ["http://localhost:3000/*", "http://localhost:4200/*"],
+      "webOrigins": ["http://localhost:3000", "http://localhost:4200"],
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "fullScopeAllowed": true,
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Admin",
+      "lastName": "LBS",
+      "email": "admin@lbs.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["ADMIN"]
+    },
+    {
+      "username": "directeur",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Jean",
+      "lastName": "Directeur",
+      "email": "directeur@lbs.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "directeur123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["DIRECTEUR"]
+    },
+    {
+      "username": "comptable",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Marie",
+      "lastName": "Comptable",
+      "email": "comptable@lbs.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "comptable123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["COMPTABLE"]
+    },
+    {
+      "username": "enseignant",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Pierre",
+      "lastName": "Professeur",
+      "email": "enseignant@lbs.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "enseignant123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["ENSEIGNANT"]
+    },
+    {
+      "username": "secretaire",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Sophie",
+      "lastName": "Secrétaire",
+      "email": "secretaire@lbs.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "secretaire123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["SECRETAIRE"]
+    }
+  ],
+  "scopeMappings": [
+    {
+      "client": "lbs-backend-client",
+      "roles": ["ADMIN", "DIRECTEUR", "COMPTABLE", "ENSEIGNANT", "SECRETAIRE"]
+    },
+    {
+      "client": "lbs-frontend-client",
+      "roles": ["ADMIN", "DIRECTEUR", "COMPTABLE", "ENSEIGNANT", "SECRETAIRE"]
+    }
+  ]
+}

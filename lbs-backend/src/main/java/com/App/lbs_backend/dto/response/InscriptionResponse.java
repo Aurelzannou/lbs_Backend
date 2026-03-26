@@ -3,33 +3,28 @@ package com.App.lbs_backend.dto.response;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-public record DossierEleveResponse(
+public record InscriptionResponse(
         Integer id,
         String uuid,
         String code,
-        String nomEleve,
-        String prenomEleve,
-        String sexe,
-        Integer age,
-        String matricule,
-        Boolean actif,
+        Integer eleveId,
         Integer classeId,
+        Integer anneeScolaireId,
         LocalDate dateDebut,
         LocalDate dateFin,
-        String soufant,
+        Integer statutId,
+        Double remise,
         String numero,
-        Integer utilisateurId,
-        String provenance,
         Integer typeOperationId,
         Integer acteId,
-        String photo,
-        Integer anneeScolaireId,
-        Double remise,
+        Integer utilisateurId,
         LocalDateTime modifierLe,
         String modifierPar,
+        EleveResponse eleve,
         ClasseResponse classe,
+        AnneeScolaireResponse anneeScolaire,
         TypeOperationResponse typeOperation,
         ActeResponse acte,
         UtilisateurResponse utilisateur,
-        AnneeScolaireResponse anneeScolaire
+        StatutInscriptionResponse statut
 ) {}
