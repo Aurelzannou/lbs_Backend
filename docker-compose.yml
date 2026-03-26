@@ -10,11 +10,12 @@ services:
       POSTGRES_PASSWORD: lbs_password
     ports:
       - "5433:5432"
-#  ton PC (localhost:5433)  →→→  conteneur Docker (5432)
-#  Pourquoi localhost au niveau de host ?
-#
-#  Dans pgAdmin (qui est dans un conteneur) → on utilise lbs-postgres
-#  Dans DBeaver/DataGrip (qui est sur ton PC) → on utilise localhost
+  #  ton PC (localhost:5433)  →→→  conteneur Docker (5432)
+  #  Pourquoi localhost au niveau de host ?
+  #
+  #  Dans pgAdmin (qui est dans un conteneur) → on utilise lbs-postgres
+  #  Dans DBeaver/DataGrip (qui est sur ton PC) → on utilise localhost
+
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: lbs-pgadmin
@@ -29,3 +30,34 @@ services:
     container_name: lbs-maildev
     ports:
       - "1081:1080"
+
+  keycloak-postgres:
+    image: postgres:latest
+    container_name: lbs-keycloak-postgres
+    environment:
+      POSTGRES_DB: keycloak_db
+      POSTGRES_USER: keycloak_user
+      POSTGRES_PASSWORD: keycloak_password
+    ports:
+      - "5434:5432"
+  #  Base de données dédiée à Keycloak (séparée de lbs_db)
+  #  Dans Keycloak → on utilise keycloak-postgres (nom du conteneur)
+  #  Dans DBeaver/DataGrip (sur ton PC) → on utilise localhost:5434
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.0
+    container_name: lbs-keycloak
+    command: start-dev
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-postgres:5432/keycloak_db
+      KC_DB_USERNAME: keycloak_user
+      KC_DB_PASSWORD: keycloak_password
+    ports:
+      - "8080:8080"
+    depends_on:
+      - keycloak-postgres
+#  Admin Console → http://localhost:8080
+#  Dans ton app Spring Boot → http://keycloak:8080 (nom du conteneur)
