@@ -1,12 +1,16 @@
 package com.App.lbs_backend.entity;
 
+import com.App.lbs_backend.core.AuditableEntity;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "lbs_coefficient", schema = "lbs")
-public class Coefficient {
+@AttributeOverrides({
+    @AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_coef_modifier_le")),
+    @AttributeOverride(name = "modifierPar", column = @Column(name = "lbs_coef_modifier_par", length = 100))
+})
+public class Coefficient extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,13 +29,7 @@ public class Coefficient {
     private Integer niveauId;
 
     @Column(name = "lbs_coef_valeur")
-    private Double valeur; // Ex: 4.0 (Coef 4)
-
-    @Column(name = "lbs_coef_modifier_le")
-    private LocalDateTime modifierLe;
-
-    @Column(name = "lbs_coef_modifier_par", length = 100)
-    private String modifierPar;
+    private Double valeur;
 
     // Relations
     @ManyToOne(fetch = FetchType.LAZY)
@@ -45,18 +43,11 @@ public class Coefficient {
     @PrePersist
     public void prePersist() {
         if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
-        this.modifierLe = LocalDateTime.now();
         if (this.valeur == null) this.valeur = 1.0;
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        this.modifierLe = LocalDateTime.now();
     }
 
     public Coefficient() {}
 
-    // ===== GETTERS & SETTERS =====
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -74,12 +65,6 @@ public class Coefficient {
 
     public Double getValeur() { return valeur; }
     public void setValeur(Double valeur) { this.valeur = valeur; }
-
-    public LocalDateTime getModifierLe() { return modifierLe; }
-    public void setModifierLe(LocalDateTime modifierLe) { this.modifierLe = modifierLe; }
-
-    public String getModifierPar() { return modifierPar; }
-    public void setModifierPar(String modifierPar) { this.modifierPar = modifierPar; }
 
     public Matiere getMatiere() { return matiere; }
     public void setMatiere(Matiere matiere) { this.matiere = matiere; }

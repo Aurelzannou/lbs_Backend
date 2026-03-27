@@ -1,13 +1,17 @@
 package com.App.lbs_backend.entity;
 
+import com.App.lbs_backend.core.AuditableEntity;
 import jakarta.persistence.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "lbs_periode_academique", schema = "lbs")
-public class PeriodeAcademique {
+@AttributeOverrides({
+    @AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_peac_modifier_le")),
+    @AttributeOverride(name = "modifierPar", column = @Column(name = "lbs_peac_modifier_par", length = 100))
+})
+public class PeriodeAcademique extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,7 +24,7 @@ public class PeriodeAcademique {
     private String code;
 
     @Column(name = "lbs_peac_libelle", length = 150)
-    private String libelle; // Ex: Trimestre 1, Semestre 1...
+    private String libelle;
 
     @Column(name = "lbs_peac_annee_scolaire_id")
     private Integer anneeScolaireId;
@@ -32,13 +36,7 @@ public class PeriodeAcademique {
     private LocalDate dateFin;
 
     @Column(name = "lbs_peac_verrouille")
-    private Boolean verrouille; // Une fois verrouillé, on ne peut plus modifier les notes
-
-    @Column(name = "lbs_peac_modifier_le")
-    private LocalDateTime modifierLe;
-
-    @Column(name = "lbs_peac_modifier_par", length = 100)
-    private String modifierPar;
+    private Boolean verrouille;
 
     // Relations
     @ManyToOne(fetch = FetchType.LAZY)
@@ -48,18 +46,11 @@ public class PeriodeAcademique {
     @PrePersist
     public void prePersist() {
         if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
-        this.modifierLe = LocalDateTime.now();
         if (this.verrouille == null) this.verrouille = false;
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        this.modifierLe = LocalDateTime.now();
     }
 
     public PeriodeAcademique() {}
 
-    // ===== GETTERS & SETTERS =====
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -83,12 +74,6 @@ public class PeriodeAcademique {
 
     public Boolean getVerrouille() { return verrouille; }
     public void setVerrouille(Boolean verrouille) { this.verrouille = verrouille; }
-
-    public LocalDateTime getModifierLe() { return modifierLe; }
-    public void setModifierLe(LocalDateTime modifierLe) { this.modifierLe = modifierLe; }
-
-    public String getModifierPar() { return modifierPar; }
-    public void setModifierPar(String modifierPar) { this.modifierPar = modifierPar; }
 
     public AnneeScolaire getAnneeScolaire() { return anneeScolaire; }
     public void setAnneeScolaire(AnneeScolaire anneeScolaire) { this.anneeScolaire = anneeScolaire; }

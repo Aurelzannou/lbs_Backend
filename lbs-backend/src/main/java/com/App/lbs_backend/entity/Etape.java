@@ -5,38 +5,39 @@ import jakarta.persistence.*;
 import java.util.UUID;
 
 @Entity
-@Table(name = "lbs_caisse", schema = "lbs")
+@Table(name = "lbs_etape", schema = "lbs")
 @AttributeOverrides({
-    @AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_cais_modifier_le")),
-    @AttributeOverride(name = "modifierPar", column = @Column(name = "lbs_cais_modifier_par", length = 100))
+    @AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_etap_modifier_le")),
+    @AttributeOverride(name = "modifierPar", column = @Column(name = "lbs_etap_modifier_par", length = 100))
 })
-public class Caisse extends AuditableEntity {
+public class Etape extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "lbs_cais_uuid", length = 50, unique = true, nullable = false)
+    @Column(name = "lbs_etap_uuid", length = 50, unique = true, nullable = false)
     private String uuid;
 
-    @Column(name = "lbs_cais_code", length = 20)
+    @Column(name = "lbs_etap_code", length = 20, unique = true)
     private String code;
 
-    @Column(name = "lbs_cais_libelle", length = 100)
+    @Column(name = "lbs_etap_libelle", length = 100)
     private String libelle;
 
-    @Column(name = "lbs_cais_solde")
-    private Double solde;
+    @Column(name = "lbs_etap_ordre")
+    private Integer ordre;
 
-    @Column(name = "lbs_cais_actif")
+    @Column(name = "lbs_etap_actif")
     private Boolean actif;
 
     @PrePersist
     public void prePersist() {
         if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
+        if (this.actif == null) this.actif = true;
     }
 
-    public Caisse() {}
+    public Etape() {}
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -50,8 +51,8 @@ public class Caisse extends AuditableEntity {
     public String getLibelle() { return libelle; }
     public void setLibelle(String libelle) { this.libelle = libelle; }
 
-    public Double getSolde() { return solde; }
-    public void setSolde(Double solde) { this.solde = solde; }
+    public Integer getOrdre() { return ordre; }
+    public void setOrdre(Integer ordre) { this.ordre = ordre; }
 
     public Boolean getActif() { return actif; }
     public void setActif(Boolean actif) { this.actif = actif; }

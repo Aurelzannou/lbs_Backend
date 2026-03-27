@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 public record NoteResponse(
         Integer id,
         String uuid,
-        Integer inscriptionId,
+        Integer dossierEleveId,
         Integer matiereId,
         Integer periodeId,
         Integer professeurId,
@@ -18,7 +18,7 @@ public record NoteResponse(
         Integer utilisateurId,
         LocalDateTime modifierLe,
         String modifierPar,
-        InscriptionResponse inscription,
+        DossierEleveResponse dossierEleve,
         MatiereResponse matiere,
         PeriodeAcademiqueResponse periode,
         ProfesseurResponse professeur,

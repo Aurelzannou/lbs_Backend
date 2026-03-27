@@ -1,14 +1,17 @@
 package com.App.lbs_backend.entity;
 
-import jakarta.persistence.*;
-import java.time.LocalDateTime;
-import java.util.UUID;
-
+import com.App.lbs_backend.core.AuditableEntity;
 import com.App.lbs_backend.core.BaseEntity;
+import jakarta.persistence.*;
+import java.util.UUID;
 
 @Entity
 @Table(name = "lbs_niveau", schema = "lbs")
-public class Niveau implements BaseEntity {
+@AttributeOverrides({
+    @AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_nive_modifier_le")),
+    @AttributeOverride(name = "modifierPar", column = @Column(name = "lbs_nive_modifier_par", length = 100))
+})
+public class Niveau extends AuditableEntity implements BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,29 +26,17 @@ public class Niveau implements BaseEntity {
     @Column(name = "lbs_nive_libelle", length = 100)
     private String libelle;
 
-    @Column(name = "lbs_nive_modifier_le")
-    private LocalDateTime modifierLe;
-
-    @Column(name = "lbs_nive_modifier_par", length = 100)
-    private String modifierPar;
-
     @PrePersist
     public void prePersist() {
         if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
-        this.modifierLe = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        this.modifierLe = LocalDateTime.now();
     }
 
     public Niveau() {}
 
-    // ===== GETTERS & SETTERS =====
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
+    @Override
     public String getUuid() { return uuid; }
     public void setUuid(String uuid) { this.uuid = uuid; }
 
@@ -54,10 +45,4 @@ public class Niveau implements BaseEntity {
 
     public String getLibelle() { return libelle; }
     public void setLibelle(String libelle) { this.libelle = libelle; }
-
-    public LocalDateTime getModifierLe() { return modifierLe; }
-    public void setModifierLe(LocalDateTime modifierLe) { this.modifierLe = modifierLe; }
-
-    public String getModifierPar() { return modifierPar; }
-    public void setModifierPar(String modifierPar) { this.modifierPar = modifierPar; }
 }

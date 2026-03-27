@@ -1,12 +1,17 @@
 package com.App.lbs_backend.entity;
 
+import com.App.lbs_backend.core.AuditableEntity;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
 @Table(name = "lbs_eleve", schema = "lbs")
-public class Eleve {
+@AttributeOverrides({
+    @AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_elev_modifier_le")),
+    @AttributeOverride(name = "modifierPar", column = @Column(name = "lbs_elev_modifier_par", length = 100))
+})
+public class Eleve extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,7 +33,7 @@ public class Eleve {
     private String sexe;
 
     @Column(name = "lbs_elev_date_naissance")
-    private java.time.LocalDate dateNaissance;
+    private LocalDate dateNaissance;
 
     @Column(name = "lbs_elev_matricule", length = 30, unique = true)
     private String matricule;
@@ -48,12 +53,6 @@ public class Eleve {
     @Column(name = "lbs_elev_utilisateur_id")
     private Integer utilisateurId;
 
-    @Column(name = "lbs_elev_modifier_le")
-    private LocalDateTime modifierLe;
-
-    @Column(name = "lbs_elev_modifier_par", length = 100)
-    private String modifierPar;
-
     // ===== RELATIONS =====
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lbs_elev_utilisateur_id", insertable = false, updatable = false)
@@ -62,13 +61,7 @@ public class Eleve {
     @PrePersist
     public void prePersist() {
         if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
-        this.modifierLe = LocalDateTime.now();
         if (this.actif == null) this.actif = true;
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        this.modifierLe = LocalDateTime.now();
     }
 
     // ===== GETTERS & SETTERS =====
@@ -90,8 +83,8 @@ public class Eleve {
     public String getSexe() { return sexe; }
     public void setSexe(String sexe) { this.sexe = sexe; }
 
-    public java.time.LocalDate getDateNaissance() { return dateNaissance; }
-    public void setDateNaissance(java.time.LocalDate dateNaissance) { this.dateNaissance = dateNaissance; }
+    public LocalDate getDateNaissance() { return dateNaissance; }
+    public void setDateNaissance(LocalDate dateNaissance) { this.dateNaissance = dateNaissance; }
 
     public String getMatricule() { return matricule; }
     public void setMatricule(String matricule) { this.matricule = matricule; }
@@ -110,12 +103,6 @@ public class Eleve {
 
     public Integer getUtilisateurId() { return utilisateurId; }
     public void setUtilisateurId(Integer utilisateurId) { this.utilisateurId = utilisateurId; }
-
-    public LocalDateTime getModifierLe() { return modifierLe; }
-    public void setModifierLe(LocalDateTime modifierLe) { this.modifierLe = modifierLe; }
-
-    public String getModifierPar() { return modifierPar; }
-    public void setModifierPar(String modifierPar) { this.modifierPar = modifierPar; }
 
     public Utilisateur getUtilisateur() { return utilisateur; }
     public void setUtilisateur(Utilisateur utilisateur) { this.utilisateur = utilisateur; }

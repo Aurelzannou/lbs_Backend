@@ -5,27 +5,26 @@ import com.App.lbs_backend.entity.Paiement;
 import org.springframework.stereotype.Component;
 
 @Component
-public class PaiementMapper implements Mapper<Paiement, PaiementResponse> {
+public class PaiementMapper {
 
-    private final InscriptionMapper inscriptionMapper;
+    private final DossierEleveMapper dossierEleveMapper;
     private final FraisScolaireMapper fraisScolaireMapper;
     private final ModePaiementMapper modePaiementMapper;
     private final CaisseMapper caisseMapper;
     private final UtilisateurMapper utilisateurMapper;
 
-    public PaiementMapper(InscriptionMapper inscriptionMapper,
+    public PaiementMapper(DossierEleveMapper dossierEleveMapper,
                           FraisScolaireMapper fraisScolaireMapper,
                           ModePaiementMapper modePaiementMapper,
                           CaisseMapper caisseMapper,
                           UtilisateurMapper utilisateurMapper) {
-        this.inscriptionMapper = inscriptionMapper;
+        this.dossierEleveMapper = dossierEleveMapper;
         this.fraisScolaireMapper = fraisScolaireMapper;
         this.modePaiementMapper = modePaiementMapper;
         this.caisseMapper = caisseMapper;
         this.utilisateurMapper = utilisateurMapper;
     }
 
-    @Override
     public PaiementResponse toResponse(Paiement entity) {
         if (entity == null) return null;
         return new PaiementResponse(
@@ -33,7 +32,7 @@ public class PaiementMapper implements Mapper<Paiement, PaiementResponse> {
                 entity.getUuid(),
                 entity.getCode(),
                 entity.getReference(),
-                entity.getInscriptionId(),
+                entity.getDossierEleveId(),
                 entity.getFraisScolaireId(),
                 entity.getDatePaiement(),
                 entity.getMontant(),
@@ -43,7 +42,7 @@ public class PaiementMapper implements Mapper<Paiement, PaiementResponse> {
                 entity.getObservation(),
                 entity.getModifierLe(),
                 entity.getModifierPar(),
-                inscriptionMapper.toResponse(entity.getInscription()),
+                dossierEleveMapper.toResponse(entity.getDossierEleve()),
                 fraisScolaireMapper.toResponse(entity.getFraisScolaire()),
                 modePaiementMapper.toResponse(entity.getModePaiement()),
                 caisseMapper.toResponse(entity.getCaisse()),

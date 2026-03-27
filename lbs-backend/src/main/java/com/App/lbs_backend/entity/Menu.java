@@ -1,12 +1,17 @@
 package com.App.lbs_backend.entity;
 
+import com.App.lbs_backend.core.AuditableEntity;
 import jakarta.persistence.*;
 import java.util.List;
 import java.util.UUID;
 
 @Entity
 @Table(name = "lbs_menu", schema = "lbs")
-public class Menu {
+@AttributeOverrides({
+    @AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_menu_modifier_le")),
+    @AttributeOverride(name = "modifierPar", column = @Column(name = "lbs_menu_modifier_par", length = 100))
+})
+public class Menu extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

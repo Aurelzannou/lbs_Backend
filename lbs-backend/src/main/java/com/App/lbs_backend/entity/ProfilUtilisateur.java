@@ -1,12 +1,16 @@
 package com.App.lbs_backend.entity;
 
+import com.App.lbs_backend.core.AuditableEntity;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "lbs_profil_utilisateur", schema = "lbs")
-public class ProfilUtilisateur {
+@AttributeOverrides({
+    @AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_prut_modifier_le")),
+    @AttributeOverride(name = "modifierPar", column = @Column(name = "lbs_prut_modifier_par", length = 100))
+})
+public class ProfilUtilisateur extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,12 +31,6 @@ public class ProfilUtilisateur {
     @Column(name = "lbs_prut_token", length = 500)
     private String token;
 
-    @Column(name = "lbs_prut_modifier_le")
-    private LocalDateTime modifierLe;
-
-    @Column(name = "lbs_prut_modifier_par", length = 100)
-    private String modifierPar;
-
     // ===== RELATIONS =====
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lbs_prut_profil_id", insertable = false, updatable = false)
@@ -45,11 +43,7 @@ public class ProfilUtilisateur {
     @PrePersist
     public void prePersist() {
         if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
-        this.modifierLe = LocalDateTime.now();
     }
-
-    @PreUpdate
-    public void preUpdate() { this.modifierLe = LocalDateTime.now(); }
 
     public ProfilUtilisateur() {}
 
@@ -67,12 +61,6 @@ public class ProfilUtilisateur {
 
     public String getToken() { return token; }
     public void setToken(String token) { this.token = token; }
-
-    public LocalDateTime getModifierLe() { return modifierLe; }
-    public void setModifierLe(LocalDateTime modifierLe) { this.modifierLe = modifierLe; }
-
-    public String getModifierPar() { return modifierPar; }
-    public void setModifierPar(String modifierPar) { this.modifierPar = modifierPar; }
 
     public Profil getProfil() { return profil; }
     public void setProfil(Profil profil) { this.profil = profil; }

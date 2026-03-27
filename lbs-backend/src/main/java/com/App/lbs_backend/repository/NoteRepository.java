@@ -7,6 +7,6 @@ import java.util.List;
 
 @Repository
 public interface NoteRepository extends BaseRepository<Note> {
-    List<Note> findByInscriptionId(Integer inscriptionId);
-    List<Note> findByInscriptionIdAndPeriodeId(Integer inscriptionId, Integer periodeId);
+    List<Note> findByDossierEleveId(Integer dossierEleveId);
+    List<Note> findByDossierEleveIdAndPeriodeId(Integer dossierEleveId, Integer periodeId);
 }

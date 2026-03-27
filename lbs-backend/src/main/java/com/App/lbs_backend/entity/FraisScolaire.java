@@ -1,12 +1,16 @@
 package com.App.lbs_backend.entity;
 
+import com.App.lbs_backend.core.AuditableEntity;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "lbs_frais_scolaire", schema = "lbs")
-public class FraisScolaire {
+@AttributeOverrides({
+    @AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_frsc_modifier_le")),
+    @AttributeOverride(name = "modifierPar", column = @Column(name = "lbs_frsc_modifier_par", length = 100))
+})
+public class FraisScolaire extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,12 +37,6 @@ public class FraisScolaire {
     @Column(name = "lbs_frsc_actif")
     private Boolean actif;
 
-    @Column(name = "lbs_frsc_modifier_le")
-    private LocalDateTime modifierLe;
-
-    @Column(name = "lbs_frsc_modifier_par", length = 100)
-    private String modifierPar;
-
     // ===== RELATIONS =====
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lbs_frsc_annee_scolaire_id", insertable = false, updatable = false)
@@ -55,11 +53,7 @@ public class FraisScolaire {
     @PrePersist
     public void prePersist() {
         if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
-        this.modifierLe = LocalDateTime.now();
     }
-
-    @PreUpdate
-    public void preUpdate() { this.modifierLe = LocalDateTime.now(); }
 
     public FraisScolaire() {}
 
@@ -86,12 +80,6 @@ public class FraisScolaire {
 
     public Boolean getActif() { return actif; }
     public void setActif(Boolean actif) { this.actif = actif; }
-
-    public LocalDateTime getModifierLe() { return modifierLe; }
-    public void setModifierLe(LocalDateTime modifierLe) { this.modifierLe = modifierLe; }
-
-    public String getModifierPar() { return modifierPar; }
-    public void setModifierPar(String modifierPar) { this.modifierPar = modifierPar; }
 
     public AnneeScolaire getAnneeScolaire() { return anneeScolaire; }
     public void setAnneeScolaire(AnneeScolaire anneeScolaire) { this.anneeScolaire = anneeScolaire; }

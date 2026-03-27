@@ -1,12 +1,16 @@
 package com.App.lbs_backend.entity;
 
+import com.App.lbs_backend.core.AuditableEntity;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "lbs_fichier", schema = "lbs")
-public class Fichier {
+@AttributeOverrides({
+    @AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_fich_modifier_le")),
+    @AttributeOverride(name = "modifierPar", column = @Column(name = "lbs_fich_modifier_par", length = 100))
+})
+public class Fichier extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,20 +31,10 @@ public class Fichier {
     @Column(name = "lbs_fich_taille")
     private Long taille;
 
-    @Column(name = "lbs_fich_modifier_le")
-    private LocalDateTime modifierLe;
-
-    @Column(name = "lbs_fich_modifier_par", length = 100)
-    private String modifierPar;
-
     @PrePersist
     public void prePersist() {
         if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
-        this.modifierLe = LocalDateTime.now();
     }
-
-    @PreUpdate
-    public void preUpdate() { this.modifierLe = LocalDateTime.now(); }
 
     public Fichier() {}
 
@@ -53,15 +47,12 @@ public class Fichier {
     public String getRepertoir() { return repertoir; }
     public void setRepertoir(String repertoir) { this.repertoir = repertoir; }
 
+    public String getCode() { return code; }
+    public void setCode(String code) { this.code = code; }
+
     public String getNom() { return nom; }
     public void setNom(String nom) { this.nom = nom; }
 
     public Long getTaille() { return taille; }
     public void setTaille(Long taille) { this.taille = taille; }
-
-    public LocalDateTime getModifierLe() { return modifierLe; }
-    public void setModifierLe(LocalDateTime modifierLe) { this.modifierLe = modifierLe; }
-
-    public String getModifierPar() { return modifierPar; }
-    public void setModifierPar(String modifierPar) { this.modifierPar = modifierPar; }
 }

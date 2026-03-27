@@ -1,12 +1,16 @@
 package com.App.lbs_backend.entity;
 
+import com.App.lbs_backend.core.AuditableEntity;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "lbs_acte", schema = "lbs")
-public class Acte {
+@AttributeOverrides({
+    @AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_acte_modifier_le")),
+    @AttributeOverride(name = "modifierPar", column = @Column(name = "lbs_acte_modifier_par", length = 100))
+})
+public class Acte extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,12 +37,6 @@ public class Acte {
     @Column(name = "lbs_acte_fichier_id")
     private Integer fichierId;
 
-    @Column(name = "lbs_acte_modifier_le")
-    private LocalDateTime modifierLe;
-
-    @Column(name = "lbs_acte_modifier_par", length = 100)
-    private String modifierPar;
-
     // ===== RELATIONS =====
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lbs_acte_type_acte_id", insertable = false, updatable = false)
@@ -51,11 +49,7 @@ public class Acte {
     @PrePersist
     public void prePersist() {
         if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
-        this.modifierLe = LocalDateTime.now();
     }
-
-    @PreUpdate
-    public void preUpdate() { this.modifierLe = LocalDateTime.now(); }
 
     public Acte() {}
 
@@ -82,12 +76,6 @@ public class Acte {
 
     public Integer getFichierId() { return fichierId; }
     public void setFichierId(Integer fichierId) { this.fichierId = fichierId; }
-
-    public LocalDateTime getModifierLe() { return modifierLe; }
-    public void setModifierLe(LocalDateTime modifierLe) { this.modifierLe = modifierLe; }
-
-    public String getModifierPar() { return modifierPar; }
-    public void setModifierPar(String modifierPar) { this.modifierPar = modifierPar; }
 
     public TypeActe getTypeActe() { return typeActe; }
     public void setTypeActe(TypeActe typeActe) { this.typeActe = typeActe; }

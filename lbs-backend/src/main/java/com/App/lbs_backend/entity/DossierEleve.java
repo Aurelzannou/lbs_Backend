@@ -6,84 +6,91 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
-@Table(name = "lbs_inscription", schema = "lbs")
+@Table(name = "lbs_dossier_eleve", schema = "lbs")
 @AttributeOverrides({
-    @AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_insc_modifier_le")),
-    @AttributeOverride(name = "modifierPar", column = @Column(name = "lbs_insc_modifier_par", length = 100))
+    @AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_doel_modifier_le")),
+    @AttributeOverride(name = "modifierPar", column = @Column(name = "lbs_doel_modifier_par", length = 100))
 })
-public class Inscription extends AuditableEntity {
+public class DossierEleve extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "lbs_insc_uuid", length = 50, unique = true, nullable = false)
+    @Column(name = "lbs_doel_uuid", length = 50, unique = true, nullable = false)
     private String uuid;
 
-    @Column(name = "lbs_insc_code", length = 20)
+    @Column(name = "lbs_doel_code", length = 20)
     private String code;
 
-    @Column(name = "lbs_insc_eleve_id")
+    @Column(name = "lbs_doel_eleve_id")
     private Integer eleveId;
 
-    @Column(name = "lbs_insc_classe_id")
+    @Column(name = "lbs_doel_classe_id")
     private Integer classeId;
 
-    @Column(name = "lbs_insc_annee_scolaire_id")
+    @Column(name = "lbs_doel_annee_scolaire_id")
     private Integer anneeScolaireId;
 
-    @Column(name = "lbs_insc_date_debut")
+    @Column(name = "lbs_doel_date_debut")
     private LocalDate dateDebut;
 
-    @Column(name = "lbs_insc_date_fin")
+    @Column(name = "lbs_doel_date_fin")
     private LocalDate dateFin;
 
-    @Column(name = "lbs_insc_statut_id")
-    private Integer statutId;
+    @Column(name = "lbs_doel_statut_id")
+    private Integer statutId; // Type de statut (NOUVEAU, REDOUBLANT...)
 
-    @Column(name = "lbs_insc_remise")
+    @Column(name = "lbs_doel_etape_courante_id")
+    private Integer etapeCouranteId; // Phase du dossier (DÉPOSÉ, VALIDÉ, PAYÉ...)
+
+    @Column(name = "lbs_doel_remise")
     private Double remise;
 
-    @Column(name = "lbs_insc_numero", length = 30)
+    @Column(name = "lbs_doel_numero", length = 30)
     private String numero;
 
-    @Column(name = "lbs_insc_type_operation_id")
+    @Column(name = "lbs_doel_type_operation_id")
     private Integer typeOperationId;
 
-    @Column(name = "lbs_insc_acte_id")
+    @Column(name = "lbs_doel_acte_id")
     private Integer acteId;
 
-    @Column(name = "lbs_insc_utilisateur_id")
+    @Column(name = "lbs_doel_utilisateur_id")
     private Integer utilisateurId;
 
     // ===== RELATIONS =====
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lbs_insc_eleve_id", insertable = false, updatable = false)
+    @JoinColumn(name = "lbs_doel_eleve_id", insertable = false, updatable = false)
     private Eleve eleve;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lbs_insc_classe_id", insertable = false, updatable = false)
+    @JoinColumn(name = "lbs_doel_classe_id", insertable = false, updatable = false)
     private Classe classe;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lbs_insc_annee_scolaire_id", insertable = false, updatable = false)
+    @JoinColumn(name = "lbs_doel_annee_scolaire_id", insertable = false, updatable = false)
     private AnneeScolaire anneeScolaire;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lbs_insc_type_operation_id", insertable = false, updatable = false)
+    @JoinColumn(name = "lbs_doel_type_operation_id", insertable = false, updatable = false)
     private TypeOperation typeOperation;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lbs_insc_acte_id", insertable = false, updatable = false)
+    @JoinColumn(name = "lbs_doel_acte_id", insertable = false, updatable = false)
     private Acte acte;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lbs_insc_utilisateur_id", insertable = false, updatable = false)
+    @JoinColumn(name = "lbs_doel_utilisateur_id", insertable = false, updatable = false)
     private Utilisateur utilisateur;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lbs_insc_statut_id", insertable = false, updatable = false)
+    @JoinColumn(name = "lbs_doel_statut_id", insertable = false, updatable = false)
     private StatutInscription statut;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lbs_doel_etape_courante_id", insertable = false, updatable = false)
+    private Etape etapeCourante;
 
     @PrePersist
     public void prePersist() {
@@ -118,6 +125,9 @@ public class Inscription extends AuditableEntity {
 
     public Integer getStatutId() { return statutId; }
     public void setStatutId(Integer statutId) { this.statutId = statutId; }
+
+    public Integer getEtapeCouranteId() { return etapeCouranteId; }
+    public void setEtapeCouranteId(Integer etapeCouranteId) { this.etapeCouranteId = etapeCouranteId; }
 
     public Double getRemise() { return remise; }
     public void setRemise(Double remise) { this.remise = remise; }
@@ -154,4 +164,7 @@ public class Inscription extends AuditableEntity {
 
     public StatutInscription getStatut() { return statut; }
     public void setStatut(StatutInscription statut) { this.statut = statut; }
+
+    public Etape getEtapeCourante() { return etapeCourante; }
+    public void setEtapeCourante(Etape etapeCourante) { this.etapeCourante = etapeCourante; }
 }

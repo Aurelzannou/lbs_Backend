@@ -1,13 +1,14 @@
 package com.App.lbs_backend.entity;
 
+import com.App.lbs_backend.core.AuditableEntity;
 import jakarta.persistence.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "lbs_depense_scolaire", schema = "lbs")
-public class DepenseScolaire {
+@AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_desc_modifier_le"))
+public class DepenseScolaire extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,9 +41,6 @@ public class DepenseScolaire {
     @Column(name = "lbs_desc_utilisateur_id")
     private Integer utilisateurId;
 
-    @Column(name = "lbs_desc_modifier_le")
-    private LocalDateTime modifierLe;
-
     // ===== RELATIONS =====
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lbs_desc_caisse_id", insertable = false, updatable = false)
@@ -59,11 +57,7 @@ public class DepenseScolaire {
     @PrePersist
     public void prePersist() {
         if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
-        this.modifierLe = LocalDateTime.now();
     }
-
-    @PreUpdate
-    public void preUpdate() { this.modifierLe = LocalDateTime.now(); }
 
     public DepenseScolaire() {}
 
@@ -96,9 +90,6 @@ public class DepenseScolaire {
 
     public Integer getUtilisateurId() { return utilisateurId; }
     public void setUtilisateurId(Integer utilisateurId) { this.utilisateurId = utilisateurId; }
-
-    public LocalDateTime getModifierLe() { return modifierLe; }
-    public void setModifierLe(LocalDateTime modifierLe) { this.modifierLe = modifierLe; }
 
     public Caisse getCaisse() { return caisse; }
     public void setCaisse(Caisse caisse) { this.caisse = caisse; }

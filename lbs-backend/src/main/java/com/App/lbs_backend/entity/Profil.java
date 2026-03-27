@@ -1,11 +1,16 @@
 package com.App.lbs_backend.entity;
 
+import com.App.lbs_backend.core.AuditableEntity;
 import jakarta.persistence.*;
 import java.util.UUID;
 
 @Entity
 @Table(name = "lbs_profil", schema = "lbs")
-public class Profil {
+@AttributeOverrides({
+    @AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_prof_modifier_le")),
+    @AttributeOverride(name = "modifierPar", column = @Column(name = "lbs_prof_modifier_par", length = 100))
+})
+public class Profil extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

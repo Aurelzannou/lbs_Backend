@@ -1,13 +1,17 @@
 package com.App.lbs_backend.entity;
 
+import com.App.lbs_backend.core.AuditableEntity;
 import jakarta.persistence.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "lbs_paiement", schema = "lbs")
-public class Paiement {
+@AttributeOverrides({
+    @AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_paie_modifier_le")),
+    @AttributeOverride(name = "modifierPar", column = @Column(name = "lbs_paie_modifier_par", length = 100))
+})
+public class Paiement extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,8 +26,8 @@ public class Paiement {
     @Column(name = "lbs_paie_reference", length = 50)
     private String reference;
 
-    @Column(name = "lbs_paie_inscription_id")
-    private Integer inscriptionId;
+    @Column(name = "lbs_paie_dossier_eleve_id")
+    private Integer dossierEleveId;
 
     @Column(name = "lbs_paie_frais_scolaire_id")
     private Integer fraisScolaireId;
@@ -46,16 +50,10 @@ public class Paiement {
     @Column(name = "lbs_paie_observation", length = 500)
     private String observation;
 
-    @Column(name = "lbs_paie_modifier_le")
-    private LocalDateTime modifierLe;
-
-    @Column(name = "lbs_paie_modifier_par", length = 100)
-    private String modifierPar;
-
     // ===== RELATIONS =====
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lbs_paie_inscription_id", insertable = false, updatable = false)
-    private Inscription inscription;
+    @JoinColumn(name = "lbs_paie_dossier_eleve_id", insertable = false, updatable = false)
+    private DossierEleve dossierEleve;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lbs_paie_frais_scolaire_id", insertable = false, updatable = false)
@@ -76,11 +74,7 @@ public class Paiement {
     @PrePersist
     public void prePersist() {
         if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
-        this.modifierLe = LocalDateTime.now();
     }
-
-    @PreUpdate
-    public void preUpdate() { this.modifierLe = LocalDateTime.now(); }
 
     public Paiement() {}
 
@@ -96,8 +90,8 @@ public class Paiement {
     public String getReference() { return reference; }
     public void setReference(String reference) { this.reference = reference; }
 
-    public Integer getInscriptionId() { return inscriptionId; }
-    public void setInscriptionId(Integer inscriptionId) { this.inscriptionId = inscriptionId; }
+    public Integer getDossierEleveId() { return dossierEleveId; }
+    public void setDossierEleveId(Integer dossierEleveId) { this.dossierEleveId = dossierEleveId; }
 
     public Integer getFraisScolaireId() { return fraisScolaireId; }
     public void setFraisScolaireId(Integer fraisScolaireId) { this.fraisScolaireId = fraisScolaireId; }
@@ -120,14 +114,8 @@ public class Paiement {
     public String getObservation() { return observation; }
     public void setObservation(String observation) { this.observation = observation; }
 
-    public LocalDateTime getModifierLe() { return modifierLe; }
-    public void setModifierLe(LocalDateTime modifierLe) { this.modifierLe = modifierLe; }
-
-    public String getModifierPar() { return modifierPar; }
-    public void setModifierPar(String modifierPar) { this.modifierPar = modifierPar; }
-
-    public Inscription getInscription() { return inscription; }
-    public void setInscription(Inscription inscription) { this.inscription = inscription; }
+    public DossierEleve getDossierEleve() { return dossierEleve; }
+    public void setDossierEleve(DossierEleve dossierEleve) { this.dossierEleve = dossierEleve; }
 
     public FraisScolaire getFraisScolaire() { return fraisScolaire; }
     public void setFraisScolaire(FraisScolaire fraisScolaire) { this.fraisScolaire = fraisScolaire; }

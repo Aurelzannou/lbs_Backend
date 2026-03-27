@@ -5,33 +5,32 @@ import com.App.lbs_backend.entity.Note;
 import org.springframework.stereotype.Component;
 
 @Component
-public class NoteMapper implements Mapper<Note, NoteResponse> {
+public class NoteMapper {
 
-    private final InscriptionMapper inscriptionMapper;
+    private final DossierEleveMapper dossierEleveMapper;
     private final MatiereMapper matiereMapper;
     private final PeriodeAcademiqueMapper periodeMapper;
     private final ProfesseurMapper professeurMapper;
     private final UtilisateurMapper utilisateurMapper;
 
-    public NoteMapper(InscriptionMapper inscriptionMapper,
+    public NoteMapper(DossierEleveMapper dossierEleveMapper,
                       MatiereMapper matiereMapper,
                       PeriodeAcademiqueMapper periodeMapper,
                       ProfesseurMapper professeurMapper,
                       UtilisateurMapper utilisateurMapper) {
-        this.inscriptionMapper = inscriptionMapper;
+        this.dossierEleveMapper = dossierEleveMapper;
         this.matiereMapper = matiereMapper;
         this.periodeMapper = periodeMapper;
         this.professeurMapper = professeurMapper;
         this.utilisateurMapper = utilisateurMapper;
     }
 
-    @Override
     public NoteResponse toResponse(Note entity) {
         if (entity == null) return null;
         return new NoteResponse(
                 entity.getId(),
                 entity.getUuid(),
-                entity.getInscriptionId(),
+                entity.getDossierEleveId(),
                 entity.getMatiereId(),
                 entity.getPeriodeId(),
                 entity.getProfesseurId(),
@@ -43,9 +42,7 @@ public class NoteMapper implements Mapper<Note, NoteResponse> {
                 entity.getUtilisateurId(),
                 entity.getModifierLe(),
                 entity.getModifierPar(),
-                // Les relations complexes peuvent être nullables pour éviter les boucles infinies ou ralentissements
-                // selon le besoin. Ici on les renseigne si les entités sont chargées (EAGER/LAZY initialisé)
-                entity.getInscription() != null ? inscriptionMapper.toResponse(entity.getInscription()) : null,
+                entity.getDossierEleve() != null ? dossierEleveMapper.toResponse(entity.getDossierEleve()) : null,
                 matiereMapper.toResponse(entity.getMatiere()),
                 periodeMapper.toResponse(entity.getPeriode()),
                 professeurMapper.toResponse(entity.getProfesseur()),

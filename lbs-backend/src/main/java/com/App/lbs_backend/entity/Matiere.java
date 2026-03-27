@@ -1,12 +1,16 @@
 package com.App.lbs_backend.entity;
 
+import com.App.lbs_backend.core.AuditableEntity;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "lbs_matiere", schema = "lbs")
-public class Matiere {
+@AttributeOverrides({
+    @AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_mati_modifier_le")),
+    @AttributeOverride(name = "modifierPar", column = @Column(name = "lbs_mati_modifier_par", length = 100))
+})
+public class Matiere extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,27 +28,14 @@ public class Matiere {
     @Column(name = "lbs_mati_actif")
     private Boolean actif;
 
-    @Column(name = "lbs_mati_modifier_le")
-    private LocalDateTime modifierLe;
-
-    @Column(name = "lbs_mati_modifier_par", length = 100)
-    private String modifierPar;
-
     @PrePersist
     public void prePersist() {
         if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
-        this.modifierLe = LocalDateTime.now();
         if (this.actif == null) this.actif = true;
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        this.modifierLe = LocalDateTime.now();
     }
 
     public Matiere() {}
 
-    // ===== GETTERS & SETTERS =====
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -59,10 +50,4 @@ public class Matiere {
 
     public Boolean getActif() { return actif; }
     public void setActif(Boolean actif) { this.actif = actif; }
-
-    public LocalDateTime getModifierLe() { return modifierLe; }
-    public void setModifierLe(LocalDateTime modifierLe) { this.modifierLe = modifierLe; }
-
-    public String getModifierPar() { return modifierPar; }
-    public void setModifierPar(String modifierPar) { this.modifierPar = modifierPar; }
 }

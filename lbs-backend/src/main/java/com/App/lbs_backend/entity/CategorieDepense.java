@@ -1,12 +1,13 @@
 package com.App.lbs_backend.entity;
 
+import com.App.lbs_backend.core.AuditableEntity;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "lbs_categorie_depense", schema = "lbs")
-public class CategorieDepense {
+@AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_cade_modifier_le"))
+public class CategorieDepense extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,17 +25,10 @@ public class CategorieDepense {
     @Column(name = "lbs_cade_actif")
     private Boolean actif;
 
-    @Column(name = "lbs_cade_modifier_le")
-    private LocalDateTime modifierLe;
-
     @PrePersist
     public void prePersist() {
         if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
-        this.modifierLe = LocalDateTime.now();
     }
-
-    @PreUpdate
-    public void preUpdate() { this.modifierLe = LocalDateTime.now(); }
 
     public CategorieDepense() {}
 
@@ -52,7 +46,4 @@ public class CategorieDepense {
 
     public Boolean getActif() { return actif; }
     public void setActif(Boolean actif) { this.actif = actif; }
-
-    public LocalDateTime getModifierLe() { return modifierLe; }
-    public void setModifierLe(LocalDateTime modifierLe) { this.modifierLe = modifierLe; }
 }

@@ -1,11 +1,16 @@
 package com.App.lbs_backend.entity;
 
+import com.App.lbs_backend.core.AuditableEntity;
 import jakarta.persistence.*;
 import java.util.UUID;
 
 @Entity
 @Table(name = "lbs_utilisateur", schema = "lbs")
-public class Utilisateur {
+@AttributeOverrides({
+    @AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_util_modifier_le")),
+    @AttributeOverride(name = "modifierPar", column = @Column(name = "lbs_util_modifier_par", length = 100))
+})
+public class Utilisateur extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,6 +52,9 @@ public class Utilisateur {
 
     public String getUuid() { return uuid; }
     public void setUuid(String uuid) { this.uuid = uuid; }
+
+    public String getCode() { return code; }
+    public void setCode(String code) { this.code = code; }
 
     public String getNom() { return nom; }
     public void setNom(String nom) { this.nom = nom; }

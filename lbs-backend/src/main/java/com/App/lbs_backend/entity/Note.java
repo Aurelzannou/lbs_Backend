@@ -1,13 +1,17 @@
 package com.App.lbs_backend.entity;
 
+import com.App.lbs_backend.core.AuditableEntity;
 import jakarta.persistence.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "lbs_note", schema = "lbs")
-public class Note {
+@AttributeOverrides({
+    @AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_note_modifier_le")),
+    @AttributeOverride(name = "modifierPar", column = @Column(name = "lbs_note_modifier_par", length = 100))
+})
+public class Note extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,8 +23,8 @@ public class Note {
     @Column(name = "lbs_note_code", length = 20)
     private String code;
 
-    @Column(name = "lbs_note_inscription_id", nullable = false)
-    private Integer inscriptionId;
+    @Column(name = "lbs_note_dossier_eleve_id", nullable = false)
+    private Integer dossierEleveId;
 
     @Column(name = "lbs_note_matiere_id", nullable = false)
     private Integer matiereId;
@@ -32,37 +36,32 @@ public class Note {
     private Integer professeurId;
 
     @Column(name = "lbs_note_valeur")
-    private Double valeur; // Ex: 15.5
+    private Double valeur;
 
     @Column(name = "lbs_note_bareme")
-    private Double bareme; // Ex: 20.0 pour une note sur 20
+    private Double bareme;
 
     @Column(name = "lbs_note_type_evaluation", length = 50)
-    private String typeEvaluation; // Ex: DEVOIR, EXAMEN, INTERROGATION
+    private String typeEvaluation;
 
     @Column(name = "lbs_note_date_evaluation")
     private LocalDate dateEvaluation;
 
     @Column(name = "lbs_note_commentaire", length = 500)
-    private String commentaire; // Appréciation du professeur
+    private String commentaire;
 
     @Column(name = "lbs_note_utilisateur_id")
-    private Integer utilisateurId; // Utilisateur (Secrétariat ou Prof) ayant saisi la note
-
-    @Column(name = "lbs_note_modifier_le")
-    private LocalDateTime modifierLe;
-
-    @Column(name = "lbs_note_modifier_par", length = 100)
-    private String modifierPar;
+    private Integer utilisateurId;
 
     // Relations
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lbs_note_inscription_id", insertable = false, updatable = false)
-    private Inscription inscription;
+    @JoinColumn(name = "lbs_note_dossier_eleve_id", insertable = false, updatable = false)
+    private DossierEleve dossierEleve;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lbs_note_matiere_id", insertable = false, updatable = false)
     private Matiere matiere;
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lbs_note_periode_id", insertable = false, updatable = false)
@@ -79,19 +78,12 @@ public class Note {
     @PrePersist
     public void prePersist() {
         if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
-        this.modifierLe = LocalDateTime.now();
         if (this.bareme == null) this.bareme = 20.0;
         if (this.dateEvaluation == null) this.dateEvaluation = LocalDate.now();
     }
 
-    @PreUpdate
-    public void preUpdate() {
-        this.modifierLe = LocalDateTime.now();
-    }
-
     public Note() {}
 
-    // ===== GETTERS & SETTERS =====
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -101,8 +93,8 @@ public class Note {
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }
 
-    public Integer getInscriptionId() { return inscriptionId; }
-    public void setInscriptionId(Integer inscriptionId) { this.inscriptionId = inscriptionId; }
+    public Integer getDossierEleveId() { return dossierEleveId; }
+    public void setDossierEleveId(Integer dossierEleveId) { this.dossierEleveId = dossierEleveId; }
 
     public Integer getMatiereId() { return matiereId; }
     public void setMatiereId(Integer matiereId) { this.matiereId = matiereId; }
@@ -131,14 +123,8 @@ public class Note {
     public Integer getUtilisateurId() { return utilisateurId; }
     public void setUtilisateurId(Integer utilisateurId) { this.utilisateurId = utilisateurId; }
 
-    public LocalDateTime getModifierLe() { return modifierLe; }
-    public void setModifierLe(LocalDateTime modifierLe) { this.modifierLe = modifierLe; }
-
-    public String getModifierPar() { return modifierPar; }
-    public void setModifierPar(String modifierPar) { this.modifierPar = modifierPar; }
-
-    public Inscription getInscription() { return inscription; }
-    public void setInscription(Inscription inscription) { this.inscription = inscription; }
+    public DossierEleve getDossierEleve() { return dossierEleve; }
+    public void setDossierEleve(DossierEleve dossierEleve) { this.dossierEleve = dossierEleve; }
 
     public Matiere getMatiere() { return matiere; }
     public void setMatiere(Matiere matiere) { this.matiere = matiere; }

@@ -1,12 +1,16 @@
 package com.App.lbs_backend.entity;
 
+import com.App.lbs_backend.core.AuditableEntity;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "lbs_statut_inscription", schema = "lbs")
-public class StatutInscription {
+@AttributeOverrides({
+    @AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_stin_modifier_le")),
+    @AttributeOverride(name = "modifierPar", column = @Column(name = "lbs_stin_modifier_par", length = 100))
+})
+public class StatutInscription extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,28 +23,15 @@ public class StatutInscription {
     private String code;
 
     @Column(name = "lbs_stin_libelle", length = 100)
-    private String libelle; // Ex: NOUVEAU, REDOUBLANT, TRANSFERE
-
-    @Column(name = "lbs_stin_modifier_le")
-    private LocalDateTime modifierLe;
-
-    @Column(name = "lbs_stin_modifier_par", length = 100)
-    private String modifierPar;
+    private String libelle;
 
     @PrePersist
     public void prePersist() {
         if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
-        this.modifierLe = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        this.modifierLe = LocalDateTime.now();
     }
 
     public StatutInscription() {}
 
-    // ===== GETTERS & SETTERS =====
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -52,10 +43,4 @@ public class StatutInscription {
 
     public String getLibelle() { return libelle; }
     public void setLibelle(String libelle) { this.libelle = libelle; }
-
-    public LocalDateTime getModifierLe() { return modifierLe; }
-    public void setModifierLe(LocalDateTime modifierLe) { this.modifierLe = modifierLe; }
-
-    public String getModifierPar() { return modifierPar; }
-    public void setModifierPar(String modifierPar) { this.modifierPar = modifierPar; }
 }
