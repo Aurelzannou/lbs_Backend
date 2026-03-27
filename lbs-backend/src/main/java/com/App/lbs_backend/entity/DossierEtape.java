@@ -6,7 +6,10 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "lbs_dossier_etape", schema = "lbs")
+@Table(name = "lbs_dossier_etape", schema = "lbs", indexes = {
+    @Index(name = "idx_doet_dossier", columnList = "lbs_doet_dossier_eleve_id"),
+    @Index(name = "idx_doet_etape", columnList = "lbs_doet_etape_id")
+})
 @AttributeOverrides({
     @AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_doet_modifier_le")),
     @AttributeOverride(name = "modifierPar", column = @Column(name = "lbs_doet_modifier_par", length = 100))
