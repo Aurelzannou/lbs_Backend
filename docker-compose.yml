@@ -1,4 +1,4 @@
-﻿version: '3.8'
+version: '3.8'
 
 services:
   postgres:
@@ -61,3 +61,19 @@ services:
       - keycloak-postgres
 #  Admin Console → http://localhost:8080
 #  Dans ton app Spring Boot → http://keycloak:8080 (nom du conteneur)
+
+  minio:
+    image: minio/minio:latest
+    container_name: lbs-minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+volumes:
+  minio_data:
