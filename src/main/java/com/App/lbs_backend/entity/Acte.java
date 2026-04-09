@@ -36,17 +36,10 @@ public class Acte extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_acte_nom_fichier", length = 200)
     private String nomFichier;
 
-    @Column(name = "lbs_acte_fichier_id")
-    private Long fichierId;
-
     // ===== RELATIONS =====
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lbs_acte_type_acte_id", insertable = false, updatable = false)
     private TypeActe typeActe;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lbs_acte_fichier_id", insertable = false, updatable = false)
-    private Fichier fichier;
 
     @PrePersist
     public void prePersist() {
@@ -76,12 +69,6 @@ public class Acte extends AuditableEntity implements Timestamps {
     public String getNomFichier() { return nomFichier; }
     public void setNomFichier(String nomFichier) { this.nomFichier = nomFichier; }
 
-    public Long getFichierId() { return fichierId; }
-    public void setFichierId(Long fichierId) { this.fichierId = fichierId; }
-
     public TypeActe getTypeActe() { return typeActe; }
     public void setTypeActe(TypeActe typeActe) { this.typeActe = typeActe; }
-
-    public Fichier getFichier() { return fichier; }
-    public void setFichier(Fichier fichier) { this.fichier = fichier; }
 }

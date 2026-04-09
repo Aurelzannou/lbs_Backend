@@ -2,8 +2,6 @@ package com.App.lbs_backend.service;
 
 import com.App.lbs_backend.config.MinioProperties;
 import com.App.lbs_backend.dto.response.FileResponse;
-import com.App.lbs_backend.entity.Fichier;
-import com.App.lbs_backend.repository.FichierRepository;
 import io.minio.*;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,12 +22,10 @@ public class MinioStorageService {
     public static final String X_FILE_SIZE = "X-File-Size";
     private final MinioClient minioClient;
     private final MinioProperties properties;
-    private final FichierRepository fichierRepository;
 
-    public MinioStorageService(MinioClient minioClient, MinioProperties properties, FichierRepository fichierRepository) {
+    public MinioStorageService(MinioClient minioClient, MinioProperties properties) {
         this.minioClient = minioClient;
         this.properties = properties;
-        this.fichierRepository = fichierRepository;
     }
 
     public static void setHeaderFileSize(HttpServletResponse response, long length) {
@@ -46,7 +42,7 @@ public class MinioStorageService {
     }
 
     @Transactional
-    public Fichier uploadFile(final String directory, MultipartFile file) throws Exception {
+    public String uploadFile(final String directory, MultipartFile file) throws Exception {
         InputStream fileStream = file.getInputStream();
         String dir = directory == null || directory.isEmpty() ? "" : directory + "/";
         String safeUploadFileName = requireNonNull(file.getOriginalFilename()).toLowerCase();
@@ -60,12 +56,7 @@ public class MinioStorageService {
                 .build();
         minioClient.putObject(bucketFileData);
 
-        Fichier fichier = new Fichier();
-        fichier.setNom(fileName);
-        fichier.setRepertoir(directory);
-        fichier.setTaille(file.getSize());
-        fichier.setModifierPar("system"); // TODO: Mettre l'utilisateur connecte
-        return fichierRepository.saveAndFlush(fichier);
+        return fileName;
     }
 
     public FileResponse downloadFile(String fileName) throws Exception {
@@ -84,8 +75,6 @@ public class MinioStorageService {
                 .bucket(bucketName())
                 .object(fileName)
                 .build());
-                
-        fichierRepository.findByCode(fileName).ifPresent(fichierRepository::delete);
     }
 
     @PostConstruct

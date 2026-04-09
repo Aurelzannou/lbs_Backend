@@ -8,11 +8,9 @@ import org.springframework.stereotype.Component;
 public class ActeMapper implements Mapper<Acte, ActeResponse> {
 
     private final TypeActeMapper typeActeMapper;
-    private final FichierMapper fichierMapper;
-
-    public ActeMapper(TypeActeMapper typeActeMapper, FichierMapper fichierMapper) {
+    
+    public ActeMapper(TypeActeMapper typeActeMapper) {
         this.typeActeMapper = typeActeMapper;
-        this.fichierMapper = fichierMapper;
     }
 
     @Override
@@ -26,11 +24,9 @@ public class ActeMapper implements Mapper<Acte, ActeResponse> {
                 entity.getTypeActeId(),
                 entity.getCheminFichier(),
                 entity.getNomFichier(),
-                entity.getFichierId(),
                 entity.getModifierLe(),
                 entity.getModifierPar(),
-                typeActeMapper.toResponse(entity.getTypeActe()),
-                fichierMapper.toResponse(entity.getFichier())
+                typeActeMapper.toResponse(entity.getTypeActe())
         );
     }
 }
