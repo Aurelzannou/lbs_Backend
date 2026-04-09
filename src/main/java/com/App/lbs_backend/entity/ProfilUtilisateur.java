@@ -58,6 +58,9 @@ public class ProfilUtilisateur extends AuditableEntity implements Timestamps {
     public Long getProfilId() { return profilId; }
     public void setProfilId(Long profilId) { this.profilId = profilId; }
 
+    public String getCode() { return code; }
+    public void setCode(String code) { this.code = code; }
+
     public Long getUtilisateurId() { return utilisateurId; }
     public void setUtilisateurId(Long utilisateurId) { this.utilisateurId = utilisateurId; }
 

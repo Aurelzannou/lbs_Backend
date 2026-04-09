@@ -1,6 +1,9 @@
 package com.App.lbs_backend.service;
 
 import com.App.lbs_backend.entity.Utilisateur;
+import com.App.lbs_backend.entity.ProfilUtilisateur;
+import com.App.lbs_backend.repository.ProfilRepository;
+import com.App.lbs_backend.repository.ProfilUtilisateurRepository;
 import com.App.lbs_backend.repository.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class UtilisateurSyncService {
 
     private final UtilisateurRepository utilisateurRepository;
+    private final ProfilRepository profilRepository;
+    private final ProfilUtilisateurRepository profilUtilisateurRepository;
 
     /**
      * Récupère l'utilisateur actuellement connecté depuis le contexte de sécurité.
@@ -65,6 +70,18 @@ public class UtilisateurSyncService {
             }
         }
         
-        return utilisateurRepository.save(newUser);
+        Utilisateur savedUser = utilisateurRepository.save(newUser);
+
+        // Attribution du profil par défaut (LECTEUR) lors de la première synchro
+        profilRepository.findByCode("LECTEUR").ifPresent(profil -> {
+            ProfilUtilisateur pu = new ProfilUtilisateur();
+            pu.setUtilisateurId(savedUser.getId());
+            pu.setProfilId(profil.getId());
+            pu.setCode(savedUser.getLogin() + "_LECTEUR");
+            profilUtilisateurRepository.save(pu);
+            log.info("Profil par défaut LECTEUR attribué à {}", savedUser.getLogin());
+        });
+
+        return savedUser;
     }
 }
