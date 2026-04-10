@@ -2,6 +2,7 @@ package com.App.lbs_backend.entity;
 
 import com.App.lbs_backend.core.AuditableEntity;
 import jakarta.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -48,13 +49,8 @@ public class Menu extends AuditableEntity implements Timestamps {
     @OneToMany(mappedBy = "menuParent", fetch = FetchType.LAZY)
     private List<Menu> listeMenuEnfant;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "lbs_profil_menu", schema = "lbs",
-            joinColumns = @JoinColumn(name = "lbs_prme_menu_id"),
-            inverseJoinColumns = @JoinColumn(name = "lbs_prme_profil_id")
-    )
-    private List<Profil> listeProfil;
+    @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProfilMenu> listeProfilMenu = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {
@@ -93,6 +89,6 @@ public class Menu extends AuditableEntity implements Timestamps {
     public List<Menu> getListeMenuEnfant() { return listeMenuEnfant; }
     public void setListeMenuEnfant(List<Menu> listeMenuEnfant) { this.listeMenuEnfant = listeMenuEnfant; }
 
-    public List<Profil> getListeProfil() { return listeProfil; }
-    public void setListeProfil(List<Profil> listeProfil) { this.listeProfil = listeProfil; }
+    public List<ProfilMenu> getListeProfilMenu() { return listeProfilMenu; }
+    public void setListeProfilMenu(List<ProfilMenu> listeProfilMenu) { this.listeProfilMenu = listeProfilMenu; }
 }

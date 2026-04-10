@@ -7,5 +7,5 @@ import java.util.List;
 
 @Repository
 public interface MenuRepository extends BaseRepository<Menu> {
-    List<Menu> findDistinctByListeProfil_IdInOrderByOrdreAsc(List<Long> profilIds);
+    List<Menu> findDistinctByListeProfilMenu_Profil_IdInOrderByOrdreAsc(List<Long> profilIds);
 }

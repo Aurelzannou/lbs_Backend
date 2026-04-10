@@ -8,4 +8,5 @@ import java.util.List;
 @Repository
 public interface ProfilUtilisateurRepository extends BaseRepository<ProfilUtilisateur> {
     List<ProfilUtilisateur> findByUtilisateurId(Long utilisateurId);
+    void deleteByUtilisateurId(Long utilisateurId);
 }

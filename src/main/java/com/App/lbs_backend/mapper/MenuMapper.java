@@ -1,5 +1,6 @@
 package com.App.lbs_backend.mapper;
 
+import com.App.lbs_backend.dto.request.MenuRequest;
 import com.App.lbs_backend.dto.response.MenuResponse;
 import com.App.lbs_backend.entity.Menu;
 import org.springframework.stereotype.Component;
@@ -32,5 +33,14 @@ public class MenuMapper implements Mapper<Menu, MenuResponse> {
                 entity.getMenuEnfantId(),
                 enfants
         );
+    }
+    public void updateEntity(Menu entity, MenuRequest request) {
+        if (request == null) return;
+        entity.setCode(request.getCode());
+        entity.setTitre(request.getTitre());
+        entity.setDescription(request.getDescription());
+        entity.setPath(request.getPath());
+        entity.setOrdre(request.getOrdre());
+        entity.setMenuEnfantId(request.getMenuEnfantId());
     }
 }

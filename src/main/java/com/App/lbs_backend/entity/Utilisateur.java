@@ -33,6 +33,9 @@ public class Utilisateur extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_util_login", length = 50)
     private String login;
 
+    @Column(name = "lbs_util_email", length = 100)
+    private String email;
+
     @Column(name = "lbs_util_photo", length = 500)
     private String photo;
 
@@ -66,6 +69,9 @@ public class Utilisateur extends AuditableEntity implements Timestamps {
 
     public String getLogin() { return login; }
     public void setLogin(String login) { this.login = login; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
     public String getPhoto() { return photo; }
     public void setPhoto(String photo) { this.photo = photo; }

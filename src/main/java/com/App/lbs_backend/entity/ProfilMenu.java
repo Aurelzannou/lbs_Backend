@@ -21,17 +21,17 @@ public class ProfilMenu extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_prme_uuid", length = 50, unique = true, nullable = false)
     private String uuid;
 
-    @Column(name = "lbs_prme_profil_id")
-    private Long profilId;
-
     @Column(name = "lbs_prme_code", length = 10)
     private String code;
 
-    @Column(name = "lbs_prme_menu_id")
-    private Long menuId;
-
     @Column(name = "lbs_prme_token", length = 500)
     private String token;
+
+    @Column(name = "lbs_prme_profil_id")
+    private Long profilId;
+
+    @Column(name = "lbs_prme_menu_id", insertable = false, updatable = false)
+    private Long menuId;
 
     // ===== RELATIONS =====
     @ManyToOne(fetch = FetchType.LAZY)
@@ -39,7 +39,7 @@ public class ProfilMenu extends AuditableEntity implements Timestamps {
     private Profil profil;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lbs_prme_menu_id", insertable = false, updatable = false)
+    @JoinColumn(name = "lbs_prme_menu_id")
     private Menu menu;
 
     @PrePersist
@@ -55,14 +55,14 @@ public class ProfilMenu extends AuditableEntity implements Timestamps {
     public String getUuid() { return uuid; }
     public void setUuid(String uuid) { this.uuid = uuid; }
 
+    public String getToken() { return token; }
+    public void setToken(String token) { this.token = token; }
+
     public Long getProfilId() { return profilId; }
     public void setProfilId(Long profilId) { this.profilId = profilId; }
 
     public Long getMenuId() { return menuId; }
     public void setMenuId(Long menuId) { this.menuId = menuId; }
-
-    public String getToken() { return token; }
-    public void setToken(String token) { this.token = token; }
 
     public Profil getProfil() { return profil; }
     public void setProfil(Profil profil) { this.profil = profil; }
