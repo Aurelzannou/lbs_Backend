@@ -27,7 +27,7 @@ public class MenuAdminController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<MenuResponse>>> getAll() {
-        var data = menuService.getAll().stream()
+        var data = menuService.repository().findAll().stream()
                         .map(menuMapper::toResponse)
                         .collect(Collectors.toList());
         return ResponseEntity.ok(apiSuccess("Menus récupérés", data, request.getRequestURI()));
@@ -35,7 +35,7 @@ public class MenuAdminController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<MenuResponse>> getById(@PathVariable Long id) {
-        var data = menuMapper.toResponse(menuService.getById(id));
+        var data = menuMapper.toResponse(menuService.findById(id));
         return ResponseEntity.ok(apiSuccess("Menu récupéré", data, request.getRequestURI()));
     }
 

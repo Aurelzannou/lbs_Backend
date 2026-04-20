@@ -24,12 +24,12 @@ public class NiveauService extends AbstractBaseService<Niveau, NiveauResponse> {
     }
 
     @Override
-    protected BaseRepository<Niveau> repository() {
+    public BaseRepository<Niveau> repository() {
         return niveauRepository;
     }
 
     @Override
-    protected Mapper<Niveau, NiveauResponse> mapper() {
+    public Mapper<Niveau, NiveauResponse> mapper() {
         return niveauMapper;
     }
 }

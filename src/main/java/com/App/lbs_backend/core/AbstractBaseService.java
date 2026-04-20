@@ -40,9 +40,9 @@ public abstract class AbstractBaseService<E, R> {
         return domain;
     }
 
-    protected abstract BaseRepository<E> repository();
+    public abstract BaseRepository<E> repository();
 
-    protected Mapper<E, R> mapper() {
+    public Mapper<E, R> mapper() {
         return null;
     }
 

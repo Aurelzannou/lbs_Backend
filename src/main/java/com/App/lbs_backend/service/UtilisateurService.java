@@ -22,12 +22,12 @@ public class UtilisateurService extends AbstractBaseService<Utilisateur, Utilisa
     }
 
     @Override
-    protected BaseRepository<Utilisateur> repository() {
+    public BaseRepository<Utilisateur> repository() {
         return utilisateurRepository;
     }
 
     @Override
-    protected Mapper<Utilisateur, UtilisateurResponse> mapper() {
+    public Mapper<Utilisateur, UtilisateurResponse> mapper() {
         return utilisateurMapper;
     }
 }
