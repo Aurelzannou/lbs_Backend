@@ -27,7 +27,7 @@ public class ProfilMenu extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_prme_token", length = 500)
     private String token;
 
-    @Column(name = "lbs_prme_profil_id")
+    @Column(name = "lbs_prme_profil_id", insertable = false, updatable = false)
     private Long profilId;
 
     @Column(name = "lbs_prme_menu_id", insertable = false, updatable = false)
@@ -35,7 +35,7 @@ public class ProfilMenu extends AuditableEntity implements Timestamps {
 
     // ===== RELATIONS =====
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lbs_prme_profil_id", insertable = false, updatable = false)
+    @JoinColumn(name = "lbs_prme_profil_id")
     private Profil profil;
 
     @ManyToOne(fetch = FetchType.LAZY)

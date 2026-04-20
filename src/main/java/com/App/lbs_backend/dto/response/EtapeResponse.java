@@ -9,7 +9,6 @@ public class EtapeResponse {
     private String uuid;
     private String code;
     private String libelle;
-    private Integer ordre;
     private Boolean actif;
     private LocalDateTime modifierLe;
     private String modifierPar;

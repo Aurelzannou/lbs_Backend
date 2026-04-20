@@ -7,16 +7,19 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
-public class EtapeRequest implements FormRequest {
-    
-    @NotBlank(message = "Le code de l'étape est obligatoire")
+public class ClasseRequest implements FormRequest {
+    @NotBlank(message = "Le code est obligatoire")
     @Size(max = 20, message = "Le code ne peut pas dépasser 20 caractères")
     private String code;
 
-    @NotBlank(message = "Le libellé de l'étape est obligatoire")
+    @NotBlank(message = "Le libellé est obligatoire")
     @Size(max = 100, message = "Le libellé ne peut pas dépasser 100 caractères")
     private String libelle;
 
+    @NotNull(message = "Le niveau est obligatoire")
+    private Long niveauId;
 
+    private Long profId;
+    private Integer capaciteMax;
     private Boolean actif;
 }

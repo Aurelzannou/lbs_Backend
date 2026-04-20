@@ -27,9 +27,6 @@ public class Etape extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_etap_libelle", length = 100)
     private String libelle;
 
-    @Column(name = "lbs_etap_ordre")
-    private Integer ordre;
-
     @Column(name = "lbs_etap_actif")
     private Boolean actif;
 
@@ -52,9 +49,6 @@ public class Etape extends AuditableEntity implements Timestamps {
 
     public String getLibelle() { return libelle; }
     public void setLibelle(String libelle) { this.libelle = libelle; }
-
-    public Integer getOrdre() { return ordre; }
-    public void setOrdre(Integer ordre) { this.ordre = ordre; }
 
     public Boolean getActif() { return actif; }
     public void setActif(Boolean actif) { this.actif = actif; }

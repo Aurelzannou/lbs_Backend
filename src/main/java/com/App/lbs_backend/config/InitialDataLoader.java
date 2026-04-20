@@ -54,6 +54,16 @@ public class InitialDataLoader implements CommandLineRunner {
         createOrUpdateSubMenu("USER", "Utilisateurs", "people-outline", "/administration/utilisateurs", 1, adminGroup, admin);
         createOrUpdateSubMenu("PROFIL_ADMIN", "Profils", "lock-outline", "/administration/profils", 2, adminGroup, admin);
         createOrUpdateSubMenu("MENU_ADMIN", "Menus", "menu-outline", "/administration/menus", 3, adminGroup, admin);
+
+        // Référentiel (Parent)
+        Menu refGroup = createOrUpdateMenu("REFERENTIEL", "Référentiel", "settings-2-outline", null, 4, List.of(admin, lecteur));
+        createOrUpdateSubMenu("NIVEAUX", "Niveaux Scolaires", "layers-outline", "/referentiel/niveaux", 1, refGroup, admin);
+        createOrUpdateSubMenu("ETAPES", "Étapes Workflow", "list-outline", "/referentiel/etapes", 2, refGroup, admin);
+        createOrUpdateSubMenu("ANNEE_SCOLAIRE", "Années Scolaires", "calendar-outline", "/referentiel/annees-scolaires", 3, refGroup, admin);
+
+        // Scolarité (Parent)
+        Menu scolariteGroup = createOrUpdateMenu("SCOLARITE", "Scolarité", "book-open-outline", null, 5, List.of(admin, lecteur));
+        createOrUpdateSubMenu("ELEVES", "Élèves", "people-outline", "/scolarite/eleves", 1, scolariteGroup, admin);
         
         log.info("Initialisation des données de base terminée.");
     }
@@ -84,7 +94,7 @@ public class InitialDataLoader implements CommandLineRunner {
         // Gestion des associations de profil (éviter les doublons)
         for (Profil p : profils) {
             boolean alreadyLinked = menu.getListeProfilMenu().stream()
-                    .anyMatch(pm -> p.getCode().equals(pm.getProfil().getCode()));
+                    .anyMatch(pm -> pm.getProfil() != null && p.getCode().equals(pm.getProfil().getCode()));
             
             if (!alreadyLinked) {
                 log.info("Liaison du menu {} au profil {}", code, p.getCode());
@@ -114,7 +124,7 @@ public class InitialDataLoader implements CommandLineRunner {
         
         // Gestion de l'association (éviter les doublons)
         boolean alreadyLinked = subMenu.getListeProfilMenu().stream()
-                .anyMatch(pm -> profil.getCode().equals(pm.getProfil().getCode()));
+                .anyMatch(pm -> pm.getProfil() != null && profil.getCode().equals(pm.getProfil().getCode()));
         
         if (!alreadyLinked) {
             log.info("Liaison du sous-menu {} au profil {}", code, profil.getCode());

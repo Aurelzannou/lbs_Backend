@@ -13,7 +13,6 @@ public class EtapeMapper {
         Etape entity = new Etape();
         entity.setCode(request.getCode());
         entity.setLibelle(request.getLibelle());
-        entity.setOrdre(request.getOrdre());
         entity.setActif(request.getActif() != null ? request.getActif() : true);
         return entity;
     }
@@ -22,7 +21,6 @@ public class EtapeMapper {
         if (request == null || entity == null) return;
         if (request.getCode() != null) entity.setCode(request.getCode());
         if (request.getLibelle() != null) entity.setLibelle(request.getLibelle());
-        if (request.getOrdre() != null) entity.setOrdre(request.getOrdre());
         if (request.getActif() != null) entity.setActif(request.getActif());
     }
 
@@ -33,7 +31,6 @@ public class EtapeMapper {
         response.setUuid(entity.getUuid());
         response.setCode(entity.getCode());
         response.setLibelle(entity.getLibelle());
-        response.setOrdre(entity.getOrdre());
         response.setActif(entity.getActif());
         response.setModifierLe(entity.getModifierLe());
         response.setModifierPar(entity.getModifierPar());
