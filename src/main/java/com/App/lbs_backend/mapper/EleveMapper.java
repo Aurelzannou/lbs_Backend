@@ -8,9 +8,11 @@ import org.springframework.stereotype.Component;
 public class EleveMapper implements Mapper<Eleve, EleveResponse> {
 
     private final UtilisateurMapper utilisateurMapper;
+    private final ClasseMapper classeMapper;
 
-    public EleveMapper(UtilisateurMapper utilisateurMapper) {
+    public EleveMapper(UtilisateurMapper utilisateurMapper, ClasseMapper classeMapper) {
         this.utilisateurMapper = utilisateurMapper;
+        this.classeMapper = classeMapper;
     }
 
     @Override
@@ -24,15 +26,16 @@ public class EleveMapper implements Mapper<Eleve, EleveResponse> {
                 entity.getPrenom(),
                 entity.getSexe(),
                 entity.getDateNaissance(),
-                entity.getMatricule(),
                 entity.getActif(),
                 entity.getSouffrant(),
                 entity.getProvenance(),
                 entity.getPhoto(),
                 entity.getUtilisateurId(),
+                entity.getClasseId(),
                 entity.getModifierLe(),
                 entity.getModifierPar(),
-                utilisateurMapper.toResponse(entity.getUtilisateur())
+                utilisateurMapper.toResponse(entity.getUtilisateur()),
+                classeMapper.toResponse(entity.getClasse())
         );
     }
 }

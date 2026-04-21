@@ -40,14 +40,11 @@ public class Eleve extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_elev_date_naissance")
     private LocalDate dateNaissance;
 
-    @Column(name = "lbs_elev_matricule", length = 30, unique = true)
-    private String matricule;
-
     @Column(name = "lbs_elev_actif")
     private Boolean actif;
 
-    @Column(name = "lbs_elev_souffrant", length = 200)
-    private String souffrant;
+    @Column(name = "lbs_elev_souffrant")
+    private Boolean souffrant;
 
     @Column(name = "lbs_elev_provenance", length = 200)
     private String provenance;
@@ -58,10 +55,17 @@ public class Eleve extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_elev_utilisateur_id")
     private Long utilisateurId;
 
+    @Column(name = "lbs_elev_classe_id")
+    private Long classeId;
+
     // ===== RELATIONS =====
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lbs_elev_utilisateur_id", insertable = false, updatable = false)
     private Utilisateur utilisateur;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lbs_elev_classe_id", insertable = false, updatable = false)
+    private Classe classe;
 
     @PrePersist
     public void prePersist() {
@@ -91,14 +95,13 @@ public class Eleve extends AuditableEntity implements Timestamps {
     public LocalDate getDateNaissance() { return dateNaissance; }
     public void setDateNaissance(LocalDate dateNaissance) { this.dateNaissance = dateNaissance; }
 
-    public String getMatricule() { return matricule; }
-    public void setMatricule(String matricule) { this.matricule = matricule; }
+
 
     public Boolean getActif() { return actif; }
     public void setActif(Boolean actif) { this.actif = actif; }
 
-    public String getSouffrant() { return souffrant; }
-    public void setSouffrant(String souffrant) { this.souffrant = souffrant; }
+    public Boolean getSouffrant() { return souffrant; }
+    public void setSouffrant(Boolean souffrant) { this.souffrant = souffrant; }
 
     public String getProvenance() { return provenance; }
     public void setProvenance(String provenance) { this.provenance = provenance; }
@@ -109,6 +112,12 @@ public class Eleve extends AuditableEntity implements Timestamps {
     public Long getUtilisateurId() { return utilisateurId; }
     public void setUtilisateurId(Long utilisateurId) { this.utilisateurId = utilisateurId; }
 
+    public Long getClasseId() { return classeId; }
+    public void setClasseId(Long classeId) { this.classeId = classeId; }
+
     public Utilisateur getUtilisateur() { return utilisateur; }
     public void setUtilisateur(Utilisateur utilisateur) { this.utilisateur = utilisateur; }
+
+    public Classe getClasse() { return classe; }
+    public void setClasse(Classe classe) { this.classe = classe; }
 }

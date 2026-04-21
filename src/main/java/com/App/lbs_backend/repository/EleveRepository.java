@@ -15,7 +15,6 @@ public interface EleveRepository extends BaseRepository<Eleve> {
     @Override
     @Query("SELECT e FROM Eleve e WHERE " +
            "LOWER(e.nom) LIKE LOWER(CONCAT('%', :filter, '%')) OR " +
-           "LOWER(e.prenom) LIKE LOWER(CONCAT('%', :filter, '%')) OR " +
-           "LOWER(e.matricule) LIKE LOWER(CONCAT('%', :filter, '%'))")
+           "LOWER(e.prenom) LIKE LOWER(CONCAT('%', :filter, '%'))")
     Page<Eleve> findByLabelContaining(@Param("filter") String filter, Pageable pageable);
 }

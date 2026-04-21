@@ -10,10 +10,10 @@ public record EleveRequest(
         String prenom,
         String sexe,
         LocalDate dateNaissance,
-        String matricule,
         Boolean actif,
-        String souffrant,
+        Boolean souffrant,
         String provenance,
         String photo,
-        Long utilisateurId
+        Long utilisateurId,
+        Long classeId
 ) implements FormRequest {}

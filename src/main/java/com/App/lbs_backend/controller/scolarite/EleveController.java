@@ -44,11 +44,11 @@ public class EleveController extends MasterController<Eleve, EleveResponse, Elev
         eleve.setPrenom(form.prenom());
         eleve.setSexe(form.sexe());
         eleve.setDateNaissance(form.dateNaissance());
-        eleve.setMatricule(form.matricule());
         eleve.setActif(form.actif());
         eleve.setSouffrant(form.souffrant());
         eleve.setProvenance(form.provenance());
         eleve.setPhoto(form.photo());
         eleve.setUtilisateurId(form.utilisateurId());
+        eleve.setClasseId(form.classeId());
     }
 }
