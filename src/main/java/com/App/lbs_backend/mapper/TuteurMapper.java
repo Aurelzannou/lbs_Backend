@@ -21,6 +21,7 @@ public class TuteurMapper implements Mapper<Tuteur, TuteurResponse> {
                 entity.getEmail(),
                 entity.getProfession(),
                 entity.getAdresse(),
+                entity.getActif(),
                 entity.getModifierLe(),
                 entity.getModifierPar()
         );

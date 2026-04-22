@@ -23,6 +23,12 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthConverter jwtAuthConverter;
+    private final com.App.lbs_backend.security.TuteurJwtAuthenticationFilter tuteurJwtAuthenticationFilter;
+
+    @Bean
+    public org.springframework.security.crypto.password.PasswordEncoder passwordEncoder() {
+        return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -33,7 +39,9 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // Endpoints publics autorisés sans token !
-                .requestMatchers("/api/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/api/files/download/**", "/api/test-report/**").permitAll()
+                .requestMatchers("/api/auth/**", "/api/portail/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/api/files/download/**", "/api/test-report/**").permitAll()
+                // Portail Tuteur
+                .requestMatchers("/api/portail/**").hasRole("TUTEUR")
                 // Toutes les requêtes vers l'API nécessitent une authentification
                 .requestMatchers("/api/**").authenticated()
                 // Le reste nécessite aussi l'authentification
@@ -42,7 +50,8 @@ public class SecurityConfig {
             // Configurer OAuth2 Resource Server avec le JWT
             .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthConverter))
-            );
+            )
+            .addFilterBefore(tuteurJwtAuthenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

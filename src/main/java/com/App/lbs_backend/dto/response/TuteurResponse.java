@@ -13,6 +13,7 @@ public record TuteurResponse(
         String email,
         String profession,
         String adresse,
+        Boolean actif,
         LocalDateTime modifierLe,
         String modifierPar
 ) {}

@@ -55,6 +55,15 @@ public class Paiement extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_paie_observation", length = 500)
     private String observation;
 
+    @Column(name = "lbs_paie_canal", length = 20)
+    private String canal; // EN_LIGNE, SUR_PLACE
+
+    @Column(name = "lbs_paie_statut_transaction", length = 20)
+    private String statutTransaction; // INITIE, SUCCES, ECHEC
+
+    @Column(name = "lbs_paie_telephone", length = 20)
+    private String telephonePaiement;
+
     // ===== RELATIONS =====
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lbs_paie_dossier_eleve_id", insertable = false, updatable = false)
@@ -133,4 +142,13 @@ public class Paiement extends AuditableEntity implements Timestamps {
 
     public Utilisateur getUtilisateur() { return utilisateur; }
     public void setUtilisateur(Utilisateur utilisateur) { this.utilisateur = utilisateur; }
+
+    public String getCanal() { return canal; }
+    public void setCanal(String canal) { this.canal = canal; }
+
+    public String getStatutTransaction() { return statutTransaction; }
+    public void setStatutTransaction(String statutTransaction) { this.statutTransaction = statutTransaction; }
+
+    public String getTelephonePaiement() { return telephonePaiement; }
+    public void setTelephonePaiement(String telephonePaiement) { this.telephonePaiement = telephonePaiement; }
 }

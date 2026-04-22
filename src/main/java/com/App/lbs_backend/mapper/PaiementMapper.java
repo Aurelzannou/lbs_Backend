@@ -5,7 +5,7 @@ import com.App.lbs_backend.entity.Paiement;
 import org.springframework.stereotype.Component;
 
 @Component
-public class PaiementMapper {
+public class PaiementMapper implements Mapper<Paiement, PaiementResponse> {
 
     private final DossierEleveMapper dossierEleveMapper;
     private final FraisScolaireMapper fraisScolaireMapper;
@@ -25,6 +25,7 @@ public class PaiementMapper {
         this.utilisateurMapper = utilisateurMapper;
     }
 
+    @Override
     public PaiementResponse toResponse(Paiement entity) {
         if (entity == null) return null;
         return new PaiementResponse(
@@ -40,6 +41,9 @@ public class PaiementMapper {
                 entity.getCaisseId(),
                 entity.getUtilisateurId(),
                 entity.getObservation(),
+                entity.getCanal(),
+                entity.getStatutTransaction(),
+                entity.getTelephonePaiement(),
                 entity.getModifierLe(),
                 entity.getModifierPar(),
                 dossierEleveMapper.toResponse(entity.getDossierEleve()),

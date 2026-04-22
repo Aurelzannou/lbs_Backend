@@ -5,8 +5,9 @@ import com.App.lbs_backend.entity.DossierEleve;
 import org.springframework.stereotype.Component;
 
 @Component
-public class DossierEleveMapper {
+public class DossierEleveMapper implements Mapper<DossierEleve, DossierEleveResponse> {
 
+    @Override
     public DossierEleveResponse toResponse(DossierEleve entity) {
         if (entity == null) return null;
         

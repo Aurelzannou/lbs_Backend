@@ -45,9 +45,16 @@ public class Tuteur extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_tute_adresse", length = 250)
     private String adresse;
 
+    @Column(name = "lbs_tute_password", length = 100)
+    private String motDePasse;
+
+    @Column(name = "lbs_tute_actif")
+    private Boolean actif;
+
     @PrePersist
     public void prePersist() {
         if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
+        if (this.actif == null) this.actif = true;
     }
 
     public Long getId() { return id; }
@@ -79,4 +86,10 @@ public class Tuteur extends AuditableEntity implements Timestamps {
 
     public String getAdresse() { return adresse; }
     public void setAdresse(String adresse) { this.adresse = adresse; }
+
+    public String getMotDePasse() { return motDePasse; }
+    public void setMotDePasse(String motDePasse) { this.motDePasse = motDePasse; }
+
+    public Boolean getActif() { return actif; }
+    public void setActif(Boolean actif) { this.actif = actif; }
 }
