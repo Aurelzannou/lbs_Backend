@@ -11,6 +11,7 @@ public record EleveResponse(
         String prenom,
         String sexe,
         LocalDate dateNaissance,
+        Integer age,
         Boolean actif,
         Boolean souffrant,
         String provenance,

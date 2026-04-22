@@ -16,4 +16,9 @@ public record EleveRequest(
         String photo,
         Long utilisateurId,
         Long classeId
-) implements FormRequest {}
+) implements FormRequest {
+    @Override
+    public String getCode() {
+        return code;
+    }
+}

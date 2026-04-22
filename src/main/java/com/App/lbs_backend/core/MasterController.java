@@ -33,6 +33,7 @@ public abstract class MasterController<E extends Timestamps, R, F extends FormRe
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody @Validated(CreateResource.class) F form) {
+        service().checkCodeUniqueness(form.getCode());
         return sendCreateResponse(doCreate(form));
     }
 
@@ -42,8 +43,9 @@ public abstract class MasterController<E extends Timestamps, R, F extends FormRe
     }
 
     @PutMapping("/{uuid}")
-    public ResponseEntity<?> update(@Valid @UUID @PathVariable("uuid") String uuid,
+    public ResponseEntity<?> update(@Valid @org.hibernate.validator.constraints.UUID @PathVariable("uuid") String uuid,
                                     @RequestBody @Validated(UpdateResource.class) F form) {
+        service().checkCodeUniqueness(form.getCode(), uuid);
         R response = doUpdate(uuid, form);
         return sendUpdateResponse(response, updateMessage(uuid));
     }

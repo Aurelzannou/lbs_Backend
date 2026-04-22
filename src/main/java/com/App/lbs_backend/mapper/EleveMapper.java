@@ -18,6 +18,12 @@ public class EleveMapper implements Mapper<Eleve, EleveResponse> {
     @Override
     public EleveResponse toResponse(Eleve entity) {
         if (entity == null) return null;
+
+        Integer age = null;
+        if (entity.getDateNaissance() != null) {
+            age = java.time.Period.between(entity.getDateNaissance(), java.time.LocalDate.now()).getYears();
+        }
+
         return new EleveResponse(
                 entity.getId(),
                 entity.getUuid(),
@@ -26,6 +32,7 @@ public class EleveMapper implements Mapper<Eleve, EleveResponse> {
                 entity.getPrenom(),
                 entity.getSexe(),
                 entity.getDateNaissance(),
+                age,
                 entity.getActif(),
                 entity.getSouffrant(),
                 entity.getProvenance(),

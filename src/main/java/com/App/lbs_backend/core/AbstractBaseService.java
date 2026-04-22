@@ -1,5 +1,6 @@
 package com.App.lbs_backend.core;
 
+import com.App.lbs_backend.core.exception.DuplicateCodeException;
 import com.App.lbs_backend.core.exception.EntityNotFoundException;
 import com.App.lbs_backend.core.http.request.IdsRequest;
 import com.App.lbs_backend.core.http.request.UuidsRequest;
@@ -98,6 +99,33 @@ public abstract class AbstractBaseService<E, R> {
 
     public E findByCode(String code) {
         return repository().findByCode(code).orElseThrow(() -> throwNotFound(code));
+    }
+
+    public void checkCodeUniqueness(String code) {
+        if (code != null && !code.isEmpty() && repository().existsByCode(code)) {
+            throw new DuplicateCodeException(domain, code);
+        }
+    }
+
+    public void checkCodeUniqueness(String code, String uuid) {
+        if (code == null || code.isEmpty()) return;
+        
+        repository().findByStrictCode(code).ifPresent(existing -> {
+            // If we find an entity with the same code, it must have the same UUID (meaning it's the same entity being updated)
+            // We need to access the uuid of the existing entity. Since it's generic E, we use findByUuid on its uuid.
+            // But wait, repository() has findByUuid.
+            if (!uuid.equals(getUuidFromEntity(existing))) {
+                throw new DuplicateCodeException(domain, code);
+            }
+        });
+    }
+
+    private String getUuidFromEntity(E entity) {
+        try {
+            return (String) entity.getClass().getMethod("getUuid").invoke(entity);
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     public R toResponse(Long id) {

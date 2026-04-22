@@ -18,6 +18,12 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(DuplicateCodeException.class)
+    public ResponseEntity<ApiResponse<Object>> handleDuplicateCode(DuplicateCodeException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.apiError(ex.getMessage(), request.getRequestURI()));
+    }
+
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleEntityNotFound(
             EntityNotFoundException ex, HttpServletRequest request) {

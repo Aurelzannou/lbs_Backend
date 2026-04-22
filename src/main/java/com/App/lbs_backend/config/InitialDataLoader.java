@@ -58,7 +58,7 @@ public class InitialDataLoader implements CommandLineRunner {
         // Référentiel (Parent)
         Menu refGroup = createOrUpdateMenu("REFERENTIEL", "Référentiel", "settings-2-outline", null, 4, List.of(admin, lecteur));
         createOrUpdateSubMenu("NIVEAUX", "Niveaux Scolaires", "layers-outline", "/referentiel/niveaux", 1, refGroup, admin);
-        createOrUpdateSubMenu("ETAPES", "Étapes Workflow", "list-outline", "/referentiel/etapes", 2, refGroup, admin);
+        // createOrUpdateSubMenu("ETAPES", "Étapes Workflow", "list-outline", "/referentiel/etapes", 2, refGroup, admin);
         createOrUpdateSubMenu("ANNEE_SCOLAIRE", "Années Scolaires", "calendar-outline", "/referentiel/annees-scolaires", 3, refGroup, admin);
 
         // Scolarité (Parent)
