@@ -21,9 +21,4 @@ public class TuteurAuthController {
     public ResponseEntity<TuteurResponse> register(@Valid @RequestBody TuteurRequest request) {
         return ResponseEntity.ok(tuteurService.register(request));
     }
-
-    @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(tuteurService.login(request));
-    }
 }

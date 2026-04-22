@@ -23,7 +23,6 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthConverter jwtAuthConverter;
-    private final com.App.lbs_backend.security.TuteurJwtAuthenticationFilter tuteurJwtAuthenticationFilter;
 
     @Bean
     public org.springframework.security.crypto.password.PasswordEncoder passwordEncoder() {
@@ -38,20 +37,24 @@ public class SecurityConfig {
             // Gestion de session (Stateless => Pas de cookies, on utilise le JWT)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Endpoints publics autorisés sans token !
-                .requestMatchers("/api/auth/**", "/api/portail/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/api/files/download/**", "/api/test-report/**").permitAll()
-                // Portail Tuteur
-                .requestMatchers("/api/portail/**").hasRole("TUTEUR")
-                // Toutes les requêtes vers l'API nécessitent une authentification
+                // Endpoints publics (Auth, Inscription, Docs)
+                .requestMatchers(
+                    "/api/auth/**", 
+                    "/api/portail/auth/**", 
+                    "/v3/api-docs/**", 
+                    "/swagger-ui/**", 
+                    "/swagger-ui.html", 
+                    "/api/files/download/**", 
+                    "/api/test-report/**"
+                ).permitAll()
+                // Toutes les autres requêtes vers l'API nécessitent une authentification via Keycloak
                 .requestMatchers("/api/**").authenticated()
-                // Le reste nécessite aussi l'authentification
                 .anyRequest().authenticated()
             )
-            // Configurer OAuth2 Resource Server avec le JWT
+            // Configurer OAuth2 Resource Server avec le JWT Keycloak
             .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthConverter))
-            )
-            .addFilterBefore(tuteurJwtAuthenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
+            );
 
         return http.build();
     }

@@ -2,38 +2,31 @@ package com.App.lbs_backend.service.scolarite;
 
 import com.App.lbs_backend.core.AbstractBaseService;
 import com.App.lbs_backend.repository.BaseRepository;
-import com.App.lbs_backend.dto.auth.AuthResponse;
-import com.App.lbs_backend.dto.auth.LoginRequest;
 import com.App.lbs_backend.dto.request.TuteurRequest;
 import com.App.lbs_backend.dto.response.TuteurResponse;
 import com.App.lbs_backend.entity.Tuteur;
 import com.App.lbs_backend.mapper.Mapper;
 import com.App.lbs_backend.mapper.TuteurMapper;
 import com.App.lbs_backend.repository.TuteurRepository;
-import com.App.lbs_backend.security.JwtTokenProvider;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import com.App.lbs_backend.service.KeycloakAdminService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import jakarta.transaction.Transactional;
-
-import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 public class TuteurService extends AbstractBaseService<Tuteur, TuteurResponse> {
 
     private final TuteurRepository tuteurRepository;
     private final TuteurMapper tuteurMapper;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtTokenProvider jwtTokenProvider;
+    private final KeycloakAdminService keycloakAdminService;
 
     public TuteurService(TuteurRepository tuteurRepository, TuteurMapper tuteurMapper, 
-                         PasswordEncoder passwordEncoder, JwtTokenProvider jwtTokenProvider) {
+                         KeycloakAdminService keycloakAdminService) {
         super(Tuteur.class);
         this.tuteurRepository = tuteurRepository;
         this.tuteurMapper = tuteurMapper;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtTokenProvider = jwtTokenProvider;
+        this.keycloakAdminService = keycloakAdminService;
     }
 
     @Override
@@ -48,10 +41,29 @@ public class TuteurService extends AbstractBaseService<Tuteur, TuteurResponse> {
 
     @Transactional
     public TuteurResponse register(TuteurRequest request) {
+        log.info("Inscription d'un nouveau tuteur : {}", request.getEmail());
+        
         if (tuteurRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Un tuteur avec cet email existe déjà");
         }
 
+        // 1. Création du compte dans Keycloak
+        String keycloakId = keycloakAdminService.createUser(
+                request.getEmail(), // On utilise l'email comme username
+                request.getEmail(),
+                request.getPrenom(),
+                request.getNom(),
+                request.getMotDePasse()
+        );
+
+        // 2. Assignation du rôle TUTEUR dans Keycloak
+        try {
+            keycloakAdminService.assignRoleToUser(keycloakId, "TUTEUR");
+        } catch (Exception e) {
+            log.error("Erreur lors de l'assignation du rôle TUTEUR dans Keycloak pour {}", request.getEmail(), e);
+        }
+
+        // 3. Création locale du Tuteur
         Tuteur tuteur = new Tuteur();
         tuteur.setNom(request.getNom());
         tuteur.setPrenom(request.getPrenom());
@@ -61,32 +73,9 @@ public class TuteurService extends AbstractBaseService<Tuteur, TuteurResponse> {
         tuteur.setProfession(request.getProfession());
         tuteur.setAdresse(request.getAdresse());
         tuteur.setCode(request.getCode());
-        tuteur.setMotDePasse(passwordEncoder.encode(request.getMotDePasse()));
+        tuteur.setKeycloakId(keycloakId);
         tuteur.setActif(true);
 
         return mapper().toResponse(tuteurRepository.save(tuteur));
-    }
-
-    public AuthResponse login(LoginRequest request) {
-        Tuteur tuteur = tuteurRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BadCredentialsException("Email ou mot de passe incorrect"));
-
-        if (!passwordEncoder.matches(request.getPassword(), tuteur.getMotDePasse())) {
-            throw new BadCredentialsException("Email ou mot de passe incorrect");
-        }
-
-        if (tuteur.getActif() != null && !tuteur.getActif()) {
-            throw new BadCredentialsException("Ce compte est désactivé");
-        }
-
-        String token = jwtTokenProvider.generateToken(tuteur.getEmail(), "TUTEUR");
-
-        return AuthResponse.builder()
-                .token(token)
-                .email(tuteur.getEmail())
-                .nom(tuteur.getNom())
-                .prenom(tuteur.getPrenom())
-                .uuid(tuteur.getUuid())
-                .build();
     }
 }

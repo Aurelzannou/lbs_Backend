@@ -57,23 +57,41 @@ public class MenuService extends AbstractBaseService<Menu, MenuResponse> {
     }
 
     /**
-     * Retourne la liste des menus autorisés pour l'utilisateur connecté.
+     * Retourne la liste des menus autorisés pour l'utilisateur connecté, 
+     * éventuellement filtrés par un profil spécifique.
      */
-    public List<Menu> getMyMenus() {
+    public List<Menu> getMyMenus(String profilCode) {
         Utilisateur currentUser = utilisateurSyncService.getCurrentUser();
-
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        boolean isAdmin = authentication.getAuthorities().stream()
+
+        // 1. Cas Administrateur (voit tout s'il a le rôle Keycloak ADMIN)
+        boolean hasAdminRole = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_admin"));
 
-        if (isAdmin) {
-            log.info("Utilisateur ADMIN détecté ({}), chargement de tous les menus.", currentUser.getLogin());
+        if (hasAdminRole && (profilCode == null || "ADMIN".equalsIgnoreCase(profilCode))) {
+            log.info("Chargement des menus ADMIN pour {}", currentUser.getLogin());
             return menuRepository.findAll().stream()
                     .filter(m -> m.getMenuEnfantId() == null)
                     .sorted(Comparator.comparing(m -> m.getOrdre() != null ? m.getOrdre() : 0))
                     .collect(Collectors.toList());
         }
 
+        // 2. Cas filtré par profil spécifique
+        if (profilCode != null && !profilCode.isEmpty()) {
+            log.info("Chargement des menus pour le profil {} de l'utilisateur {}", profilCode, currentUser.getLogin());
+            
+            // Vérifier que l'utilisateur possède bien ce profil
+            return profilUtilisateurRepository.findByUtilisateurId(currentUser.getId()).stream()
+                    .map(pu -> profilRepository.findById(pu.getProfilId()).orElse(null))
+                    .filter(p -> p != null && p.getCode().equalsIgnoreCase(profilCode))
+                    .findFirst()
+                    .map(p -> menuRepository.findDistinctByListeProfilMenu_Profil_IdInOrderByOrdreAsc(List.of(p.getId())).stream()
+                            .filter(m -> m.getMenuEnfantId() == null)
+                            .collect(Collectors.toList()))
+                    .orElse(List.of());
+        }
+
+        // 3. Par défaut : tous les menus de tous ses profils
         List<Long> profilIds = profilUtilisateurRepository.findByUtilisateurId(currentUser.getId())
                 .stream()
                 .map(ProfilUtilisateur::getProfilId)

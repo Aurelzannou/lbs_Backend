@@ -60,16 +60,19 @@ public class AuthService {
         user.setPrenom(request.getFirstName());
         utilisateurRepository.save(user);
 
-        // 3. Attribution du profil par défaut (LECTEUR)
-        profilRepository.findByCode("LECTEUR").ifPresentOrElse(profil -> {
+        // 3. Attribution du profil (TUTEUR par défaut si spécifié, sinon LECTEUR)
+        String roleToAssign = (request.getRole() != null && !request.getRole().isBlank()) 
+                              ? request.getRole() : "LECTEUR";
+
+        profilRepository.findByCode(roleToAssign).ifPresentOrElse(profil -> {
             assignProfilToUser(user, profil);
-            // Synchroniser le rôle dans Keycloak (Optionnel mais recommandé)
+            // Synchroniser le rôle dans Keycloak
             try {
                 keycloakAdminService.assignRoleToUser(keycloakId, profil.getCode());
             } catch (Exception e) {
-                log.error("Erreur lors de l'assignation du rôle LECTEUR dans Keycloak : {}", e.getMessage());
+                log.error("Erreur lors de l'assignation du rôle {} dans Keycloak : {}", roleToAssign, e.getMessage());
             }
-        }, () -> log.warn("Profil par défaut 'LECTEUR' non trouvé. Aucune attribution effectuée."));
+        }, () -> log.warn("Profil '{}' non trouvé. Aucune attribution effectuée.", roleToAssign));
     }
 
     @Transactional

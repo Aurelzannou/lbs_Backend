@@ -29,9 +29,9 @@ public class MenuController extends MasterController<Menu, MenuResponse, MenuReq
      * Endpoint retournant les menus de l'utilisateur connecté
      */
     @GetMapping("/my-menu")
-    public ResponseEntity<?> getMyMenu() {
+    public ResponseEntity<?> getMyMenu(@RequestParam(required = false) String profilCode) {
         return sendResponse(
-                menuService.getMyMenus().stream()
+                menuService.getMyMenus(profilCode).stream()
                         .map(menuService.mapper()::toResponse)
                         .collect(Collectors.toList())
         );

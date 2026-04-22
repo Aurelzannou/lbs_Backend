@@ -21,6 +21,9 @@ public class Tuteur extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_tute_uuid", length = 50, unique = true, nullable = false)
     private String uuid;
 
+    @Column(name = "lbs_tute_keycloak_id", length = 100, unique = true)
+    private String keycloakId;
+
     @Column(name = "lbs_tute_code", length = 20)
     private String code;
 
@@ -62,6 +65,9 @@ public class Tuteur extends AuditableEntity implements Timestamps {
 
     public String getUuid() { return uuid; }
     public void setUuid(String uuid) { this.uuid = uuid; }
+
+    public String getKeycloakId() { return keycloakId; }
+    public void setKeycloakId(String keycloakId) { this.keycloakId = keycloakId; }
 
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }

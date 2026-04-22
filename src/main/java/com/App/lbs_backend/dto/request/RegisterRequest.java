@@ -24,4 +24,6 @@ public class RegisterRequest {
 
     @NotBlank(message = "Le nom est obligatoire")
     private String lastName;
+
+    private String role;
 }
