@@ -29,6 +29,9 @@ public class Menu extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_menu_description", length = 500)
     private String description;
 
+    @Column(name = "lbs_menu_icon", length = 100)
+    private String icon;
+
     @Column(name = "lbs_menu_path", length = 200)
     private String path;
 
@@ -70,6 +73,9 @@ public class Menu extends AuditableEntity implements Timestamps {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public String getIcon() { return icon; }
+    public void setIcon(String icon) { this.icon = icon; }
 
     public String getPath() { return path; }
     public void setPath(String path) { this.path = path; }

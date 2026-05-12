@@ -37,6 +37,8 @@ public class SecurityConfig {
             // Gestion de session (Stateless => Pas de cookies, on utilise le JWT)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // /api/auth/me nécessite un JWT valide (lecture du contexte de sécurité)
+                .requestMatchers("/api/auth/me").authenticated()
                 // Endpoints publics (Auth, Inscription, Docs)
                 .requestMatchers(
                     "/api/auth/**", 

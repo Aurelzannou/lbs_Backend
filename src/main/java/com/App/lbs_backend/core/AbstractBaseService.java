@@ -30,7 +30,6 @@ public abstract class AbstractBaseService<E, R> {
     protected static final Logger logger = Logger.getLogger(AbstractBaseService.class);
     protected final Class<E> entity;
     private final String domain;
-    protected Page<E> paginated;
 
     public AbstractBaseService(Class<E> klass) {
         entity = klass;
@@ -111,21 +110,21 @@ public abstract class AbstractBaseService<E, R> {
         if (code == null || code.isEmpty()) return;
         
         repository().findByStrictCode(code).ifPresent(existing -> {
-            // If we find an entity with the same code, it must have the same UUID (meaning it's the same entity being updated)
-            // We need to access the uuid of the existing entity. Since it's generic E, we use findByUuid on its uuid.
-            // But wait, repository() has findByUuid.
             if (!uuid.equals(getUuidFromEntity(existing))) {
                 throw new DuplicateCodeException(domain, code);
             }
         });
     }
 
+    /**
+     * Extrait l'UUID d'une entité en utilisant l'interface Timestamps
+     * que toutes les entités implémentent.
+     */
     private String getUuidFromEntity(E entity) {
-        try {
-            return (String) entity.getClass().getMethod("getUuid").invoke(entity);
-        } catch (Exception e) {
-            return "";
+        if (entity instanceof Timestamps timestamps) {
+            return timestamps.getUuid();
         }
+        return "";
     }
 
     public R toResponse(Long id) {
@@ -142,30 +141,30 @@ public abstract class AbstractBaseService<E, R> {
 
     @SuppressWarnings("unused")
     public PageResponse<?> customPagination(int page, int size) {
-        final Page<R> tickets;
         Pageable pageable = PageRequest.of(page, size);
         List<E> list = repository().findAll();
 
         final int start = (int) pageable.getOffset();
         final int end = Math.min((start + pageable.getPageSize()), list.size());
 
+        Page<E> paginated;
         if (!list.isEmpty()) {
             paginated = new PageImpl<>(list.subList(start, end), pageable, list.size());
         } else {
             paginated = new PageImpl<>(list, pageable, 0);
         }
-        return paginateResponse();
+        return paginateResponse(paginated);
     }
 
     public PageResponse<?> findAll(PaginationCriteria criteria) {
-        paginated = repository().findAll(criteria.pageable());
-        return paginateResponse();
+        Page<E> paginated = repository().findAll(criteria.pageable());
+        return paginateResponse(paginated);
     }
 
     public PageResponse<?> searchByTerm(PaginationCriteria criteria) {
         String filter = criteria.filter() == null ? "" : criteria.filter();
-        paginated = repository().findByLabelContaining(filter, criteria.pageable());
-        return paginateResponse();
+        Page<E> paginated = repository().findByLabelContaining(filter, criteria.pageable());
+        return paginateResponse(paginated);
     }
 
     public Specification<E> applySpecification(List<FilterCriteria> filters) {
@@ -173,15 +172,15 @@ public abstract class AbstractBaseService<E, R> {
     }
 
     public PageResponse<?> applyFilters(List<FilterCriteria> filters, PaginationCriteria criteria) {
-        paginated = repository().findAll(applySpecification(filters), criteria.pageable());
-        return paginateResponse();
+        Page<E> paginated = repository().findAll(applySpecification(filters), criteria.pageable());
+        return paginateResponse(paginated);
     }
 
     private EntityNotFoundException throwNotFound(Object data) {
         return new EntityNotFoundException(domain, data.toString());
     }
 
-    protected PageResponse<?> paginateResponse() {
+    protected PageResponse<?> paginateResponse(Page<E> paginated) {
         if (mapper() == null) {
             logger.error("THE MAPPER FOR THIS SERVICE IS NOT CONFIGURED.");
             return new PageResponse<>(List.of(), MetaResponse.of());
@@ -194,7 +193,7 @@ public abstract class AbstractBaseService<E, R> {
         return new PageResponse<>(operationResponse, MetaResponse.ofPage(paginated));
     }
 
-    protected PageResponse<?> paginateResponse(Function<E, ?> mapperFunction) {
+    protected PageResponse<?> paginateResponse(Page<E> paginated, Function<E, ?> mapperFunction) {
         List<?> operationResponse = paginated.getContent()
                 .stream()
                 .map(mapperFunction)

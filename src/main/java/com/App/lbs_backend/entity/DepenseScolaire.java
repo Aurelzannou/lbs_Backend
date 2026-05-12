@@ -9,7 +9,10 @@ import com.App.lbs_backend.core.Timestamps;
 
 @Entity
 @Table(name = "lbs_depense_scolaire", schema = "lbs")
-@AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_desc_modifier_le"))
+@AttributeOverrides({
+    @AttributeOverride(name = "modifierLe", column = @Column(name = "lbs_desc_modifier_le")),
+    @AttributeOverride(name = "modifierPar", column = @Column(name = "lbs_desc_modifier_par", length = 100))
+})
 public class DepenseScolaire extends AuditableEntity implements Timestamps {
 
     @Id

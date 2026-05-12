@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:latest
@@ -10,6 +8,8 @@ services:
       POSTGRES_PASSWORD: lbs_password
     ports:
       - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
   #  ton PC (localhost:5433)  →→→  conteneur Docker (5432)
   #  Pourquoi localhost au niveau de host ?
   #
@@ -40,6 +40,8 @@ services:
       POSTGRES_PASSWORD: keycloak_password
     ports:
       - "5434:5432"
+    volumes:
+      - keycloak_postgres_data:/var/lib/postgresql/data
   #  Base de données dédiée à Keycloak (séparée de lbs_db)
   #  Dans Keycloak → on utilise keycloak-postgres (nom du conteneur)
   #  Dans DBeaver/DataGrip (sur ton PC) → on utilise localhost:5434
@@ -76,4 +78,6 @@ services:
       - minio_data:/data
 
 volumes:
+  postgres_data:
+  keycloak_postgres_data:
   minio_data:

@@ -1,7 +1,6 @@
 package com.App.lbs_backend.entity;
 
 import com.App.lbs_backend.core.AuditableEntity;
-import com.App.lbs_backend.core.BaseEntity;
 import jakarta.persistence.*;
 import java.util.UUID;
 

@@ -7,6 +7,7 @@ public record MenuResponse(
         String uuid,
         String code,
         String description,
+        String icon,
         String path,
         Integer ordre,
         String titre,

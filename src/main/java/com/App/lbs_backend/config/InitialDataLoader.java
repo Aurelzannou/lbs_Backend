@@ -33,6 +33,7 @@ public class InitialDataLoader implements CommandLineRunner {
         // 0. Synchronisation avec Keycloak - Créer les rôles s'ils n'existent pas
         keycloakAdminService.createRole("ADMIN", "Administrateur Système");
         keycloakAdminService.createRole("LECTEUR", "Lecteur (Consultation)");
+        keycloakAdminService.createRole("TUTEUR", "Parent / Tuteur");
 
         // 1. Initialisation des Profils (DB locale)
         Profil admin = createProfilIfNotFound("ADMIN", "Administrateur Système");
@@ -42,28 +43,27 @@ public class InitialDataLoader implements CommandLineRunner {
         log.info("Vérification des menus par défaut...");
         
         // Dashboard
-        Menu dashboard = createOrUpdateMenu("DASHBOARD", "Tableau de bord", "home-outline", "/dashboard", 1, List.of(admin, lecteur));
+        Menu dashboard = createOrUpdateMenu("DASHBOARD", "Tableau de bord", "Vue d'ensemble", "home-outline", "/dashboard", 1, List.of(admin, lecteur));
         
         // Profil
-        Menu profil = createOrUpdateMenu("PROFIL", "Mon Profil", "person-outline", "/profile", 2, List.of(admin, lecteur));
+        Menu profil = createOrUpdateMenu("PROFIL", "Mon Profil", "Gérer mon profil", "person-outline", "/profile", 2, List.of(admin, lecteur));
         
         // Administration (Parent)
-        Menu adminGroup = createOrUpdateMenu("ADMINISTRATION", "Administration", "shield-outline", null, 3, List.of(admin));
+        Menu adminGroup = createOrUpdateMenu("ADMINISTRATION", "Administration", "Gestion du système", "shield-outline", null, 3, List.of(admin));
         
         // Sous-menus Administration
-        createOrUpdateSubMenu("USER", "Utilisateurs", "people-outline", "/administration/utilisateurs", 1, adminGroup, admin);
-        createOrUpdateSubMenu("PROFIL_ADMIN", "Profils", "lock-outline", "/administration/profils", 2, adminGroup, admin);
-        createOrUpdateSubMenu("MENU_ADMIN", "Menus", "menu-outline", "/administration/menus", 3, adminGroup, admin);
+        createOrUpdateSubMenu("USER", "Utilisateurs", "Gestion des utilisateurs", "people-outline", "/administration/utilisateurs", 1, adminGroup, admin);
+        createOrUpdateSubMenu("PROFIL_ADMIN", "Profils", "Gestion des profils", "lock-outline", "/administration/profils", 2, adminGroup, admin);
+        createOrUpdateSubMenu("MENU_ADMIN", "Menus", "Gestion des menus", "menu-outline", "/administration/menus", 3, adminGroup, admin);
 
         // Référentiel (Parent)
-        Menu refGroup = createOrUpdateMenu("REFERENTIEL", "Référentiel", "settings-2-outline", null, 4, List.of(admin, lecteur));
-        createOrUpdateSubMenu("NIVEAUX", "Niveaux Scolaires", "layers-outline", "/referentiel/niveaux", 1, refGroup, admin);
-        // createOrUpdateSubMenu("ETAPES", "Étapes Workflow", "list-outline", "/referentiel/etapes", 2, refGroup, admin);
-        createOrUpdateSubMenu("ANNEE_SCOLAIRE", "Années Scolaires", "calendar-outline", "/referentiel/annees-scolaires", 3, refGroup, admin);
+        Menu refGroup = createOrUpdateMenu("REFERENTIEL", "Référentiel", "Données de référence", "settings-2-outline", null, 4, List.of(admin, lecteur));
+        createOrUpdateSubMenu("NIVEAUX", "Niveaux Scolaires", "Gestion des niveaux", "layers-outline", "/referentiel/niveaux", 1, refGroup, admin);
+        createOrUpdateSubMenu("ANNEE_SCOLAIRE", "Années Scolaires", "Gestion des années scolaires", "calendar-outline", "/referentiel/annees-scolaires", 3, refGroup, admin);
 
         // Scolarité (Parent)
-        Menu scolariteGroup = createOrUpdateMenu("SCOLARITE", "Scolarité", "book-open-outline", null, 5, List.of(admin, lecteur));
-        createOrUpdateSubMenu("ELEVES", "Élèves", "people-outline", "/scolarite/eleves", 1, scolariteGroup, admin);
+        Menu scolariteGroup = createOrUpdateMenu("SCOLARITE", "Scolarité", "Gestion scolaire", "book-open-outline", null, 5, List.of(admin, lecteur));
+        createOrUpdateSubMenu("ELEVES", "Élèves", "Gestion des élèves", "people-outline", "/scolarite/eleves", 1, scolariteGroup, admin);
         
         log.info("Initialisation des données de base terminée.");
     }
@@ -78,7 +78,7 @@ public class InitialDataLoader implements CommandLineRunner {
         });
     }
 
-    private Menu createOrUpdateMenu(String code, String titre, String description, String path, int ordre, List<Profil> profils) {
+    private Menu createOrUpdateMenu(String code, String titre, String description, String icon, String path, int ordre, List<Profil> profils) {
         Menu menu = menuRepository.findByCode(code).orElseGet(() -> {
             log.info("Création du menu : {}", code);
             Menu newMenu = new Menu();
@@ -87,7 +87,8 @@ public class InitialDataLoader implements CommandLineRunner {
         });
 
         menu.setTitre(titre);
-        menu.setDescription(description); 
+        menu.setDescription(description);
+        menu.setIcon(icon);
         menu.setPath(path);
         menu.setOrdre(ordre);
         
@@ -108,7 +109,7 @@ public class InitialDataLoader implements CommandLineRunner {
         return menuRepository.save(menu);
     }
 
-    private void createOrUpdateSubMenu(String code, String titre, String description, String path, int ordre, Menu parent, Profil profil) {
+    private void createOrUpdateSubMenu(String code, String titre, String description, String icon, String path, int ordre, Menu parent, Profil profil) {
         Menu subMenu = menuRepository.findByCode(code).orElseGet(() -> {
             log.info("Création du sous-menu : {}", code);
             Menu newSubMenu = new Menu();
@@ -118,6 +119,7 @@ public class InitialDataLoader implements CommandLineRunner {
 
         subMenu.setTitre(titre);
         subMenu.setDescription(description);
+        subMenu.setIcon(icon);
         subMenu.setPath(path);
         subMenu.setOrdre(ordre);
         subMenu.setMenuEnfantId(parent.getId());

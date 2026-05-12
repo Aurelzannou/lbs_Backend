@@ -45,7 +45,7 @@ public class DossierEtape extends AuditableEntity implements Timestamps {
 
     // ===== RELATIONS =====
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lbs_doel_dossier_eleve_id", insertable = false, updatable = false)
+    @JoinColumn(name = "lbs_doet_dossier_eleve_id", insertable = false, updatable = false)
     private DossierEleve dossierEleve;
 
     @ManyToOne(fetch = FetchType.LAZY)

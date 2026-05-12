@@ -27,6 +27,7 @@ public class MenuMapper implements Mapper<Menu, MenuResponse> {
                 entity.getUuid(),
                 entity.getCode(),
                 entity.getDescription(),
+                entity.getIcon(),
                 entity.getPath(),
                 entity.getOrdre(),
                 entity.getTitre(),
