@@ -1,7 +1,8 @@
 package com.App.lbs_backend.controller.scolarite;
 
 import com.App.lbs_backend.dto.response.DossierEleveResponse;
-import com.App.lbs_backend.entity.Tuteur;
+import com.App.lbs_backend.dto.response.TuteurResponse;
+import com.App.lbs_backend.mapper.TuteurMapper;
 import com.App.lbs_backend.repository.TuteurRepository;
 import com.App.lbs_backend.service.scolarite.DossierEleveService;
 import lombok.RequiredArgsConstructor;
@@ -20,23 +21,31 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PortailController {
 
-    private final TuteurRepository       tuteurRepository;
-    private final DossierEleveService    dossierEleveService;
+    private final TuteurRepository    tuteurRepository;
+    private final TuteurMapper        tuteurMapper;
+    private final DossierEleveService dossierEleveService;
 
-    /**
-     * Retourne les dossiers d'inscription du tuteur actuellement connecté.
-     * L'identité est extraite directement depuis le JWT Keycloak.
-     */
+    /** Retourne le profil du tuteur connecté (identifié via JWT). */
+    @GetMapping("/me")
+    public ResponseEntity<TuteurResponse> getMe(@AuthenticationPrincipal Jwt jwt) {
+        if (jwt == null) return ResponseEntity.notFound().build();
+        String email = jwt.getClaimAsString("email");
+        if (email == null) return ResponseEntity.notFound().build();
+
+        return tuteurRepository.findByEmail(email)
+                .map(t -> ResponseEntity.ok(tuteurMapper.toResponse(t)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /** Retourne les dossiers d'inscription du tuteur connecté. */
     @GetMapping("/mes-dossiers")
     public ResponseEntity<List<DossierEleveResponse>> getMesDossiers(@AuthenticationPrincipal Jwt jwt) {
         if (jwt == null) return ResponseEntity.ok(Collections.emptyList());
-
-        // Récupérer l'email depuis le JWT
         String email = jwt.getClaimAsString("email");
         if (email == null) return ResponseEntity.ok(Collections.emptyList());
 
         return tuteurRepository.findByEmail(email)
-                .map(tuteur -> ResponseEntity.ok(dossierEleveService.getByTuteurId(tuteur.getId())))
+                .map(t -> ResponseEntity.ok(dossierEleveService.getByTuteurId(t.getId())))
                 .orElse(ResponseEntity.ok(Collections.emptyList()));
     }
 }

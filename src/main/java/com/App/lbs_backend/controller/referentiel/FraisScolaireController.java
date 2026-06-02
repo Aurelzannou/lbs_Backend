@@ -7,8 +7,10 @@ import com.App.lbs_backend.dto.response.FraisScolaireResponse;
 import com.App.lbs_backend.entity.FraisScolaire;
 import com.App.lbs_backend.service.referentiel.FraisScolaireService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/frais-scolaires")
@@ -34,6 +36,13 @@ public class FraisScolaireController extends MasterController<FraisScolaire, Fra
         
         FraisScolaire saved = fraisScolaireService.create(entity);
         return fraisScolaireService.toResponse(saved.getId());
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<FraisScolaireResponse>> search(
+            @RequestParam Long classeId,
+            @RequestParam Long anneeScolaireId) {
+        return ResponseEntity.ok(fraisScolaireService.findByClasseAndAnnee(classeId, anneeScolaireId));
     }
 
     @Override

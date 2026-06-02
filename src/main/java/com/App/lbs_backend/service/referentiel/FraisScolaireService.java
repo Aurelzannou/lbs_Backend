@@ -9,6 +9,9 @@ import com.App.lbs_backend.repository.BaseRepository;
 import com.App.lbs_backend.repository.FraisScolaireRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 public class FraisScolaireService extends AbstractBaseService<FraisScolaire, FraisScolaireResponse> {
     
@@ -29,5 +32,13 @@ public class FraisScolaireService extends AbstractBaseService<FraisScolaire, Fra
     @Override
     public Mapper<FraisScolaire, FraisScolaireResponse> mapper() {
         return fraisScolaireMapper;
+    }
+
+    public List<FraisScolaireResponse> findByClasseAndAnnee(Long classeId, Long anneeScolaireId) {
+        return fraisScolaireRepository
+                .findByClasseIdAndAnneeScolaireId(classeId, anneeScolaireId)
+                .stream()
+                .map(fraisScolaireMapper::toResponse)
+                .collect(Collectors.toList());
     }
 }
