@@ -15,7 +15,8 @@ public record EleveRequest(
         String provenance,
         String photo,
         Long utilisateurId,
-        Long classeId
+        Long classeId,
+        Long tuteurId
 ) implements FormRequest {
     @Override
     public String getCode() {

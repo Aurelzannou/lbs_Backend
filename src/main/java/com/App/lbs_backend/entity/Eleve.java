@@ -58,6 +58,9 @@ public class Eleve extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_elev_classe_id")
     private Long classeId;
 
+    @Column(name = "lbs_elev_tuteur_id")
+    private Long tuteurId;
+
     // ===== RELATIONS =====
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lbs_elev_utilisateur_id", insertable = false, updatable = false)
@@ -66,6 +69,10 @@ public class Eleve extends AuditableEntity implements Timestamps {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lbs_elev_classe_id", insertable = false, updatable = false)
     private Classe classe;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lbs_elev_tuteur_id", insertable = false, updatable = false)
+    private Tuteur tuteur;
 
     @PrePersist
     public void prePersist() {
@@ -115,9 +122,15 @@ public class Eleve extends AuditableEntity implements Timestamps {
     public Long getClasseId() { return classeId; }
     public void setClasseId(Long classeId) { this.classeId = classeId; }
 
+    public Long getTuteurId() { return tuteurId; }
+    public void setTuteurId(Long tuteurId) { this.tuteurId = tuteurId; }
+
     public Utilisateur getUtilisateur() { return utilisateur; }
     public void setUtilisateur(Utilisateur utilisateur) { this.utilisateur = utilisateur; }
 
     public Classe getClasse() { return classe; }
     public void setClasse(Classe classe) { this.classe = classe; }
+
+    public Tuteur getTuteur() { return tuteur; }
+    public void setTuteur(Tuteur tuteur) { this.tuteur = tuteur; }
 }

@@ -7,8 +7,11 @@ import com.App.lbs_backend.dto.response.DossierEleveResponse;
 import com.App.lbs_backend.entity.DossierEleve;
 import com.App.lbs_backend.service.scolarite.DossierEleveService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/dossier-eleves")
@@ -36,6 +39,18 @@ public class DossierEleveController extends MasterController<DossierEleve, Dossi
         mapFormToEntity(form, dossier);
         dossierEleveService.update(dossier);
         return dossierEleveService.toResponse(dossier.getId());
+    }
+
+    @PutMapping("/{uuid}/statut")
+    public ResponseEntity<?> changerStatut(@PathVariable String uuid,
+                                           @RequestBody Map<String, String> body) {
+        DossierEleveResponse response = dossierEleveService.changerStatut(uuid, body.get("statut"));
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/tuteur/{tuteurId}")
+    public ResponseEntity<List<DossierEleveResponse>> getByTuteur(@PathVariable Long tuteurId) {
+        return ResponseEntity.ok(dossierEleveService.getByTuteurId(tuteurId));
     }
 
     private void mapFormToEntity(DossierEleveRequest form, DossierEleve dossier) {

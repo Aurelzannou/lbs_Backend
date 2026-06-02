@@ -50,5 +50,6 @@ public class EleveController extends MasterController<Eleve, EleveResponse, Elev
         eleve.setPhoto(form.photo());
         eleve.setUtilisateurId(form.utilisateurId());
         eleve.setClasseId(form.classeId());
+        eleve.setTuteurId(form.tuteurId());
     }
 }

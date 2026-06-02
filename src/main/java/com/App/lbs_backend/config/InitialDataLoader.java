@@ -3,9 +3,11 @@ package com.App.lbs_backend.config;
 import com.App.lbs_backend.entity.Menu;
 import com.App.lbs_backend.entity.Profil;
 import com.App.lbs_backend.entity.ProfilMenu;
+import com.App.lbs_backend.entity.StatutInscription;
 import com.App.lbs_backend.entity.Utilisateur;
 import com.App.lbs_backend.repository.MenuRepository;
 import com.App.lbs_backend.repository.ProfilRepository;
+import com.App.lbs_backend.repository.StatutInscriptionRepository;
 import com.App.lbs_backend.service.KeycloakAdminService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +25,7 @@ public class InitialDataLoader implements CommandLineRunner {
 
     private final ProfilRepository profilRepository;
     private final MenuRepository menuRepository;
+    private final StatutInscriptionRepository statutInscriptionRepository;
     private final KeycloakAdminService keycloakAdminService;
 
     @Override
@@ -64,8 +67,28 @@ public class InitialDataLoader implements CommandLineRunner {
         // Scolarité (Parent)
         Menu scolariteGroup = createOrUpdateMenu("SCOLARITE", "Scolarité", "Gestion scolaire", "book-open-outline", null, 5, List.of(admin, lecteur));
         createOrUpdateSubMenu("ELEVES", "Élèves", "Gestion des élèves", "people-outline", "/scolarite/eleves", 1, scolariteGroup, admin);
-        
+        createOrUpdateSubMenu("INSCRIPTIONS", "Inscriptions", "Gestion des dossiers d'inscription", "file-text-outline", "/scolarite/inscriptions", 2, scolariteGroup, admin);
+
+        // 3. Statuts d'inscription
+        log.info("Vérification des statuts d'inscription...");
+        createStatutIfNotFound("DEPOSE",     "Déposé");
+        createStatutIfNotFound("EN_ATTENTE", "En attente");
+        createStatutIfNotFound("ACCEPTE",    "Accepté");
+        createStatutIfNotFound("REFUSE",     "Refusé");
+        createStatutIfNotFound("INSCRIT",    "Inscrit");
+        createStatutIfNotFound("ANNULE",     "Annulé");
+
         log.info("Initialisation des données de base terminée.");
+    }
+
+    private void createStatutIfNotFound(String code, String libelle) {
+        statutInscriptionRepository.findByCode(code).orElseGet(() -> {
+            log.info("Création du statut inscription : {}", code);
+            StatutInscription statut = new StatutInscription();
+            statut.setCode(code);
+            statut.setLibelle(libelle);
+            return statutInscriptionRepository.save(statut);
+        });
     }
 
     private Profil createProfilIfNotFound(String code, String libelle) {
