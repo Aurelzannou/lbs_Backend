@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports
+              http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="fiche-inscription"
+              pageWidth="595" pageHeight="842"
+              columnWidth="535" leftMargin="30" rightMargin="30"
+              topMargin="30" bottomMargin="30"
+              uuid="a1b2c3d4-e5f6-7890-abcd-ef1234567890">
+
+  <!-- Paramètres -->
+  <parameter name="numeroDossier"  class="java.lang.String"/>
+  <parameter name="eleveNom"       class="java.lang.String"/>
+  <parameter name="elevePrenom"    class="java.lang.String"/>
+  <parameter name="classe"         class="java.lang.String"/>
+  <parameter name="anneeScolaire"  class="java.lang.String"/>
+  <parameter name="statut"         class="java.lang.String"/>
+  <parameter name="dateDebut"      class="java.lang.String"/>
+
+  <queryString><![CDATA[]]></queryString>
+
+  <!-- En-tête -->
+  <title>
+    <band height="120">
+      <!-- Bandeau bleu -->
+      <rectangle>
+        <reportElement x="0" y="0" width="535" height="60" backcolor="#1e3a8a" forecolor="#1e3a8a"/>
+        <graphicElement>
+          <pen lineWidth="0"/>
+        </graphicElement>
+      </rectangle>
+      <staticText>
+        <reportElement x="10" y="8" width="200" height="30" forecolor="#FFFFFF"/>
+        <textElement verticalAlignment="Middle">
+          <font size="18" isBold="true"/>
+        </textElement>
+        <text><![CDATA[LBS Education]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="10" y="38" width="300" height="16" forecolor="#bfdbfe"/>
+        <textElement>
+          <font size="10"/>
+        </textElement>
+        <text><![CDATA[Système de Gestion Scolaire]]></text>
+      </staticText>
+      <!-- Titre du document -->
+      <staticText>
+        <reportElement x="0" y="70" width="535" height="24"/>
+        <textElement textAlignment="Center" verticalAlignment="Middle">
+          <font size="14" isBold="true"/>
+        </textElement>
+        <text><![CDATA[FICHE D'INSCRIPTION]]></text>
+      </staticText>
+      <!-- Ligne de séparation -->
+      <line>
+        <reportElement x="0" y="98" width="535" height="1" forecolor="#e2e8f0"/>
+      </line>
+    </band>
+  </title>
+
+  <!-- Corps -->
+  <detail>
+    <band height="280">
+
+      <!-- N° Dossier -->
+      <staticText>
+        <reportElement x="0" y="20" width="160" height="20"/>
+        <textElement><font size="10" isBold="true"/></textElement>
+        <text><![CDATA[N° Dossier :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="160" y="20" width="375" height="20"/>
+        <textElement><font size="10"/></textElement>
+        <textFieldExpression><![CDATA[$P{numeroDossier}]]></textFieldExpression>
+      </textField>
+
+      <!-- Ligne -->
+      <line><reportElement x="0" y="42" width="535" height="1" forecolor="#f1f5f9"/></line>
+
+      <!-- Nom de l'élève -->
+      <staticText>
+        <reportElement x="0" y="50" width="160" height="20"/>
+        <textElement><font size="10" isBold="true"/></textElement>
+        <text><![CDATA[Nom de l'élève :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="160" y="50" width="375" height="20"/>
+        <textElement><font size="10"/></textElement>
+        <textFieldExpression><![CDATA[$P{eleveNom} + " " + $P{elevePrenom}]]></textFieldExpression>
+      </textField>
+
+      <line><reportElement x="0" y="72" width="535" height="1" forecolor="#f1f5f9"/></line>
+
+      <!-- Classe -->
+      <staticText>
+        <reportElement x="0" y="80" width="160" height="20"/>
+        <textElement><font size="10" isBold="true"/></textElement>
+        <text><![CDATA[Classe :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="160" y="80" width="375" height="20"/>
+        <textElement><font size="10"/></textElement>
+        <textFieldExpression><![CDATA[$P{classe}]]></textFieldExpression>
+      </textField>
+
+      <line><reportElement x="0" y="102" width="535" height="1" forecolor="#f1f5f9"/></line>
+
+      <!-- Année scolaire -->
+      <staticText>
+        <reportElement x="0" y="110" width="160" height="20"/>
+        <textElement><font size="10" isBold="true"/></textElement>
+        <text><![CDATA[Année scolaire :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="160" y="110" width="375" height="20"/>
+        <textElement><font size="10"/></textElement>
+        <textFieldExpression><![CDATA[$P{anneeScolaire}]]></textFieldExpression>
+      </textField>
+
+      <line><reportElement x="0" y="132" width="535" height="1" forecolor="#f1f5f9"/></line>
+
+      <!-- Statut -->
+      <staticText>
+        <reportElement x="0" y="140" width="160" height="20"/>
+        <textElement><font size="10" isBold="true"/></textElement>
+        <text><![CDATA[Statut :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="160" y="140" width="375" height="20"/>
+        <textElement><font size="10"/></textElement>
+        <textFieldExpression><![CDATA[$P{statut}]]></textFieldExpression>
+      </textField>
+
+      <line><reportElement x="0" y="162" width="535" height="1" forecolor="#f1f5f9"/></line>
+
+      <!-- Date d'inscription -->
+      <staticText>
+        <reportElement x="0" y="170" width="160" height="20"/>
+        <textElement><font size="10" isBold="true"/></textElement>
+        <text><![CDATA[Date d'inscription :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="160" y="170" width="375" height="20"/>
+        <textElement><font size="10"/></textElement>
+        <textFieldExpression><![CDATA[$P{dateDebut}]]></textFieldExpression>
+      </textField>
+
+      <!-- Zone signature -->
+      <staticText>
+        <reportElement x="0" y="230" width="200" height="16"/>
+        <textElement><font size="9" isBold="true"/></textElement>
+        <text><![CDATA[Signature du responsable :]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="335" y="230" width="200" height="16"/>
+        <textElement><font size="9" isBold="true"/></textElement>
+        <text><![CDATA[Cachet de l'établissement :]]></text>
+      </staticText>
+    </band>
+  </detail>
+
+  <!-- Pied de page -->
+  <pageFooter>
+    <band height="30">
+      <line><reportElement x="0" y="0" width="535" height="1" forecolor="#e2e8f0"/></line>
+      <staticText>
+        <reportElement x="0" y="8" width="535" height="16" forecolor="#94a3b8"/>
+        <textElement textAlignment="Center"><font size="8"/></textElement>
+        <text><![CDATA[LBS Education — Document généré automatiquement — © 2026]]></text>
+      </staticText>
+    </band>
+  </pageFooter>
+
+</jasperReport>

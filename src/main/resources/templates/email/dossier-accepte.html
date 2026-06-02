@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6fb; margin: 0; padding: 0; }
+    .wrapper { max-width: 600px; margin: 30px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .header { background: linear-gradient(135deg, #1e3a8a, #2563eb); padding: 32px 40px; text-align: center; }
+    .header h1 { color: white; margin: 0; font-size: 22px; font-weight: 700; }
+    .header p  { color: #bfdbfe; margin: 8px 0 0; font-size: 13px; }
+    .badge-ok  { display: inline-block; background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;
+                 padding: 6px 18px; border-radius: 20px; font-weight: 700; font-size: 13px; margin: 20px 0 0; }
+    .body { padding: 36px 40px; }
+    .body p { color: #374151; font-size: 15px; line-height: 1.7; margin: 0 0 16px; }
+    .info-box { background: #f0f9ff; border-left: 4px solid #2563eb; border-radius: 0 8px 8px 0;
+                padding: 16px 20px; margin: 24px 0; }
+    .info-box p { margin: 4px 0; font-size: 14px; color: #1e293b; }
+    .info-box strong { color: #1d4ed8; }
+    .btn { display: inline-block; background: linear-gradient(135deg, #1e3a8a, #2563eb);
+           color: white; text-decoration: none; padding: 12px 32px; border-radius: 8px;
+           font-weight: 700; font-size: 14px; margin: 8px 0 24px; }
+    .footer { background: #f8fafc; padding: 20px 40px; text-align: center; border-top: 1px solid #e2e8f0; }
+    .footer p { color: #94a3b8; font-size: 12px; margin: 0; }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <h1>LBS Education</h1>
+    <p>Système de Gestion Scolaire</p>
+    <span class="badge-ok">✓ Dossier Accepté</span>
+  </div>
+  <div class="body">
+    <p>Bonjour <strong th:text="${tuteurPrenom + ' ' + tuteurNom}">Prénom Nom</strong>,</p>
+    <p>Nous avons le plaisir de vous informer que le dossier d'inscription de votre enfant a été <strong style="color:#065f46">accepté</strong> par notre administration.</p>
+
+    <div class="info-box">
+      <p><strong>Élève :</strong> <span th:text="${elevePrenom + ' ' + eleveNom}">—</span></p>
+      <p><strong>Classe :</strong> <span th:text="${classe}">—</span></p>
+      <p><strong>Année scolaire :</strong> <span th:text="${anneeScolaire}">—</span></p>
+      <p><strong>N° Dossier :</strong> <span th:text="${numeroDossier}">—</span></p>
+    </div>
+
+    <p>La prochaine étape est le <strong>règlement des frais d'inscription</strong>. Connectez-vous à votre espace parent pour effectuer le paiement.</p>
+
+    <p style="text-align:center">
+      <a class="btn" th:href="${portalUrl}">Accéder à mon espace</a>
+    </p>
+
+    <p style="color:#64748b; font-size:13px">Si vous avez des questions, n'hésitez pas à nous contacter directement à l'école.</p>
+  </div>
+  <div class="footer">
+    <p>© 2026 LBS Education — Tous droits réservés</p>
+  </div>
+</div>
+</body>
+</html>

@@ -10,6 +10,7 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
   #  ton PC (localhost:5433)  →→→  conteneur Docker (5432)
   #  Pourquoi localhost au niveau de host ?
   #

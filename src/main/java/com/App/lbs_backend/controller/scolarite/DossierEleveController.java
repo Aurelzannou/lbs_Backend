@@ -5,11 +5,15 @@ import com.App.lbs_backend.core.MasterController;
 import com.App.lbs_backend.dto.request.DossierEleveRequest;
 import com.App.lbs_backend.dto.response.DossierEleveResponse;
 import com.App.lbs_backend.entity.DossierEleve;
+import com.App.lbs_backend.service.ReportService;
 import com.App.lbs_backend.service.scolarite.DossierEleveService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +23,7 @@ import java.util.Map;
 public class DossierEleveController extends MasterController<DossierEleve, DossierEleveResponse, DossierEleveRequest> {
 
     private final DossierEleveService dossierEleveService;
+    private final ReportService       reportService;
 
     @Override
     protected AbstractBaseService<DossierEleve, DossierEleveResponse> service() {
@@ -29,6 +34,10 @@ public class DossierEleveController extends MasterController<DossierEleve, Dossi
     protected DossierEleveResponse doCreate(DossierEleveRequest form) {
         DossierEleve dossier = new DossierEleve();
         mapFormToEntity(form, dossier);
+        // Si aucun statut fourni, auto-set DEPOSE
+        if (dossier.getStatutId() == null) {
+            dossierEleveService.setStatutDepose(dossier);
+        }
         DossierEleve saved = dossierEleveService.create(dossier);
         return dossierEleveService.toResponse(saved.getId());
     }
@@ -51,6 +60,30 @@ public class DossierEleveController extends MasterController<DossierEleve, Dossi
     @GetMapping("/tuteur/{tuteurId}")
     public ResponseEntity<List<DossierEleveResponse>> getByTuteur(@PathVariable Long tuteurId) {
         return ResponseEntity.ok(dossierEleveService.getByTuteurId(tuteurId));
+    }
+
+    @GetMapping("/{uuid}/fiche-inscription")
+    public ResponseEntity<byte[]> getFicheInscription(@PathVariable String uuid) {
+        DossierEleveResponse dossier = dossierEleveService.toResponse(
+            dossierEleveService.findByUuid(uuid).getId()
+        );
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("numeroDossier",    dossier.getNumero() != null ? dossier.getNumero() : "—");
+        params.put("eleveNom",         dossier.getEleveNom() != null ? dossier.getEleveNom() : "—");
+        params.put("elevePrenom",      dossier.getElevePrenom() != null ? dossier.getElevePrenom() : "—");
+        params.put("classe",           dossier.getClasseLibelle() != null ? dossier.getClasseLibelle() : "—");
+        params.put("anneeScolaire",    dossier.getAnneeScolaireLibelle() != null ? dossier.getAnneeScolaireLibelle() : "—");
+        params.put("statut",           dossier.getStatutLibelle() != null ? dossier.getStatutLibelle() : "—");
+        params.put("dateDebut",        dossier.getDateDebut() != null ? dossier.getDateDebut().toString() : "—");
+
+        byte[] pdf = reportService.generatePdf("fiche-inscription", params, null);
+
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION,
+                    "attachment; filename=\"fiche-inscription-" + (dossier.getNumero() != null ? dossier.getNumero() : uuid) + ".pdf\"")
+            .contentType(MediaType.APPLICATION_PDF)
+            .body(pdf);
     }
 
     private void mapFormToEntity(DossierEleveRequest form, DossierEleve dossier) {

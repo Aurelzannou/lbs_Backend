@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6fb; margin: 0; padding: 0; }
+    .wrapper { max-width: 600px; margin: 30px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .header { background: linear-gradient(135deg, #7f1d1d, #dc2626); padding: 32px 40px; text-align: center; }
+    .header h1 { color: white; margin: 0; font-size: 22px; font-weight: 700; }
+    .header p  { color: #fecaca; margin: 8px 0 0; font-size: 13px; }
+    .badge-ko  { display: inline-block; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;
+                 padding: 6px 18px; border-radius: 20px; font-weight: 700; font-size: 13px; margin: 20px 0 0; }
+    .body { padding: 36px 40px; }
+    .body p { color: #374151; font-size: 15px; line-height: 1.7; margin: 0 0 16px; }
+    .info-box { background: #fff5f5; border-left: 4px solid #dc2626; border-radius: 0 8px 8px 0;
+                padding: 16px 20px; margin: 24px 0; }
+    .info-box p { margin: 4px 0; font-size: 14px; color: #1e293b; }
+    .info-box strong { color: #dc2626; }
+    .motif-box { background: #fef9c3; border: 1px solid #fde68a; border-radius: 8px;
+                 padding: 14px 18px; margin: 16px 0; font-size: 14px; color: #92400e; }
+    .btn { display: inline-block; background: linear-gradient(135deg, #1e3a8a, #2563eb);
+           color: white; text-decoration: none; padding: 12px 32px; border-radius: 8px;
+           font-weight: 700; font-size: 14px; margin: 8px 0 24px; }
+    .footer { background: #f8fafc; padding: 20px 40px; text-align: center; border-top: 1px solid #e2e8f0; }
+    .footer p { color: #94a3b8; font-size: 12px; margin: 0; }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <h1>LBS Education</h1>
+    <p>Système de Gestion Scolaire</p>
+    <span class="badge-ko">✗ Dossier Refusé</span>
+  </div>
+  <div class="body">
+    <p>Bonjour <strong th:text="${tuteurPrenom + ' ' + tuteurNom}">Prénom Nom</strong>,</p>
+    <p>Nous avons le regret de vous informer que le dossier d'inscription de votre enfant n'a pas pu être accepté à ce stade.</p>
+
+    <div class="info-box">
+      <p><strong>Élève :</strong> <span th:text="${elevePrenom + ' ' + eleveNom}">—</span></p>
+      <p><strong>Classe demandée :</strong> <span th:text="${classe}">—</span></p>
+      <p><strong>Année scolaire :</strong> <span th:text="${anneeScolaire}">—</span></p>
+      <p><strong>N° Dossier :</strong> <span th:text="${numeroDossier}">—</span></p>
+    </div>
+
+    <div class="motif-box" th:if="${motif != null and !#strings.isEmpty(motif)}">
+      <strong>Motif :</strong> <span th:text="${motif}">—</span>
+    </div>
+
+    <p>Nous vous invitons à vous rapprocher de notre administration pour plus d'informations ou pour soumettre un nouveau dossier.</p>
+
+    <p style="text-align:center">
+      <a class="btn" th:href="${portalUrl}">Accéder à mon espace</a>
+    </p>
+  </div>
+  <div class="footer">
+    <p>© 2026 LBS Education — Tous droits réservés</p>
+  </div>
+</div>
+</body>
+</html>
