@@ -3,16 +3,18 @@ package com.App.lbs_backend.service;
 import com.App.lbs_backend.dto.request.RegisterRequest;
 import com.App.lbs_backend.entity.Profil;
 import com.App.lbs_backend.entity.ProfilUtilisateur;
+import com.App.lbs_backend.entity.Tuteur;
 import com.App.lbs_backend.entity.Utilisateur;
 import com.App.lbs_backend.repository.ProfilRepository;
 import com.App.lbs_backend.repository.ProfilUtilisateurRepository;
+import com.App.lbs_backend.repository.TuteurRepository;
 import com.App.lbs_backend.repository.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -23,18 +25,21 @@ public class AuthService {
     private final UtilisateurRepository utilisateurRepository;
     private final ProfilRepository profilRepository;
     private final ProfilUtilisateurRepository profilUtilisateurRepository;
+    private final TuteurRepository tuteurRepository;
 
-    /**
-     * Gère l'inscription d'un nouvel utilisateur :
-     * 1. Création dans Keycloak
-     * 2. Création en base locale
-     * 3. Attribution du profil par défaut (LECTEUR)
-     */
     @Transactional
     public void register(RegisterRequest request) {
-        log.info("Processus d'inscription pour l'utilisateur : {}", request.getUsername());
+        String userType = (request.getUserType() != null) ? request.getUserType().toUpperCase() : "ADMIN";
+        if ("PARENT".equals(userType)) {
+            registerParent(request);
+        } else {
+            registerAdmin(request);
+        }
+    }
 
-        // 0. Vérifier si l'utilisateur existe déjà (localement)
+    private void registerAdmin(RegisterRequest request) {
+        log.info("Inscription administrateur : {}", request.getUsername());
+
         if (utilisateurRepository.existsByLogin(request.getUsername())) {
             throw new IllegalArgumentException("Ce nom d'utilisateur est déjà utilisé.");
         }
@@ -42,7 +47,6 @@ public class AuthService {
             throw new IllegalArgumentException("Cette adresse email est déjà utilisée.");
         }
 
-        // 1. Création dans Keycloak
         String keycloakId = keycloakAdminService.createUser(
                 request.getUsername(),
                 request.getEmail(),
@@ -51,7 +55,6 @@ public class AuthService {
                 request.getPassword()
         );
 
-        // 2. Création locale
         Utilisateur user = new Utilisateur();
         user.setKeycloack(keycloakId);
         user.setLogin(request.getUsername());
@@ -60,19 +63,51 @@ public class AuthService {
         user.setPrenom(request.getFirstName());
         utilisateurRepository.save(user);
 
-        // 3. Attribution du profil (TUTEUR par défaut si spécifié, sinon LECTEUR)
-        String roleToAssign = (request.getRole() != null && !request.getRole().isBlank()) 
-                              ? request.getRole() : "LECTEUR";
+        String roleToAssign = (request.getRole() != null && !request.getRole().isBlank())
+                ? request.getRole() : "LECTEUR";
 
         profilRepository.findByCode(roleToAssign).ifPresentOrElse(profil -> {
             assignProfilToUser(user, profil);
-            // Synchroniser le rôle dans Keycloak
             try {
                 keycloakAdminService.assignRoleToUser(keycloakId, profil.getCode());
             } catch (Exception e) {
-                log.error("Erreur lors de l'assignation du rôle {} dans Keycloak : {}", roleToAssign, e.getMessage());
+                log.error("Erreur assignation rôle {} dans Keycloak : {}", roleToAssign, e.getMessage());
             }
-        }, () -> log.warn("Profil '{}' non trouvé. Aucune attribution effectuée.", roleToAssign));
+        }, () -> log.warn("Profil '{}' non trouvé.", roleToAssign));
+    }
+
+    private void registerParent(RegisterRequest request) {
+        log.info("Inscription parent d'élève : {}", request.getEmail());
+
+        if (tuteurRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Cette adresse email est déjà utilisée.");
+        }
+
+        // Pour les parents, l'email sert d'identifiant Keycloak
+        String keycloakId = keycloakAdminService.createUser(
+                request.getEmail(),
+                request.getEmail(),
+                request.getFirstName(),
+                request.getLastName(),
+                request.getPassword()
+        );
+
+        try {
+            keycloakAdminService.assignRoleToUser(keycloakId, "TUTEUR");
+        } catch (Exception e) {
+            log.error("Erreur assignation rôle TUTEUR dans Keycloak : {}", e.getMessage());
+        }
+
+        Tuteur tuteur = new Tuteur();
+        tuteur.setKeycloakId(keycloakId);
+        tuteur.setNom(request.getLastName());
+        tuteur.setPrenom(request.getFirstName());
+        tuteur.setEmail(request.getEmail());
+        tuteur.setTelephone1(request.getTelephone());
+        tuteur.setActif(true);
+        tuteurRepository.save(tuteur);
+
+        log.info("Parent d'élève enregistré avec succès : {}", request.getEmail());
     }
 
     @Transactional
@@ -80,20 +115,17 @@ public class AuthService {
         Utilisateur user = utilisateurRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-        log.info("Mise à jour des profils pour l'utilisateur {} : {}", user.getLogin(), profilCodes);
+        log.info("Mise à jour des profils pour {} : {}", user.getLogin(), profilCodes);
 
-        // 1. Supprimer les anciens profils
         profilUtilisateurRepository.deleteByUtilisateurId(user.getId());
 
-        // 2. Ajouter les nouveaux profils
         for (String code : profilCodes) {
             profilRepository.findByCode(code).ifPresent(profil -> {
                 assignProfilToUser(user, profil);
-                // Optionnel : synchroniser avec Keycloak si nécessaire
                 try {
                     keycloakAdminService.assignRoleToUser(user.getKeycloack(), profil.getCode());
                 } catch (Exception e) {
-                    log.error("Erreur lors de l'assignation du rôle {} dans Keycloak : {}", code, e.getMessage());
+                    log.error("Erreur assignation rôle {} dans Keycloak : {}", code, e.getMessage());
                 }
             });
         }
@@ -103,9 +135,9 @@ public class AuthService {
         ProfilUtilisateur pu = new ProfilUtilisateur();
         pu.setUtilisateurId(user.getId());
         pu.setProfilId(profil.getId());
-        pu.setCode(user.getLogin() + "_" + profil.getCode() + "_" + System.currentTimeMillis()); // Rendre le code unique
+        pu.setCode(user.getLogin() + "_" + profil.getCode() + "_" + System.currentTimeMillis());
         profilUtilisateurRepository.save(pu);
-        log.info("Profil {} attribué à l'utilisateur {}", profil.getCode(), user.getLogin());
+        log.info("Profil {} attribué à {}", profil.getCode(), user.getLogin());
     }
 
     public List<Utilisateur> getAllUsers() {

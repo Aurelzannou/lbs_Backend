@@ -12,5 +12,5 @@ public record MenuResponse(
         Integer ordre,
         String titre,
         Long menuEnfantId,
-        List<MenuResponse> listeMenuEnfant
-) {}
+        List<MenuResponse> listeMenuEnfant,
+        List<Long> profilIds) {}

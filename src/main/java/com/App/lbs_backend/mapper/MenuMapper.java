@@ -6,6 +6,7 @@ import com.App.lbs_backend.entity.Menu;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class MenuMapper implements Mapper<Menu, MenuResponse> {
@@ -22,6 +23,12 @@ public class MenuMapper implements Mapper<Menu, MenuResponse> {
                     .toList();
         }
 
+        List<Long> profilIds = entity.getListeProfilMenu() == null ? List.of() :
+                entity.getListeProfilMenu().stream()
+                        .filter(pm -> pm.getProfilId() != null)
+                        .map(pm -> pm.getProfilId())
+                        .collect(Collectors.toList());
+
         return new MenuResponse(
                 entity.getId(),
                 entity.getUuid(),
@@ -32,7 +39,8 @@ public class MenuMapper implements Mapper<Menu, MenuResponse> {
                 entity.getOrdre(),
                 entity.getTitre(),
                 entity.getMenuEnfantId(),
-                enfants
+                enfants,
+                profilIds
         );
     }
     public void updateEntity(Menu entity, MenuRequest request) {

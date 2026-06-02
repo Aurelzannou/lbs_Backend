@@ -8,8 +8,11 @@ import lombok.Data;
 @Data
 public class RegisterRequest {
 
-    @NotBlank(message = "Le nom d'utilisateur est obligatoire")
-    private String username;
+    @NotBlank(message = "Le prénom est obligatoire")
+    private String firstName;
+
+    @NotBlank(message = "Le nom est obligatoire")
+    private String lastName;
 
     @NotBlank(message = "L'email est obligatoire")
     @Email(message = "Format d'email invalide")
@@ -19,11 +22,15 @@ public class RegisterRequest {
     @Size(min = 6, message = "Le mot de passe doit contenir au moins 6 caractères")
     private String password;
 
-    @NotBlank(message = "Le prénom est obligatoire")
-    private String firstName;
+    // "ADMIN" ou "PARENT" — détermine le type de compte à créer
+    private String userType;
 
-    @NotBlank(message = "Le nom est obligatoire")
-    private String lastName;
+    // Requis uniquement pour ADMIN (identifiant de connexion)
+    private String username;
 
+    // Profil optionnel pour ADMIN (défaut : LECTEUR)
     private String role;
+
+    // Requis uniquement pour PARENT
+    private String telephone;
 }
