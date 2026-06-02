@@ -5,7 +5,7 @@ import com.App.lbs_backend.core.MasterController;
 import com.App.lbs_backend.dto.request.DossierEleveRequest;
 import com.App.lbs_backend.dto.response.DossierEleveResponse;
 import com.App.lbs_backend.entity.DossierEleve;
-import com.App.lbs_backend.service.ReportService;
+import com.App.lbs_backend.core.utils.ReportService;
 import com.App.lbs_backend.service.scolarite.DossierEleveService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -77,13 +77,16 @@ public class DossierEleveController extends MasterController<DossierEleve, Dossi
         params.put("statut",           dossier.getStatutLibelle() != null ? dossier.getStatutLibelle() : "—");
         params.put("dateDebut",        dossier.getDateDebut() != null ? dossier.getDateDebut().toString() : "—");
 
-        byte[] pdf = reportService.generatePdf("fiche-inscription", params, null);
-
-        return ResponseEntity.ok()
-            .header(HttpHeaders.CONTENT_DISPOSITION,
-                    "attachment; filename=\"fiche-inscription-" + (dossier.getNumero() != null ? dossier.getNumero() : uuid) + ".pdf\"")
-            .contentType(MediaType.APPLICATION_PDF)
-            .body(pdf);
+        try {
+            byte[] pdf = reportService.generatePdfReport("fiche-inscription", params, null);
+            return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"fiche-inscription-" + (dossier.getNumero() != null ? dossier.getNumero() : uuid) + ".pdf\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     private void mapFormToEntity(DossierEleveRequest form, DossierEleve dossier) {

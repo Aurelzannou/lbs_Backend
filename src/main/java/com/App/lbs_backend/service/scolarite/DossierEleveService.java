@@ -1,7 +1,7 @@
 package com.App.lbs_backend.service.scolarite;
 
 import com.App.lbs_backend.core.AbstractBaseService;
-import com.App.lbs_backend.core.BaseRepository;
+import com.App.lbs_backend.repository.BaseRepository;
 import com.App.lbs_backend.dto.response.DossierEleveResponse;
 import com.App.lbs_backend.entity.DossierEleve;
 import com.App.lbs_backend.entity.Eleve;
