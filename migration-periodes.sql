@@ -1,10 +1,10 @@
--- Migration : création des tables de périodes d'inscription et de rentrée
+-- Migration : création de la table des périodes d'inscription
 -- À exécuter une seule fois sur la base de données
 
 CREATE TABLE IF NOT EXISTS lbs.lbs_periode_inscription (
-    id                    BIGSERIAL PRIMARY KEY,
-    lbs_pins_uuid         VARCHAR(50)  NOT NULL UNIQUE,
-    lbs_pins_libelle      VARCHAR(150),
+    id                         BIGSERIAL PRIMARY KEY,
+    lbs_pins_uuid              VARCHAR(50)  NOT NULL UNIQUE,
+    lbs_pins_libelle           VARCHAR(150),
     lbs_pins_annee_scolaire_id BIGINT NOT NULL REFERENCES lbs.lbs_annee_scolaire(id),
     lbs_pins_date_ouverture    DATE NOT NULL,
     lbs_pins_date_cloture      DATE NOT NULL,
@@ -13,14 +13,7 @@ CREATE TABLE IF NOT EXISTS lbs.lbs_periode_inscription (
     lbs_pins_modifier_par      VARCHAR(100)
 );
 
-CREATE TABLE IF NOT EXISTS lbs.lbs_periode_rentree (
-    id                    BIGSERIAL PRIMARY KEY,
-    lbs_pren_uuid         VARCHAR(50)  NOT NULL UNIQUE,
-    lbs_pren_libelle      VARCHAR(150),
-    lbs_pren_annee_scolaire_id BIGINT NOT NULL REFERENCES lbs.lbs_annee_scolaire(id),
-    lbs_pren_date_ouverture    DATE NOT NULL,
-    lbs_pren_date_cloture      DATE NOT NULL,
-    lbs_pren_actif             BOOLEAN DEFAULT TRUE,
-    lbs_pren_modifier_le       TIMESTAMP,
-    lbs_pren_modifier_par      VARCHAR(100)
-);
+-- Fix pre-existant : cast de la colonne souffrant en boolean
+ALTER TABLE lbs.lbs_eleve
+  ALTER COLUMN lbs_elev_souffrant TYPE boolean
+  USING lbs_elev_souffrant::boolean;

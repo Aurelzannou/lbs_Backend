@@ -64,7 +64,6 @@ public class InitialDataLoader implements CommandLineRunner {
         createOrUpdateSubMenu("NIVEAUX", "Niveaux Scolaires", "Gestion des niveaux", "layers-outline", "/referentiel/niveaux", 1, refGroup, admin);
         createOrUpdateSubMenu("ANNEE_SCOLAIRE", "Années Scolaires", "Gestion des années scolaires", "calendar-outline", "/referentiel/annees-scolaires", 3, refGroup, admin);
         createOrUpdateSubMenu("PERIODE_INSCRIPTION", "Périodes d'inscription", "Gestion des périodes d'inscription", "calendar-check-outline", "/referentiel/periodes-inscription", 4, refGroup, admin);
-        createOrUpdateSubMenu("PERIODE_RENTREE", "Périodes de rentrée", "Gestion des périodes de rentrée", "school-outline", "/referentiel/periodes-rentree", 5, refGroup, admin);
 
         // Scolarité (Parent)
         Menu scolariteGroup = createOrUpdateMenu("SCOLARITE", "Scolarité", "Gestion scolaire", "book-open-outline", null, 5, List.of(admin, lecteur));
