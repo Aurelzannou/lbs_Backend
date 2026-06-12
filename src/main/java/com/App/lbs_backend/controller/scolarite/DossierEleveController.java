@@ -50,13 +50,6 @@ public class DossierEleveController extends MasterController<DossierEleve, Dossi
         return dossierEleveService.toResponse(dossier.getId());
     }
 
-    @PutMapping("/{uuid}/statut")
-    public ResponseEntity<?> changerStatut(@PathVariable String uuid,
-                                           @RequestBody Map<String, String> body) {
-        DossierEleveResponse response = dossierEleveService.changerStatut(uuid, body.get("statut"));
-        return ResponseEntity.ok(response);
-    }
-
     @GetMapping("/tuteur/{tuteurId}")
     public ResponseEntity<List<DossierEleveResponse>> getByTuteur(@PathVariable Long tuteurId) {
         return ResponseEntity.ok(dossierEleveService.getByTuteurId(tuteurId));

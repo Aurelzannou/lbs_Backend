@@ -12,6 +12,6 @@ public interface DossierEleveRepository extends BaseRepository<DossierEleve> {
 
     List<DossierEleve> findByStatutId(Long statutId);
 
-    @Query("SELECT d FROM DossierEleve d JOIN Eleve e ON d.eleveId = e.id WHERE e.tuteurId = :tuteurId ORDER BY d.id DESC")
+    @Query("SELECT d FROM DossierEleve d JOIN d.eleve e WHERE e.tuteurId = :tuteurId ORDER BY d.id DESC")
     List<DossierEleve> findByTuteurId(@Param("tuteurId") Long tuteurId);
 }
