@@ -30,6 +30,7 @@ public class InscriptionController {
         // même si le frontend n'a pas pu charger le profil tuteur.
         if (request.getTuteurId() == null && jwt != null) {
             String email = jwt.getClaimAsString("email");
+            if (email == null) email = jwt.getClaimAsString("preferred_username");
             if (email != null) {
                 tuteurRepository.findByEmail(email)
                         .ifPresent(t -> request.setTuteurId(t.getId()));

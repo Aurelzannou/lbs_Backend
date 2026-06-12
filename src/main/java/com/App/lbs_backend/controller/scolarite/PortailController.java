@@ -29,6 +29,7 @@ public class PortailController {
     public ResponseEntity<?> getMe(@AuthenticationPrincipal Jwt jwt) {
         if (jwt == null) return ResponseEntity.notFound().build();
         String email = jwt.getClaimAsString("email");
+        if (email == null) email = jwt.getClaimAsString("preferred_username");
         if (email == null) return ResponseEntity.notFound().build();
 
         return tuteurRepository.findByEmail(email)

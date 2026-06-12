@@ -57,13 +57,20 @@ public class ValidationService {
      * Retourne les dossiers du tuteur identifié par son email (depuis le JWT).
      */
     public List<DossierEleveResponse> getMesDossiers(String email) {
+        log.info("[mes-dossiers] email extrait du JWT : '{}'", email);
         return tuteurRepository.findByEmail(email)
-                .map(tuteur -> dossierEleveRepository
-                        .findByTuteurId(tuteur.getId())
-                        .stream()
-                        .map(d -> dossierEleveService.mapper().toResponse(d))
-                        .collect(Collectors.toList()))
-                .orElse(Collections.emptyList());
+                .map(tuteur -> {
+                    log.info("[mes-dossiers] tuteur trouvé : id={} email={}", tuteur.getId(), tuteur.getEmail());
+                    List<DossierEleve> dossiers = dossierEleveRepository.findByTuteurId(tuteur.getId());
+                    log.info("[mes-dossiers] {} dossier(s) trouvé(s) pour tuteurId={}", dossiers.size(), tuteur.getId());
+                    return dossiers.stream()
+                            .map(d -> dossierEleveService.mapper().toResponse(d))
+                            .collect(Collectors.toList());
+                })
+                .orElseGet(() -> {
+                    log.warn("[mes-dossiers] aucun tuteur trouvé pour email='{}'", email);
+                    return Collections.emptyList();
+                });
     }
 
     // ─────────────────────────────────────────────────────────────────────────

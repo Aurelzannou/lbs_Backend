@@ -43,7 +43,9 @@ public class ValidationController {
     @GetMapping("/mes-dossiers")
     public ResponseEntity<?> getMesDossiers(@AuthenticationPrincipal Jwt jwt) {
         if (jwt == null) return ResponseEntity.ok(ApiResponse.apiSuccess("OK", Collections.emptyList(), httpRequest.getRequestURI()));
+        // preferred_username = email dans ce système (email utilisé comme username Keycloak)
         String email = jwt.getClaimAsString("email");
+        if (email == null) email = jwt.getClaimAsString("preferred_username");
         if (email == null) return ResponseEntity.ok(ApiResponse.apiSuccess("OK", Collections.emptyList(), httpRequest.getRequestURI()));
         List<DossierEleveResponse> dossiers = validationService.getMesDossiers(email);
         return ResponseEntity.ok(ApiResponse.apiSuccess("OK", dossiers, httpRequest.getRequestURI()));
