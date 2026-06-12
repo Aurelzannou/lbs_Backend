@@ -5,6 +5,7 @@ import com.App.lbs_backend.dto.response.DossierEleveResponse;
 import com.App.lbs_backend.entity.DossierEleve;
 import com.App.lbs_backend.entity.Eleve;
 import com.App.lbs_backend.repository.StatutInscriptionRepository;
+import com.App.lbs_backend.service.referentiel.PeriodeInscriptionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class InscriptionService {
     private final EleveService                eleveService;
     private final DossierEleveService         dossierEleveService;
     private final StatutInscriptionRepository statutRepository;
+    private final PeriodeInscriptionService   periodeInscriptionService;
 
     /**
      * Soumet une inscription complète :
@@ -31,6 +33,9 @@ public class InscriptionService {
     @Transactional
     public DossierEleveResponse soumettre(SoumettreInscriptionRequest request) {
         log.info("Soumission inscription — classe:{} année:{}", request.getClasseId(), request.getAnneeScolaireId());
+        if (request.getAnneeScolaireId() != null) {
+            periodeInscriptionService.validerPeriode(request.getAnneeScolaireId());
+        }
 
         Long eleveId = resolveEleveId(request);
 

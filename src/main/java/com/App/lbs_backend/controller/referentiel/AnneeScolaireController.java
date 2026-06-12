@@ -25,12 +25,7 @@ public class AnneeScolaireController extends MasterController<AnneeScolaire, Ann
     @Override
     protected AnneeScolaireResponse doCreate(AnneeScolaireRequest form) {
         AnneeScolaire entity = new AnneeScolaire();
-        entity.setCode(form.getCode());
-        entity.setLibelle(form.getLibelle());
-        entity.setDateDebut(form.getDateDebut());
-        entity.setDateFin(form.getDateFin());
-        entity.setActif(form.getActif());
-        
+        applyForm(entity, form);
         AnneeScolaire saved = anneeScolaireService.create(entity);
         return anneeScolaireService.toResponse(saved.getId());
     }
@@ -38,13 +33,16 @@ public class AnneeScolaireController extends MasterController<AnneeScolaire, Ann
     @Override
     protected AnneeScolaireResponse doUpdate(String uuid, AnneeScolaireRequest form) {
         AnneeScolaire entity = anneeScolaireService.findByUuid(uuid);
+        applyForm(entity, form);
+        anneeScolaireService.update(entity);
+        return anneeScolaireService.toResponse(entity.getId());
+    }
+
+    private void applyForm(AnneeScolaire entity, AnneeScolaireRequest form) {
         entity.setCode(form.getCode());
         entity.setLibelle(form.getLibelle());
         entity.setDateDebut(form.getDateDebut());
         entity.setDateFin(form.getDateFin());
         entity.setActif(form.getActif());
-        
-        anneeScolaireService.update(entity);
-        return anneeScolaireService.toResponse(entity.getId());
     }
 }
