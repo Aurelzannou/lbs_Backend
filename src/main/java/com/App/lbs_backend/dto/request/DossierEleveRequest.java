@@ -12,6 +12,13 @@ import java.time.LocalDate;
 public class DossierEleveRequest implements FormRequest {
     private String code;
     private Long eleveId;
+
+    // Champs pour créer l'élève à la volée (si eleveId absent)
+    private String nom;
+    private String prenom;
+    private String sexe;
+    private LocalDate dateNaissance;
+
     private Long classeId;
     private Long anneeScolaireId;
     private LocalDate dateDebut;

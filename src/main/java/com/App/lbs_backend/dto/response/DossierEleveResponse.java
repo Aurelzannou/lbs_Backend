@@ -18,6 +18,7 @@ public class DossierEleveResponse {
     private LocalDate dateDebut;
     private LocalDate dateFin;
     private Long statutId;
+    private String statutCode;
     private String statutLibelle;
     private Long etapeCouranteId;
     private String etapeCouranteLibelle;

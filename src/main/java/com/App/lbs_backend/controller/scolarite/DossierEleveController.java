@@ -5,8 +5,10 @@ import com.App.lbs_backend.core.MasterController;
 import com.App.lbs_backend.dto.request.DossierEleveRequest;
 import com.App.lbs_backend.dto.response.DossierEleveResponse;
 import com.App.lbs_backend.entity.DossierEleve;
+import com.App.lbs_backend.entity.Eleve;
 import com.App.lbs_backend.core.utils.ReportService;
 import com.App.lbs_backend.service.scolarite.DossierEleveService;
+import com.App.lbs_backend.service.scolarite.EleveService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -23,6 +25,7 @@ import java.util.Map;
 public class DossierEleveController extends MasterController<DossierEleve, DossierEleveResponse, DossierEleveRequest> {
 
     private final DossierEleveService dossierEleveService;
+    private final EleveService        eleveService;
     private final ReportService       reportService;
 
     @Override
@@ -32,9 +35,19 @@ public class DossierEleveController extends MasterController<DossierEleve, Dossi
 
     @Override
     protected DossierEleveResponse doCreate(DossierEleveRequest form) {
+        // Créer l'élève si les infos sont fournies sans eleveId
+        if (form.getEleveId() == null && form.getNom() != null) {
+            Eleve eleve = new Eleve();
+            eleve.setNom(form.getNom());
+            eleve.setPrenom(form.getPrenom());
+            eleve.setSexe(form.getSexe());
+            eleve.setDateNaissance(form.getDateNaissance());
+            Eleve saved = eleveService.create(eleve);
+            form.setEleveId(saved.getId());
+        }
+
         DossierEleve dossier = new DossierEleve();
         mapFormToEntity(form, dossier);
-        // Si aucun statut fourni, auto-set DEPOSE
         if (dossier.getStatutId() == null) {
             dossierEleveService.setStatutDepose(dossier);
         }

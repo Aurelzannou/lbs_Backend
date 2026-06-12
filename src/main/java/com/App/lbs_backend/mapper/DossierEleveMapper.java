@@ -27,7 +27,10 @@ public class DossierEleveMapper implements Mapper<DossierEleve, DossierEleveResp
         response.setDateDebut(entity.getDateDebut());
         response.setDateFin(entity.getDateFin());
         response.setStatutId(entity.getStatutId());
-        if (entity.getStatut() != null) response.setStatutLibelle(entity.getStatut().getLibelle());
+        if (entity.getStatut() != null) {
+            response.setStatutCode(entity.getStatut().getCode());
+            response.setStatutLibelle(entity.getStatut().getLibelle());
+        }
         response.setEtapeCouranteId(entity.getEtapeCouranteId());
         if (entity.getEtapeCourante() != null) response.setEtapeCouranteLibelle(entity.getEtapeCourante().getLibelle());
         response.setRemise(entity.getRemise());
