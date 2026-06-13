@@ -51,6 +51,10 @@ public class DossierEleveController extends MasterController<DossierEleve, Dossi
         if (dossier.getStatutId() == null) {
             dossierEleveService.setStatutDepose(dossier);
         }
+        // Générer le numéro de dossier
+        String numero = dossierEleveService.genererNumero(form.getNom(), form.getPrenom());
+        dossier.setNumero(numero);
+
         DossierEleve saved = dossierEleveService.create(dossier);
         return dossierEleveService.toResponse(saved.getId());
     }

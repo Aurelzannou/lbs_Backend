@@ -10,14 +10,13 @@ import com.App.lbs_backend.repository.DossierEleveRepository;
 import com.App.lbs_backend.repository.StatutInscriptionRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
  * Service CRUD pour les dossiers d'inscription.
- * Responsabilité unique : opérations de base sur l'entité DossierEleve.
- * La logique métier (accepter, refuser, notifier) est dans ValidationService.
- * L'orchestration de la soumission est dans InscriptionService.
+ * Gère aussi la génération du numéro de dossier (INS-ANNÉE-NOM3PRENOM1-SÉQUENCE).
  */
 @Service
 public class DossierEleveService extends AbstractBaseService<DossierEleve, DossierEleveResponse> {
@@ -47,10 +46,43 @@ public class DossierEleveService extends AbstractBaseService<DossierEleve, Dossi
                 .ifPresent(s -> dossier.setStatutId(s.getId()));
     }
 
+    /**
+     * Génère un numéro de dossier unique : INS-{ANNÉE}-{NOM3}{PRENOM1}-{SÉQUENCE 4 chiffres}
+     * Exemple : INS-2026-COMJ-0001
+     */
+    public String genererNumero(String nom, String prenom) {
+        int annee = LocalDate.now().getYear();
+        String trigramme = buildTrigramme(nom, prenom);
+        long count = dossierEleveRepository.countByAnnee(annee);
+        return "INS-" + annee + "-" + trigramme + "-" + String.format("%04d", count + 1);
+    }
+
     /** Retourne les dossiers d'un tuteur. */
     public List<DossierEleveResponse> getByTuteurId(Long tuteurId) {
         return dossierEleveRepository.findByTuteurId(tuteurId).stream()
                 .map(d -> mapper().toResponse(d))
                 .collect(Collectors.toList());
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private String buildTrigramme(String nom, String prenom) {
+        String n = normalize(nom);
+        String p = normalize(prenom);
+        String part1 = n.length() >= 3 ? n.substring(0, 3) : n;
+        String part2 = !p.isEmpty() ? p.substring(0, 1) : "";
+        return (part1 + part2).toUpperCase();
+    }
+
+    private String normalize(String s) {
+        if (s == null || s.isBlank()) return "X";
+        return s.trim()
+                .replaceAll("[^a-zA-ZÀ-ÿ]", "")
+                .replaceAll("[àáâãäå]", "a")
+                .replaceAll("[èéêë]",   "e")
+                .replaceAll("[ìíîï]",   "i")
+                .replaceAll("[òóôõö]",  "o")
+                .replaceAll("[ùúûü]",   "u")
+                .replaceAll("[ç]",      "c");
     }
 }

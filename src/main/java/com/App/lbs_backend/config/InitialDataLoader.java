@@ -69,6 +69,7 @@ public class InitialDataLoader implements CommandLineRunner {
         Menu scolariteGroup = createOrUpdateMenu("SCOLARITE", "Scolarité", "Gestion scolaire", "book-open-outline", null, 5, List.of(admin, lecteur));
         createOrUpdateSubMenu("ELEVES", "Élèves", "Gestion des élèves", "people-outline", "/scolarite/eleves", 1, scolariteGroup, admin);
         createOrUpdateSubMenu("INSCRIPTIONS", "Inscriptions", "Gestion des dossiers d'inscription", "file-text-outline", "/scolarite/inscriptions", 2, scolariteGroup, admin);
+        createOrUpdateSubMenu("VALIDATIONS", "Validations", "Validation des dossiers d'inscription", "checkmark-circle-outline", "/scolarite/validations", 3, scolariteGroup, admin);
 
         // 3. Statuts d'inscription
         log.info("Vérification des statuts d'inscription...");

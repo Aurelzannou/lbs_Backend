@@ -44,6 +44,7 @@ public class InscriptionService {
         dossier.setClasseId(request.getClasseId());
         dossier.setAnneeScolaireId(request.getAnneeScolaireId());
         dossierEleveService.setStatutDepose(dossier);
+        dossier.setNumero(dossierEleveService.genererNumero(request.getNom(), request.getPrenom()));
 
         DossierEleve saved = dossierEleveService.create(dossier);
         log.info("Dossier créé — uuid:{}", saved.getUuid());

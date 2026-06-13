@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/validation")
@@ -38,6 +39,16 @@ public class ValidationController {
     @PutMapping("/dossiers/{uuid}/inscrire")
     public ResponseEntity<?> inscrire(@PathVariable String uuid) {
         return ResponseEntity.ok(ApiResponse.apiSuccess("Élève inscrit", validationService.inscrire(uuid), httpRequest.getRequestURI()));
+    }
+
+    @GetMapping("/dossiers")
+    public ResponseEntity<?> listerDossiers(
+            @RequestParam(required = false) String statut,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        List<DossierEleveResponse> dossiers = validationService.listerDossiers(
+                Optional.ofNullable(statut), page, size);
+        return ResponseEntity.ok(ApiResponse.apiSuccess("OK", dossiers, httpRequest.getRequestURI()));
     }
 
     @GetMapping("/mes-dossiers")

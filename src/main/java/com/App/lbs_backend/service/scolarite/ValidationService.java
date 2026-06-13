@@ -15,8 +15,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -51,6 +55,23 @@ public class ValidationService {
     public DossierEleveResponse inscrire(String uuid) {
         log.info("Inscription confirmée pour le dossier : {}", uuid);
         return changerStatut(uuid, "INSCRIT");
+    }
+
+    /**
+     * Liste les dossiers pour l'écran de validation, filtrables par statut.
+     */
+    public List<DossierEleveResponse> listerDossiers(Optional<String> statutCode, int page, int size) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        List<DossierEleve> dossiers = statutCode
+                .filter(s -> !s.isBlank())
+                .map(s -> statutRepository.findByCode(s)
+                        .map(st -> dossierEleveRepository.findByStatutId(st.getId()))
+                        .orElse(Collections.emptyList()))
+                .orElseGet(() -> dossierEleveRepository.findAll(pageable).getContent());
+
+        return dossiers.stream()
+                .map(d -> dossierEleveService.mapper().toResponse(d))
+                .collect(Collectors.toList());
     }
 
     /**

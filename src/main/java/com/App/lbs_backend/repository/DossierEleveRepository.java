@@ -46,6 +46,10 @@ public interface DossierEleveRepository extends BaseRepository<DossierEleve> {
     @Query("SELECT d FROM DossierEleve d WHERE d.numero IN :codes")
     Page<DossierEleve> findByCodeIn(@Param("codes") java.util.Collection<String> codes, Pageable pageable);
 
+    @Query("SELECT COUNT(d) FROM DossierEleve d WHERE YEAR(d.dateDebut) = :annee")
+    long countByAnnee(@Param("annee") int annee);
+
+    @EntityGraph(attributePaths = {"eleve", "classe", "anneeScolaire", "statut", "etapeCourante", "typeOperation"})
     List<DossierEleve> findByStatutId(Long statutId);
 
     @EntityGraph(attributePaths = {"eleve", "classe", "anneeScolaire", "statut"})
