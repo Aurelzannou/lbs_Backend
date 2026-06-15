@@ -38,6 +38,7 @@ public class ValidationService {
     private final EleveRepository             eleveRepository;
     private final TuteurRepository            tuteurRepository;
     private final EmailService                emailService;
+    private final HistoriqueService           historiqueService;
 
     @Transactional
     public DossierEleveResponse accepter(String uuid) {
@@ -103,6 +104,7 @@ public class ValidationService {
         dossier.setStatutId(statut.getId());
         dossierEleveService.update(dossier);
 
+        historiqueService.enregistrer(dossier.getId(), statutCode, "admin", motif);
         envoyerNotification(dossier, statutCode, motif);
         return dossierEleveService.toResponse(dossier.getId());
     }

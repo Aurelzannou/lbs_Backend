@@ -70,6 +70,7 @@ public class InitialDataLoader implements CommandLineRunner {
         createOrUpdateSubMenu("ELEVES", "Élèves", "Gestion des élèves", "people-outline", "/scolarite/eleves", 1, scolariteGroup, admin);
         createOrUpdateSubMenu("INSCRIPTIONS", "Inscriptions", "Gestion des dossiers d'inscription", "file-text-outline", "/scolarite/inscriptions", 2, scolariteGroup, admin);
         createOrUpdateSubMenu("VALIDATIONS", "Validations", "Validation des dossiers d'inscription", "checkmark-circle-outline", "/scolarite/validations", 3, scolariteGroup, admin);
+        createOrUpdateSubMenu("CONFIRMATIONS", "Confirmations", "Confirmation des inscriptions", "person-done-outline", "/scolarite/confirmations", 4, scolariteGroup, admin);
 
         // 3. Statuts d'inscription
         log.info("Vérification des statuts d'inscription...");

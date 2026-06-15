@@ -56,6 +56,7 @@ public class DossierEleveController extends MasterController<DossierEleve, Dossi
         dossier.setNumero(numero);
 
         DossierEleve saved = dossierEleveService.create(dossier);
+        dossierEleveService.enregistrerDepot(saved);
         return dossierEleveService.toResponse(saved.getId());
     }
 

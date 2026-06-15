@@ -4,9 +4,11 @@ import com.App.lbs_backend.core.AbstractBaseService;
 import com.App.lbs_backend.repository.BaseRepository;
 import com.App.lbs_backend.dto.response.DossierEleveResponse;
 import com.App.lbs_backend.entity.DossierEleve;
+import com.App.lbs_backend.entity.HistoriqueDossier;
 import com.App.lbs_backend.mapper.DossierEleveMapper;
 import com.App.lbs_backend.mapper.Mapper;
 import com.App.lbs_backend.repository.DossierEleveRepository;
+import com.App.lbs_backend.repository.HistoriqueDossierRepository;
 import com.App.lbs_backend.repository.StatutInscriptionRepository;
 import org.springframework.stereotype.Service;
 
@@ -24,14 +26,17 @@ public class DossierEleveService extends AbstractBaseService<DossierEleve, Dossi
     private final DossierEleveRepository      dossierEleveRepository;
     private final DossierEleveMapper          dossierEleveMapper;
     private final StatutInscriptionRepository statutRepository;
+    private final HistoriqueDossierRepository historiqueRepository;
 
     public DossierEleveService(DossierEleveRepository dossierEleveRepository,
                                DossierEleveMapper dossierEleveMapper,
-                               StatutInscriptionRepository statutRepository) {
+                               StatutInscriptionRepository statutRepository,
+                               HistoriqueDossierRepository historiqueRepository) {
         super(DossierEleve.class);
         this.dossierEleveRepository = dossierEleveRepository;
         this.dossierEleveMapper     = dossierEleveMapper;
         this.statutRepository       = statutRepository;
+        this.historiqueRepository   = historiqueRepository;
     }
 
     @Override
@@ -40,10 +45,18 @@ public class DossierEleveService extends AbstractBaseService<DossierEleve, Dossi
     @Override
     public Mapper<DossierEleve, DossierEleveResponse> mapper() { return dossierEleveMapper; }
 
-    /** Auto-set du statut DEPOSE lors de la création d'un dossier. */
+    /** Auto-set du statut DEPOSE + enregistrement historique. */
     public void setStatutDepose(DossierEleve dossier) {
         statutRepository.findByCode("DEPOSE")
                 .ifPresent(s -> dossier.setStatutId(s.getId()));
+    }
+
+    public void enregistrerDepot(DossierEleve saved) {
+        HistoriqueDossier h = new HistoriqueDossier();
+        h.setDossierId(saved.getId());
+        h.setAction("DEPOSE");
+        h.setEffectuePar("système");
+        historiqueRepository.save(h);
     }
 
     /**
