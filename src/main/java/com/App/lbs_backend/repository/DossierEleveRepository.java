@@ -50,7 +50,40 @@ public interface DossierEleveRepository extends BaseRepository<DossierEleve> {
     long countByAnnee(@Param("annee") int annee);
 
     @EntityGraph(attributePaths = {"eleve", "classe", "anneeScolaire", "statut", "etapeCourante", "typeOperation"})
+    @Query("""
+        SELECT d FROM DossierEleve d
+        WHERE (:anneeId IS NULL OR d.anneeScolaireId = :anneeId)
+          AND (:filter IS NULL OR :filter = ''
+               OR lower(d.numero) LIKE lower(concat('%', :filter, '%'))
+               OR lower(d.eleve.nom) LIKE lower(concat('%', :filter, '%'))
+               OR lower(d.eleve.prenom) LIKE lower(concat('%', :filter, '%')))
+        ORDER BY d.id DESC
+        """)
+    org.springframework.data.domain.Page<DossierEleve> searchFiltered(
+        @Param("anneeId") Long anneeId,
+        @Param("filter")  String filter,
+        org.springframework.data.domain.Pageable pageable
+    );
+
+    @EntityGraph(attributePaths = {"eleve", "classe", "anneeScolaire", "statut", "etapeCourante", "typeOperation"})
     List<DossierEleve> findByStatutId(Long statutId);
+
+    @EntityGraph(attributePaths = {"eleve", "classe", "anneeScolaire", "statut"})
+    @Query("""
+        SELECT d FROM DossierEleve d
+        WHERE d.statut.id = :statutId
+          AND (:anneeId IS NULL OR d.anneeScolaireId = :anneeId)
+          AND (:filter IS NULL OR :filter = ''
+               OR lower(d.numero) LIKE lower(concat('%', :filter, '%'))
+               OR lower(d.eleve.nom) LIKE lower(concat('%', :filter, '%'))
+               OR lower(d.eleve.prenom) LIKE lower(concat('%', :filter, '%')))
+        ORDER BY d.id DESC
+        """)
+    List<DossierEleve> findByStatutIdFiltered(
+        @Param("statutId") Long statutId,
+        @Param("anneeId")  Long anneeId,
+        @Param("filter")   String filter
+    );
 
     @EntityGraph(attributePaths = {"eleve", "classe", "anneeScolaire", "statut"})
     @Query("SELECT d FROM DossierEleve d JOIN d.eleve e WHERE e.tuteurId = :tuteurId ORDER BY d.id DESC")

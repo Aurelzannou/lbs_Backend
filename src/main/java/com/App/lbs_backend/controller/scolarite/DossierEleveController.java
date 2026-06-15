@@ -2,6 +2,8 @@ package com.App.lbs_backend.controller.scolarite;
 
 import com.App.lbs_backend.core.AbstractBaseService;
 import com.App.lbs_backend.core.MasterController;
+import com.App.lbs_backend.core.http.response.ApiResponse;
+import com.App.lbs_backend.core.specs.PaginationCriteria;
 import com.App.lbs_backend.dto.request.DossierEleveRequest;
 import com.App.lbs_backend.dto.response.DossierEleveResponse;
 import com.App.lbs_backend.entity.DossierEleve;
@@ -10,6 +12,9 @@ import com.App.lbs_backend.core.utils.ReportService;
 import com.App.lbs_backend.service.scolarite.DossierEleveService;
 import com.App.lbs_backend.service.scolarite.EleveService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +36,20 @@ public class DossierEleveController extends MasterController<DossierEleve, Dossi
     @Override
     protected AbstractBaseService<DossierEleve, DossierEleveResponse> service() {
         return dossierEleveService;
+    }
+
+    @Override
+    @GetMapping
+    public ResponseEntity<?> list(PaginationCriteria criteria) {
+        int page      = criteria.page()   != null ? criteria.page() - 1 : 0;
+        int size      = criteria.size()   != null ? criteria.size()     : 10;
+        String filter = criteria.filter() != null ? criteria.filter()   : "";
+        String anneeIdParam = request.getParameter("anneeId");
+        Long anneeId  = anneeIdParam != null ? Long.parseLong(anneeIdParam) : null;
+        PageRequest pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        Page<DossierEleve> result = dossierEleveService.searchFiltered(anneeId, filter, pageable);
+        return ResponseEntity.ok(ApiResponse.apiSuccess("OK",
+            dossierEleveService.toPageResponse(result), request.getRequestURI()));
     }
 
     @Override

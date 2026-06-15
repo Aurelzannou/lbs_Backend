@@ -59,16 +59,17 @@ public class ValidationService {
     }
 
     /**
-     * Liste les dossiers pour l'écran de validation, filtrables par statut.
+     * Liste les dossiers filtrés par statut, année scolaire et recherche texte.
      */
-    public List<DossierEleveResponse> listerDossiers(Optional<String> statutCode, int page, int size) {
-        PageRequest pageable = PageRequest.of(page, size, Sort.by("id").descending());
+    public List<DossierEleveResponse> listerDossiers(Optional<String> statutCode, Long anneeId, String filter) {
         List<DossierEleve> dossiers = statutCode
                 .filter(s -> !s.isBlank())
-                .map(s -> statutRepository.findByCode(s)
-                        .map(st -> dossierEleveRepository.findByStatutId(st.getId()))
-                        .orElse(Collections.emptyList()))
-                .orElseGet(() -> dossierEleveRepository.findAll(pageable).getContent());
+                .flatMap(s -> statutRepository.findByCode(s))
+                .map(st -> dossierEleveRepository.findByStatutIdFiltered(
+                        st.getId(),
+                        anneeId,
+                        (filter != null && !filter.isBlank()) ? filter : null))
+                .orElse(Collections.emptyList());
 
         return dossiers.stream()
                 .map(d -> dossierEleveService.mapper().toResponse(d))

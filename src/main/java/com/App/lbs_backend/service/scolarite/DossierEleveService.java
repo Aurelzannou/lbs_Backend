@@ -1,6 +1,8 @@
 package com.App.lbs_backend.service.scolarite;
 
 import com.App.lbs_backend.core.AbstractBaseService;
+import com.App.lbs_backend.core.http.response.PageResponse;
+import com.App.lbs_backend.core.http.response.MetaResponse;
 import com.App.lbs_backend.repository.BaseRepository;
 import com.App.lbs_backend.dto.response.DossierEleveResponse;
 import com.App.lbs_backend.entity.DossierEleve;
@@ -10,6 +12,8 @@ import com.App.lbs_backend.mapper.Mapper;
 import com.App.lbs_backend.repository.DossierEleveRepository;
 import com.App.lbs_backend.repository.HistoriqueDossierRepository;
 import com.App.lbs_backend.repository.StatutInscriptionRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -68,6 +72,19 @@ public class DossierEleveService extends AbstractBaseService<DossierEleve, Dossi
         String trigramme = buildTrigramme(nom, prenom);
         long count = dossierEleveRepository.countByAnnee(annee);
         return "INS-" + annee + "-" + trigramme + "-" + String.format("%04d", count + 1);
+    }
+
+    /** Recherche paginée avec filtre texte + année. */
+    public Page<DossierEleve> searchFiltered(Long anneeId, String filter, Pageable pageable) {
+        return dossierEleveRepository.searchFiltered(anneeId, filter, pageable);
+    }
+
+    /** Convertit une Page JPA en PageResponse DTO. */
+    public PageResponse<DossierEleveResponse> toPageResponse(Page<DossierEleve> page) {
+        List<DossierEleveResponse> items = page.getContent().stream()
+                .map(d -> mapper().toResponse(d))
+                .collect(Collectors.toList());
+        return new PageResponse<>(items, MetaResponse.ofPage(page));
     }
 
     /** Retourne les dossiers d'un tuteur. */

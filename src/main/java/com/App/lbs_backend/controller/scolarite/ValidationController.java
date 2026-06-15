@@ -44,10 +44,10 @@ public class ValidationController {
     @GetMapping("/dossiers")
     public ResponseEntity<?> listerDossiers(
             @RequestParam(required = false) String statut,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(required = false) Long anneeId,
+            @RequestParam(required = false) String filter) {
         List<DossierEleveResponse> dossiers = validationService.listerDossiers(
-                Optional.ofNullable(statut), page, size);
+                Optional.ofNullable(statut), anneeId, filter);
         return ResponseEntity.ok(ApiResponse.apiSuccess("OK", dossiers, httpRequest.getRequestURI()));
     }
 
