@@ -41,7 +41,7 @@ public class DossierEleveController extends MasterController<DossierEleve, Dossi
     @Override
     @GetMapping
     public ResponseEntity<?> list(PaginationCriteria criteria) {
-        int page      = criteria.page()   != null ? criteria.page() - 1 : 0;
+        int page      = criteria.page()   != null ? Math.max(criteria.page(), 0) : 0;
         int size      = criteria.size()   != null ? criteria.size()     : 10;
         String filter = criteria.filter() != null ? criteria.filter()   : "";
         String anneeIdParam = request.getParameter("anneeId");
