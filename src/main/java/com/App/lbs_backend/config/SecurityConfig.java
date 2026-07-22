@@ -41,9 +41,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/me").authenticated()
                 // Endpoints publics (Auth, Inscription, Docs)
                 .requestMatchers(
-                    "/api/auth/**", 
-                    "/api/portail/auth/**", 
-                    "/v3/api-docs/**", 
+                    "/api/auth/**",
+                    "/v3/api-docs/**",
                     "/swagger-ui/**", 
                     "/swagger-ui.html", 
                     "/api/files/download/**", 

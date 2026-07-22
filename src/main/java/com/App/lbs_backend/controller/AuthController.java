@@ -2,6 +2,7 @@ package com.App.lbs_backend.controller;
 
 import com.App.lbs_backend.dto.response.UtilisateurResponse;
 import com.App.lbs_backend.mapper.UtilisateurMapper;
+import com.App.lbs_backend.service.KeycloakAdminService;
 import com.App.lbs_backend.service.UtilisateurSyncService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -9,10 +10,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.App.lbs_backend.dto.request.RegisterRequest;
 import com.App.lbs_backend.service.AuthService;
 import jakarta.validation.Valid;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -22,6 +26,7 @@ public class AuthController {
     private final UtilisateurSyncService utilisateurSyncService;
     private final UtilisateurMapper utilisateurMapper;
     private final AuthService authService;
+    private final KeycloakAdminService keycloakAdminService;
 
     /**
      * Endpoint permettant à l'application Front-End de récupérer les 
@@ -40,6 +45,17 @@ public class AuthController {
     public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest request) {
         authService.register(request);
         return ResponseEntity.ok("Inscription réussie. Vous pouvez maintenant vous connecter.");
+    }
+
+    /**
+     * Indique si un compte a déjà configuré l'OTP (TOTP), pour permettre au front de savoir
+     * s'il doit demander un code de vérification après un premier échec de connexion.
+     * N'expose aucune information sur l'existence du mot de passe — uniquement sur l'OTP.
+     */
+    @GetMapping("/otp-required")
+    public ResponseEntity<Map<String, Boolean>> isOtpRequired(@RequestParam String username) {
+        boolean otpRequired = keycloakAdminService.hasOtpConfigured(username);
+        return ResponseEntity.ok(Map.of("otpRequired", otpRequired));
     }
 
     /**

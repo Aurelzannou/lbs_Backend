@@ -3,14 +3,18 @@ package com.App.lbs_backend.config;
 import com.App.lbs_backend.entity.Menu;
 import com.App.lbs_backend.entity.Profil;
 import com.App.lbs_backend.entity.ProfilMenu;
+import com.App.lbs_backend.entity.ProfilUtilisateur;
 import com.App.lbs_backend.entity.StatutInscription;
 import com.App.lbs_backend.entity.Utilisateur;
 import com.App.lbs_backend.repository.MenuRepository;
 import com.App.lbs_backend.repository.ProfilRepository;
+import com.App.lbs_backend.repository.ProfilUtilisateurRepository;
 import com.App.lbs_backend.repository.StatutInscriptionRepository;
+import com.App.lbs_backend.repository.UtilisateurRepository;
 import com.App.lbs_backend.service.KeycloakAdminService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +31,17 @@ public class InitialDataLoader implements CommandLineRunner {
     private final MenuRepository menuRepository;
     private final StatutInscriptionRepository statutInscriptionRepository;
     private final KeycloakAdminService keycloakAdminService;
+    private final UtilisateurRepository utilisateurRepository;
+    private final ProfilUtilisateurRepository profilUtilisateurRepository;
+
+    @Value("${superadmin.username}")
+    private String superAdminUsername;
+
+    @Value("${superadmin.email}")
+    private String superAdminEmail;
+
+    @Value("${superadmin.password}")
+    private String superAdminPassword;
 
     @Override
     @Transactional
@@ -41,6 +56,10 @@ public class InitialDataLoader implements CommandLineRunner {
         // 1. Initialisation des Profils (DB locale)
         Profil admin = createProfilIfNotFound("ADMIN", "Administrateur Système");
         Profil lecteur = createProfilIfNotFound("LECTEUR", "Lecteur (Consultation)");
+        createProfilIfNotFound("TUTEUR", "Parent / Tuteur");
+
+        // 1bis. Compte super-admin par défaut, pour pouvoir administrer dès le premier démarrage
+        createSuperAdminIfNotFound(admin);
 
         // 2. Initialisation des Menus
         log.info("Vérification des menus par défaut...");
@@ -92,6 +111,38 @@ public class InitialDataLoader implements CommandLineRunner {
             statut.setLibelle(libelle);
             return statutInscriptionRepository.save(statut);
         });
+    }
+
+    private void createSuperAdminIfNotFound(Profil adminProfil) {
+        if (utilisateurRepository.existsByLogin(superAdminUsername)) {
+            return;
+        }
+        log.warn("Création du compte super-admin par défaut '{}' — pensez à changer son mot de passe en production.", superAdminUsername);
+
+        String keycloakId = keycloakAdminService.createUser(
+                superAdminUsername, superAdminEmail, "Super", "Admin", superAdminPassword);
+
+        Utilisateur user = new Utilisateur();
+        user.setKeycloack(keycloakId);
+        user.setLogin(superAdminUsername);
+        user.setEmail(superAdminEmail);
+        user.setNom("Admin");
+        user.setPrenom("Super");
+        utilisateurRepository.save(user);
+
+        ProfilUtilisateur pu = new ProfilUtilisateur();
+        pu.setUtilisateurId(user.getId());
+        pu.setProfilId(adminProfil.getId());
+        pu.setCode(user.getLogin() + "_" + adminProfil.getCode() + "_" + System.currentTimeMillis());
+        profilUtilisateurRepository.save(pu);
+
+        try {
+            keycloakAdminService.assignRoleToUser(keycloakId, "ADMIN");
+        } catch (Exception e) {
+            log.error("Erreur assignation rôle ADMIN au super-admin : {}", e.getMessage());
+        }
+
+        log.info("Compte super-admin créé : login='{}'", superAdminUsername);
     }
 
     private Profil createProfilIfNotFound(String code, String libelle) {

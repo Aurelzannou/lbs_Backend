@@ -78,7 +78,20 @@ services:
     volumes:
       - minio_data:/data
 
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: lbs-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-lbs_user}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-lbs_password}
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Console d'administration
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
 volumes:
   postgres_data:
   keycloak_postgres_data:
   minio_data:
+  rabbitmq_data:

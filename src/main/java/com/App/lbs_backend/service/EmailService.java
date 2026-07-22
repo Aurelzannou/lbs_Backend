@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
@@ -27,7 +26,6 @@ public class EmailService {
     @Value("${app.portal.url:http://localhost:4200/portail/dashboard}")
     private String portalUrl;
 
-    @Async
     public void sendDossierAccepte(String toEmail, String tuteurNom, String tuteurPrenom,
                                    String eleveNom, String elevePrenom,
                                    String classe, String anneeScolaire, String numeroDossier) {
@@ -48,7 +46,6 @@ public class EmailService {
              ctx);
     }
 
-    @Async
     public void sendDossierRefuse(String toEmail, String tuteurNom, String tuteurPrenom,
                                   String eleveNom, String elevePrenom,
                                   String classe, String anneeScolaire,

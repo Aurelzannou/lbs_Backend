@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -122,6 +123,31 @@ public class KeycloakAdminService {
         } catch (Exception e) {
             log.error("Exception lors de la création de l'utilisateur dans Keycloak: ", e);
             throw new RuntimeException("Erreur de synchronisation Keycloak", e);
+        }
+    }
+
+    /**
+     * Indique si l'utilisateur (identifié par son login Keycloak — username ou email selon le
+     * type de compte) a déjà configuré un second facteur OTP (TOTP). Utilisé pour désambiguïser
+     * côté connexion entre "mot de passe invalide" et "code OTP requis".
+     *
+     * @param username Le login Keycloak de l'utilisateur (username pour un admin, email pour un tuteur)
+     * @return true si un credential de type OTP est configuré, false si l'utilisateur n'existe pas
+     *         ou n'a pas encore activé l'OTP.
+     */
+    public boolean hasOtpConfigured(String username) {
+        try {
+            UsersResource usersResource = keycloak.realm(targetRealm).users();
+            List<UserRepresentation> matches = usersResource.search(username, true);
+            if (matches.isEmpty()) {
+                return false;
+            }
+            String userId = matches.get(0).getId();
+            List<CredentialRepresentation> credentials = usersResource.get(userId).credentials();
+            return credentials.stream().anyMatch(c -> "otp".equals(c.getType()));
+        } catch (Exception e) {
+            log.error("Erreur lors de la vérification OTP pour {} : {}", username, e.getMessage());
+            return false;
         }
     }
 }

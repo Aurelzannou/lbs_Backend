@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
+
+      # `mvn test`/`verify` nécessitent une vraie base Postgres/Keycloak (LbsBackendApplicationTests
+      # charge le contexte Spring complet) — non configuré ici. On valide la compilation pour l'instant ;
+      # brancher des services de test (Testcontainers ou conteneurs GitHub Actions) est un suivi séparé.
+      - run: mvn -B compile

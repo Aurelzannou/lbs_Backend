@@ -1,5 +1,7 @@
 package com.App.lbs_backend.service.scolarite;
 
+import com.App.lbs_backend.config.RabbitMQConfig;
+import com.App.lbs_backend.dto.message.DossierNotificationMessage;
 import com.App.lbs_backend.dto.response.DossierEleveResponse;
 import com.App.lbs_backend.entity.DossierEleve;
 import com.App.lbs_backend.entity.Eleve;
@@ -9,9 +11,9 @@ import com.App.lbs_backend.repository.DossierEleveRepository;
 import com.App.lbs_backend.repository.EleveRepository;
 import com.App.lbs_backend.repository.StatutInscriptionRepository;
 import com.App.lbs_backend.repository.TuteurRepository;
-import com.App.lbs_backend.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,7 +39,7 @@ public class ValidationService {
     private final StatutInscriptionRepository statutRepository;
     private final EleveRepository             eleveRepository;
     private final TuteurRepository            tuteurRepository;
-    private final EmailService                emailService;
+    private final RabbitTemplate              rabbitTemplate;
     private final HistoriqueService           historiqueService;
 
     @Transactional
@@ -127,15 +129,12 @@ public class ValidationService {
             String annee  = dossier.getAnneeScolaire() != null ? dossier.getAnneeScolaire().getLibelle() : "—";
             String numero = dossier.getNumero() != null ? dossier.getNumero() : "—";
 
-            if ("ACCEPTE".equals(statutCode)) {
-                emailService.sendDossierAccepte(tuteur.getEmail(),
-                        tuteur.getNom(), tuteur.getPrenom(),
-                        eleve.getNom(), eleve.getPrenom(), classe, annee, numero);
-            } else {
-                emailService.sendDossierRefuse(tuteur.getEmail(),
-                        tuteur.getNom(), tuteur.getPrenom(),
-                        eleve.getNom(), eleve.getPrenom(), classe, annee, numero, motif);
-            }
+            DossierNotificationMessage message = new DossierNotificationMessage(
+                    statutCode, tuteur.getEmail(), tuteur.getNom(), tuteur.getPrenom(),
+                    eleve.getNom(), eleve.getPrenom(), classe, annee, numero, motif);
+
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.NOTIFICATION_EXCHANGE, RabbitMQConfig.EMAIL_ROUTING_KEY, message);
         } catch (Exception e) {
             log.error("Erreur notification email dossier {} : {}", dossier.getUuid(), e.getMessage());
         }
