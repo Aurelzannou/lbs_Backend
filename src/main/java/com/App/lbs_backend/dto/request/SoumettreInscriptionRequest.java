@@ -14,6 +14,8 @@ public class SoumettreInscriptionRequest {
     private String prenom;
     private String sexe;
     private LocalDate dateNaissance;
+    private Boolean souffrant;
+    private String provenance;
 
     // Dossier
     private Long classeId;

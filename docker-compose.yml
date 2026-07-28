@@ -59,11 +59,11 @@ services:
       KC_DB_USERNAME: keycloak_user
       KC_DB_PASSWORD: keycloak_password
     ports:
-      - "8080:8080"
+      - "8083:8080"    # 8080 déjà utilisé par un autre projet sur cette machine
     depends_on:
       - keycloak-postgres
-#  Admin Console → http://localhost:8080
-#  Dans ton app Spring Boot → http://keycloak:8080 (nom du conteneur)
+#  Admin Console → http://localhost:8083
+#  Dans ton app Spring Boot → http://keycloak:8080 (nom du conteneur, port interne inchangé)
 
   minio:
     image: minio/minio:latest
@@ -73,8 +73,8 @@ services:
       MINIO_ROOT_PASSWORD: minioadmin
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9002:9000"    # 9000 déjà utilisé par un autre projet sur cette machine
+      - "9003:9001"
     volumes:
       - minio_data:/data
 
@@ -85,8 +85,8 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-lbs_user}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-lbs_password}
     ports:
-      - "5672:5672"    # AMQP
-      - "15672:15672"  # Console d'administration
+      - "5673:5672"    # AMQP (5672 déjà utilisé par un autre projet sur cette machine)
+      - "15673:15672"  # Console d'administration
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 

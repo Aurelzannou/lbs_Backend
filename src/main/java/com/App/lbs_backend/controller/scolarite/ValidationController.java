@@ -36,18 +36,14 @@ public class ValidationController {
         return ResponseEntity.ok(ApiResponse.apiSuccess("Dossier refusé", validationService.refuser(uuid, motif), httpRequest.getRequestURI()));
     }
 
-    @PutMapping("/dossiers/{uuid}/inscrire")
-    public ResponseEntity<?> inscrire(@PathVariable String uuid) {
-        return ResponseEntity.ok(ApiResponse.apiSuccess("Élève inscrit", validationService.inscrire(uuid), httpRequest.getRequestURI()));
-    }
-
     @GetMapping("/dossiers")
     public ResponseEntity<?> listerDossiers(
             @RequestParam(required = false) String statut,
             @RequestParam(required = false) Long anneeId,
+            @RequestParam(required = false) Long classeId,
             @RequestParam(required = false) String filter) {
         List<DossierEleveResponse> dossiers = validationService.listerDossiers(
-                Optional.ofNullable(statut), anneeId, filter);
+                Optional.ofNullable(statut), anneeId, classeId, filter);
         return ResponseEntity.ok(ApiResponse.apiSuccess("OK", dossiers, httpRequest.getRequestURI()));
     }
 

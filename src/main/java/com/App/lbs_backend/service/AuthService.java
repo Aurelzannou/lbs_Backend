@@ -29,7 +29,7 @@ public class AuthService {
 
     /**
      * Inscription publique : crée toujours un compte TUTEUR (Tuteur + Utilisateur compagnon).
-     * La création de comptes ADMIN/LECTEUR se fait exclusivement via l'attribution de profils
+     * La création de comptes ADMIN se fait exclusivement via l'attribution de profils
      * par un administrateur déjà authentifié (voir updateUserProfils), jamais via cet endpoint public.
      */
     @Transactional

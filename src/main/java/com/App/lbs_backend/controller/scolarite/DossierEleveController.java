@@ -54,19 +54,22 @@ public class DossierEleveController extends MasterController<DossierEleve, Dossi
 
     @Override
     protected DossierEleveResponse doCreate(DossierEleveRequest form) {
-        // Créer l'élève si les infos sont fournies sans eleveId
-        if (form.getEleveId() == null && form.getNom() != null) {
-            Eleve eleve = new Eleve();
-            eleve.setNom(form.getNom());
-            eleve.setPrenom(form.getPrenom());
-            eleve.setSexe(form.getSexe());
-            eleve.setDateNaissance(form.getDateNaissance());
-            Eleve saved = eleveService.create(eleve);
-            form.setEleveId(saved.getId());
-        }
-
         DossierEleve dossier = new DossierEleve();
         mapFormToEntity(form, dossier);
+
+        // L'Eleve n'est créé qu'à l'acceptation du dossier (voir ValidationService.accepter()).
+        // Si un élève existant est sélectionné, on recopie son identité pour un affichage
+        // cohérent dès le dépôt ; sinon on garde directement les champs saisis dans le formulaire.
+        if (form.getEleveId() != null) {
+            Eleve existant = eleveService.findById(form.getEleveId());
+            dossier.setNom(existant.getNom());
+            dossier.setPrenom(existant.getPrenom());
+            dossier.setSexe(existant.getSexe());
+            dossier.setDateNaissance(existant.getDateNaissance());
+            dossier.setSouffrant(existant.getSouffrant());
+            dossier.setProvenance(existant.getProvenance());
+        }
+
         if (dossier.getStatutId() == null) {
             dossierEleveService.setStatutDepose(dossier);
         }
@@ -122,6 +125,12 @@ public class DossierEleveController extends MasterController<DossierEleve, Dossi
     private void mapFormToEntity(DossierEleveRequest form, DossierEleve dossier) {
         dossier.setCode(form.getCode());
         dossier.setEleveId(form.getEleveId());
+        dossier.setNom(form.getNom());
+        dossier.setPrenom(form.getPrenom());
+        dossier.setSexe(form.getSexe());
+        dossier.setDateNaissance(form.getDateNaissance());
+        dossier.setSouffrant(form.getSouffrant());
+        dossier.setProvenance(form.getProvenance());
         dossier.setClasseId(form.getClasseId());
         dossier.setAnneeScolaireId(form.getAnneeScolaireId());
         dossier.setDateDebut(form.getDateDebut());

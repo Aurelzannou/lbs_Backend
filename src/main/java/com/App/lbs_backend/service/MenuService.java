@@ -83,7 +83,7 @@ public class MenuService extends AbstractBaseService<Menu, MenuResponse> {
             // Vérifier que l'utilisateur possède bien ce profil
             return profilUtilisateurRepository.findByUtilisateurId(currentUser.getId()).stream()
                     .map(pu -> profilRepository.findById(pu.getProfilId()).orElse(null))
-                    .filter(p -> p != null && p.getCode().equalsIgnoreCase(profilCode))
+                    .filter(p -> p != null && profilCode.equalsIgnoreCase(p.getCode()))
                     .findFirst()
                     .map(p -> menuRepository.findDistinctByListeProfilMenu_Profil_IdInOrderByOrdreAsc(List.of(p.getId())).stream()
                             .filter(m -> m.getMenuEnfantId() == null)

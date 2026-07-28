@@ -11,6 +11,10 @@ public class DossierEleveResponse {
     private Long eleveId;
     private String eleveNom;
     private String elevePrenom;
+    private String sexe;
+    private LocalDate dateNaissance;
+    private Boolean souffrant;
+    private String provenance;
     private Long classeId;
     private String classeLibelle;
     private Long anneeScolaireId;

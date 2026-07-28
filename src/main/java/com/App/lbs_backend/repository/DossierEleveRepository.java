@@ -22,7 +22,7 @@ public interface DossierEleveRepository extends BaseRepository<DossierEleve> {
 
     @Override
     @EntityGraph(attributePaths = {"eleve", "classe", "anneeScolaire", "statut", "etapeCourante", "typeOperation"})
-    @Query("SELECT d FROM DossierEleve d WHERE lower(d.numero) LIKE lower(concat('%', :filter, '%')) OR lower(d.eleve.nom) LIKE lower(concat('%', :filter, '%')) OR lower(d.eleve.prenom) LIKE lower(concat('%', :filter, '%'))")
+    @Query("SELECT d FROM DossierEleve d WHERE lower(d.numero) LIKE lower(concat('%', :filter, '%')) OR lower(d.nom) LIKE lower(concat('%', :filter, '%')) OR lower(d.prenom) LIKE lower(concat('%', :filter, '%'))")
     Page<DossierEleve> findByLabelContaining(@Param("filter") String filter, Pageable pageable);
 
     @Override
@@ -55,8 +55,8 @@ public interface DossierEleveRepository extends BaseRepository<DossierEleve> {
         WHERE (:anneeId IS NULL OR d.anneeScolaireId = :anneeId)
           AND (:filter IS NULL OR :filter = ''
                OR lower(d.numero) LIKE lower(concat('%', :filter, '%'))
-               OR lower(d.eleve.nom) LIKE lower(concat('%', :filter, '%'))
-               OR lower(d.eleve.prenom) LIKE lower(concat('%', :filter, '%')))
+               OR lower(d.nom) LIKE lower(concat('%', :filter, '%'))
+               OR lower(d.prenom) LIKE lower(concat('%', :filter, '%')))
         ORDER BY d.id DESC
         """)
     org.springframework.data.domain.Page<DossierEleve> searchFiltered(
@@ -73,19 +73,21 @@ public interface DossierEleveRepository extends BaseRepository<DossierEleve> {
         SELECT d FROM DossierEleve d
         WHERE d.statut.id = :statutId
           AND (:anneeId IS NULL OR d.anneeScolaireId = :anneeId)
+          AND (:classeId IS NULL OR d.classeId = :classeId)
           AND (:filter IS NULL OR :filter = ''
                OR lower(d.numero) LIKE lower(concat('%', :filter, '%'))
-               OR lower(d.eleve.nom) LIKE lower(concat('%', :filter, '%'))
-               OR lower(d.eleve.prenom) LIKE lower(concat('%', :filter, '%')))
+               OR lower(d.nom) LIKE lower(concat('%', :filter, '%'))
+               OR lower(d.prenom) LIKE lower(concat('%', :filter, '%')))
         ORDER BY d.id DESC
         """)
     List<DossierEleve> findByStatutIdFiltered(
         @Param("statutId") Long statutId,
         @Param("anneeId")  Long anneeId,
+        @Param("classeId") Long classeId,
         @Param("filter")   String filter
     );
 
     @EntityGraph(attributePaths = {"eleve", "classe", "anneeScolaire", "statut"})
-    @Query("SELECT d FROM DossierEleve d JOIN d.eleve e WHERE e.tuteurId = :tuteurId ORDER BY d.id DESC")
+    @Query("SELECT d FROM DossierEleve d WHERE d.tuteurId = :tuteurId ORDER BY d.id DESC")
     List<DossierEleve> findByTuteurId(@Param("tuteurId") Long tuteurId);
 }

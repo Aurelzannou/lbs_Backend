@@ -27,8 +27,9 @@ public class InscriptionService {
 
     /**
      * Soumet une inscription complète :
-     * 1. Crée l'élève si nécessaire
-     * 2. Crée le dossier avec statut DEPOSE
+     * 1. Crée le dossier avec statut DEPOSE (l'Eleve n'est créé qu'à l'acceptation, voir
+     *    ValidationService.accepter() — le dossier porte lui-même l'identité du candidat
+     *    en attendant).
      */
     @Transactional
     public DossierEleveResponse soumettre(SoumettreInscriptionRequest request) {
@@ -37,30 +38,36 @@ public class InscriptionService {
             periodeInscriptionService.validerPeriode(request.getAnneeScolaireId());
         }
 
-        Long eleveId = resolveEleveId(request);
-
         DossierEleve dossier = new DossierEleve();
-        dossier.setEleveId(eleveId);
         dossier.setClasseId(request.getClasseId());
         dossier.setAnneeScolaireId(request.getAnneeScolaireId());
+        dossier.setTuteurId(request.getTuteurId());
+
+        if (request.getEleveId() != null) {
+            // Enfant déjà inscrit par le passé : on garde le lien direct et on recopie
+            // son identité pour un affichage cohérent dès le dépôt.
+            Eleve existant = eleveService.findById(request.getEleveId());
+            dossier.setEleveId(existant.getId());
+            dossier.setNom(existant.getNom());
+            dossier.setPrenom(existant.getPrenom());
+            dossier.setSexe(existant.getSexe());
+            dossier.setDateNaissance(existant.getDateNaissance());
+            dossier.setSouffrant(existant.getSouffrant());
+            dossier.setProvenance(existant.getProvenance());
+        } else {
+            dossier.setNom(request.getNom());
+            dossier.setPrenom(request.getPrenom());
+            dossier.setSexe(request.getSexe());
+            dossier.setDateNaissance(request.getDateNaissance());
+            dossier.setSouffrant(request.getSouffrant());
+            dossier.setProvenance(request.getProvenance());
+        }
+
         dossierEleveService.setStatutDepose(dossier);
         dossier.setNumero(dossierEleveService.genererNumero(request.getNom(), request.getPrenom()));
 
         DossierEleve saved = dossierEleveService.create(dossier);
         log.info("Dossier créé — uuid:{}", saved.getUuid());
         return dossierEleveService.toResponse(saved.getId());
-    }
-
-    private Long resolveEleveId(SoumettreInscriptionRequest request) {
-        if (request.getEleveId() != null) {
-            return request.getEleveId();
-        }
-        Eleve eleve = new Eleve();
-        eleve.setNom(request.getNom());
-        eleve.setPrenom(request.getPrenom());
-        eleve.setSexe(request.getSexe());
-        eleve.setDateNaissance(request.getDateNaissance());
-        eleve.setTuteurId(request.getTuteurId());
-        return eleveService.create(eleve).getId();
     }
 }

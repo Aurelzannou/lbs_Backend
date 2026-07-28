@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 /**
  * Orchestrateur des opérations de validation des dossiers d'inscription.
- * Centralise : accepter, refuser, inscrire, consulter les dossiers.
+ * Centralise : accepter, refuser, consulter les dossiers.
  */
 @Service
 @RequiredArgsConstructor
@@ -45,31 +45,29 @@ public class ValidationService {
     @Transactional
     public DossierEleveResponse accepter(String uuid) {
         log.info("Acceptation du dossier : {}", uuid);
-        return changerStatutEtNotifier(uuid, "ACCEPTE", null);
+        DossierEleve dossier = dossierEleveService.findByUuid(uuid);
+        creerEleveSiAbsent(dossier);
+        return changerStatutEtNotifier(dossier, "ACCEPTE", null);
     }
 
     @Transactional
     public DossierEleveResponse refuser(String uuid, String motif) {
         log.info("Refus du dossier : {}", uuid);
-        return changerStatutEtNotifier(uuid, "REFUSE", motif);
-    }
-
-    @Transactional
-    public DossierEleveResponse inscrire(String uuid) {
-        log.info("Inscription confirmée pour le dossier : {}", uuid);
-        return changerStatut(uuid, "INSCRIT");
+        DossierEleve dossier = dossierEleveService.findByUuid(uuid);
+        return changerStatutEtNotifier(dossier, "REFUSE", motif);
     }
 
     /**
      * Liste les dossiers filtrés par statut, année scolaire et recherche texte.
      */
-    public List<DossierEleveResponse> listerDossiers(Optional<String> statutCode, Long anneeId, String filter) {
+    public List<DossierEleveResponse> listerDossiers(Optional<String> statutCode, Long anneeId, Long classeId, String filter) {
         List<DossierEleve> dossiers = statutCode
                 .filter(s -> !s.isBlank())
                 .flatMap(s -> statutRepository.findByCode(s))
                 .map(st -> dossierEleveRepository.findByStatutIdFiltered(
                         st.getId(),
                         anneeId,
+                        classeId,
                         (filter != null && !filter.isBlank()) ? filter : null))
                 .orElse(Collections.emptyList());
 
@@ -100,8 +98,30 @@ public class ValidationService {
 
     // ─────────────────────────────────────────────────────────────────────────
 
-    private DossierEleveResponse changerStatutEtNotifier(String uuid, String statutCode, String motif) {
-        DossierEleve dossier = dossierEleveService.findByUuid(uuid);
+    /**
+     * Crée réellement la ligne Eleve au moment de l'acceptation, si le dossier n'en a pas
+     * déjà un (cas d'un nouveau candidat — un enfant déjà inscrit par le passé a déjà son
+     * eleveId dès le dépôt). En profite pour renseigner la classe sur l'Eleve.
+     */
+    private void creerEleveSiAbsent(DossierEleve dossier) {
+        if (dossier.getEleveId() != null) return;
+
+        Eleve eleve = new Eleve();
+        eleve.setNom(dossier.getNom());
+        eleve.setPrenom(dossier.getPrenom());
+        eleve.setSexe(dossier.getSexe());
+        eleve.setDateNaissance(dossier.getDateNaissance());
+        eleve.setSouffrant(dossier.getSouffrant());
+        eleve.setProvenance(dossier.getProvenance());
+        eleve.setTuteurId(dossier.getTuteurId());
+        eleve.setClasseId(dossier.getClasseId());
+        Eleve saved = eleveRepository.save(eleve);
+
+        dossier.setEleveId(saved.getId());
+        log.info("Eleve créé à l'acceptation du dossier {} : eleveId={}", dossier.getUuid(), saved.getId());
+    }
+
+    private DossierEleveResponse changerStatutEtNotifier(DossierEleve dossier, String statutCode, String motif) {
         StatutInscription statut = statutRepository.findByCode(statutCode)
                 .orElseThrow(() -> new RuntimeException("Statut non trouvé : " + statutCode));
         dossier.setStatutId(statut.getId());
@@ -112,17 +132,12 @@ public class ValidationService {
         return dossierEleveService.toResponse(dossier.getId());
     }
 
-    private DossierEleveResponse changerStatut(String uuid, String statutCode) {
-        return changerStatutEtNotifier(uuid, statutCode, null);
-    }
-
     private void envoyerNotification(DossierEleve dossier, String statutCode, String motif) {
         if (!List.of("ACCEPTE", "REFUSE").contains(statutCode)) return;
         try {
-            Eleve eleve = eleveRepository.findById(dossier.getEleveId()).orElse(null);
-            if (eleve == null || eleve.getTuteurId() == null) return;
+            if (dossier.getTuteurId() == null) return;
 
-            Tuteur tuteur = tuteurRepository.findById(eleve.getTuteurId()).orElse(null);
+            Tuteur tuteur = tuteurRepository.findById(dossier.getTuteurId()).orElse(null);
             if (tuteur == null || tuteur.getEmail() == null) return;
 
             String classe = dossier.getClasse() != null ? dossier.getClasse().getLibelle() : "—";
@@ -131,7 +146,7 @@ public class ValidationService {
 
             DossierNotificationMessage message = new DossierNotificationMessage(
                     statutCode, tuteur.getEmail(), tuteur.getNom(), tuteur.getPrenom(),
-                    eleve.getNom(), eleve.getPrenom(), classe, annee, numero, motif);
+                    dossier.getNom(), dossier.getPrenom(), classe, annee, numero, motif);
 
             rabbitTemplate.convertAndSend(
                     RabbitMQConfig.NOTIFICATION_EXCHANGE, RabbitMQConfig.EMAIL_ROUTING_KEY, message);

@@ -33,6 +33,29 @@ public class DossierEleve extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_doel_eleve_id")
     private Long eleveId;
 
+    // Identité du candidat, renseignée dès le dépôt — indépendante de l'existence d'un Eleve
+    // (l'Eleve n'est créé qu'à l'acceptation, voir ValidationService.accepter()).
+    @Column(name = "lbs_doel_nom", length = 100)
+    private String nom;
+
+    @Column(name = "lbs_doel_prenom", length = 100)
+    private String prenom;
+
+    @Column(name = "lbs_doel_sexe", length = 10)
+    private String sexe;
+
+    @Column(name = "lbs_doel_date_naissance")
+    private LocalDate dateNaissance;
+
+    @Column(name = "lbs_doel_tuteur_id")
+    private Long tuteurId;
+
+    @Column(name = "lbs_doel_souffrant")
+    private Boolean souffrant;
+
+    @Column(name = "lbs_doel_provenance", length = 200)
+    private String provenance;
+
     @Column(name = "lbs_doel_classe_id")
     private Long classeId;
 
@@ -117,6 +140,27 @@ public class DossierEleve extends AuditableEntity implements Timestamps {
 
     public Long getEleveId() { return eleveId; }
     public void setEleveId(Long eleveId) { this.eleveId = eleveId; }
+
+    public String getNom() { return nom; }
+    public void setNom(String nom) { this.nom = nom; }
+
+    public String getPrenom() { return prenom; }
+    public void setPrenom(String prenom) { this.prenom = prenom; }
+
+    public String getSexe() { return sexe; }
+    public void setSexe(String sexe) { this.sexe = sexe; }
+
+    public LocalDate getDateNaissance() { return dateNaissance; }
+    public void setDateNaissance(LocalDate dateNaissance) { this.dateNaissance = dateNaissance; }
+
+    public Long getTuteurId() { return tuteurId; }
+    public void setTuteurId(Long tuteurId) { this.tuteurId = tuteurId; }
+
+    public Boolean getSouffrant() { return souffrant; }
+    public void setSouffrant(Boolean souffrant) { this.souffrant = souffrant; }
+
+    public String getProvenance() { return provenance; }
+    public void setProvenance(String provenance) { this.provenance = provenance; }
 
     public Long getClasseId() { return classeId; }
     public void setClasseId(Long classeId) { this.classeId = classeId; }

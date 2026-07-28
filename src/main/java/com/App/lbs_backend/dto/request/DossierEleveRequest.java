@@ -18,6 +18,8 @@ public class DossierEleveRequest implements FormRequest {
     private String prenom;
     private String sexe;
     private LocalDate dateNaissance;
+    private Boolean souffrant;
+    private String provenance;
 
     private Long classeId;
     private Long anneeScolaireId;

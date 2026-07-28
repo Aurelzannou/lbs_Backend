@@ -16,10 +16,14 @@ public class DossierEleveMapper implements Mapper<DossierEleve, DossierEleveResp
         response.setUuid(entity.getUuid());
         response.setCode(entity.getCode());
         response.setEleveId(entity.getEleveId());
-        if (entity.getEleve() != null) {
-            response.setEleveNom(entity.getEleve().getNom());
-            response.setElevePrenom(entity.getEleve().getPrenom());
-        }
+        // Le nom/prénom du candidat vivent sur le dossier lui-même — indépendants de
+        // l'existence d'un Eleve (qui n'est créé qu'à l'acceptation, voir ValidationService).
+        response.setEleveNom(entity.getNom());
+        response.setElevePrenom(entity.getPrenom());
+        response.setSexe(entity.getSexe());
+        response.setDateNaissance(entity.getDateNaissance());
+        response.setSouffrant(entity.getSouffrant());
+        response.setProvenance(entity.getProvenance());
         response.setClasseId(entity.getClasseId());
         if (entity.getClasse() != null) response.setClasseLibelle(entity.getClasse().getLibelle());
         response.setAnneeScolaireId(entity.getAnneeScolaireId());

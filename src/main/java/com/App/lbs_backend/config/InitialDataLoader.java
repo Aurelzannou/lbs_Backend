@@ -50,12 +50,10 @@ public class InitialDataLoader implements CommandLineRunner {
 
         // 0. Synchronisation avec Keycloak - Créer les rôles s'ils n'existent pas
         keycloakAdminService.createRole("ADMIN", "Administrateur Système");
-        keycloakAdminService.createRole("LECTEUR", "Lecteur (Consultation)");
         keycloakAdminService.createRole("TUTEUR", "Parent / Tuteur");
 
         // 1. Initialisation des Profils (DB locale)
         Profil admin = createProfilIfNotFound("ADMIN", "Administrateur Système");
-        Profil lecteur = createProfilIfNotFound("LECTEUR", "Lecteur (Consultation)");
         createProfilIfNotFound("TUTEUR", "Parent / Tuteur");
 
         // 1bis. Compte super-admin par défaut, pour pouvoir administrer dès le premier démarrage
@@ -65,10 +63,10 @@ public class InitialDataLoader implements CommandLineRunner {
         log.info("Vérification des menus par défaut...");
         
         // Dashboard
-        Menu dashboard = createOrUpdateMenu("DASHBOARD", "Tableau de bord", "Vue d'ensemble", "home-outline", "/dashboard", 1, List.of(admin, lecteur));
-        
+        Menu dashboard = createOrUpdateMenu("DASHBOARD", "Tableau de bord", "Vue d'ensemble", "home-outline", "/dashboard", 1, List.of(admin));
+
         // Profil
-        Menu profil = createOrUpdateMenu("PROFIL", "Mon Profil", "Gérer mon profil", "person-outline", "/profile", 2, List.of(admin, lecteur));
+        Menu profil = createOrUpdateMenu("PROFIL", "Mon Profil", "Gérer mon profil", "person-outline", "/profile", 2, List.of(admin));
         
         // Administration (Parent)
         Menu adminGroup = createOrUpdateMenu("ADMINISTRATION", "Administration", "Gestion du système", "shield-outline", null, 3, List.of(admin));
@@ -79,17 +77,16 @@ public class InitialDataLoader implements CommandLineRunner {
         createOrUpdateSubMenu("MENU_ADMIN", "Menus", "Gestion des menus", "menu-outline", "/administration/menus", 3, adminGroup, admin);
 
         // Référentiel (Parent)
-        Menu refGroup = createOrUpdateMenu("REFERENTIEL", "Référentiel", "Données de référence", "settings-2-outline", null, 4, List.of(admin, lecteur));
+        Menu refGroup = createOrUpdateMenu("REFERENTIEL", "Référentiel", "Données de référence", "settings-2-outline", null, 4, List.of(admin));
         createOrUpdateSubMenu("NIVEAUX", "Niveaux Scolaires", "Gestion des niveaux", "layers-outline", "/referentiel/niveaux", 1, refGroup, admin);
         createOrUpdateSubMenu("ANNEE_SCOLAIRE", "Années Scolaires", "Gestion des années scolaires", "calendar-outline", "/referentiel/annees-scolaires", 3, refGroup, admin);
         createOrUpdateSubMenu("PERIODE_INSCRIPTION", "Périodes d'inscription", "Gestion des périodes d'inscription", "calendar-check-outline", "/referentiel/periodes-inscription", 4, refGroup, admin);
 
         // Scolarité (Parent)
-        Menu scolariteGroup = createOrUpdateMenu("SCOLARITE", "Scolarité", "Gestion scolaire", "book-open-outline", null, 5, List.of(admin, lecteur));
+        Menu scolariteGroup = createOrUpdateMenu("SCOLARITE", "Scolarité", "Gestion scolaire", "book-open-outline", null, 5, List.of(admin));
         createOrUpdateSubMenu("ELEVES", "Élèves", "Gestion des élèves", "people-outline", "/scolarite/eleves", 1, scolariteGroup, admin);
         createOrUpdateSubMenu("INSCRIPTIONS", "Inscriptions", "Gestion des dossiers d'inscription", "file-text-outline", "/scolarite/inscriptions", 2, scolariteGroup, admin);
         createOrUpdateSubMenu("VALIDATIONS", "Validations", "Validation des dossiers d'inscription", "checkmark-circle-outline", "/scolarite/validations", 3, scolariteGroup, admin);
-        createOrUpdateSubMenu("CONFIRMATIONS", "Confirmations", "Confirmation des inscriptions", "person-done-outline", "/scolarite/confirmations", 4, scolariteGroup, admin);
 
         // 3. Statuts d'inscription
         log.info("Vérification des statuts d'inscription...");
