@@ -32,7 +32,9 @@ public class EleveController extends MasterController<Eleve, EleveResponse, Elev
     @Override
     @GetMapping
     public ResponseEntity<?> list(PaginationCriteria criteria) {
-        int page      = criteria.page()   != null ? Math.max(criteria.page(), 0) : 0;
+        // criteria.page() est en 1-based (front) — PageRequest.of() attend du 0-based.
+        int rawPage   = criteria.page()   != null ? criteria.page()     : 1;
+        int page      = Math.max(rawPage - 1, 0);
         int size      = criteria.size()   != null ? criteria.size()     : 10;
         String filter = criteria.filter() != null ? criteria.filter()   : "";
         String classeIdParam = request.getParameter("classeId");
