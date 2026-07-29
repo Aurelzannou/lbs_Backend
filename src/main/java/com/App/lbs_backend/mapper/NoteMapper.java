@@ -7,22 +7,19 @@ import org.springframework.stereotype.Component;
 @Component
 public class NoteMapper {
 
-    private final DossierEleveMapper dossierEleveMapper;
+    private final EleveMapper eleveMapper;
     private final MatiereMapper matiereMapper;
     private final PeriodeAcademiqueMapper periodeMapper;
     private final ProfesseurMapper professeurMapper;
-    private final UtilisateurMapper utilisateurMapper;
 
-    public NoteMapper(DossierEleveMapper dossierEleveMapper,
+    public NoteMapper(EleveMapper eleveMapper,
                       MatiereMapper matiereMapper,
                       PeriodeAcademiqueMapper periodeMapper,
-                      ProfesseurMapper professeurMapper,
-                      UtilisateurMapper utilisateurMapper) {
-        this.dossierEleveMapper = dossierEleveMapper;
+                      ProfesseurMapper professeurMapper) {
+        this.eleveMapper = eleveMapper;
         this.matiereMapper = matiereMapper;
         this.periodeMapper = periodeMapper;
         this.professeurMapper = professeurMapper;
-        this.utilisateurMapper = utilisateurMapper;
     }
 
     public NoteResponse toResponse(Note entity) {
@@ -30,23 +27,21 @@ public class NoteMapper {
         return new NoteResponse(
                 entity.getId(),
                 entity.getUuid(),
-                entity.getDossierEleveId(),
+                entity.getEleveId(),
                 entity.getMatiereId(),
                 entity.getPeriodeId(),
                 entity.getProfesseurId(),
                 entity.getValeur(),
                 entity.getBareme(),
                 entity.getTypeEvaluation(),
+                entity.getNumeroDevoir(),
                 entity.getDateEvaluation(),
-                entity.getCommentaire(),
-                entity.getUtilisateurId(),
                 entity.getModifierLe(),
                 entity.getModifierPar(),
-                entity.getDossierEleve() != null ? dossierEleveMapper.toResponse(entity.getDossierEleve()) : null,
-                matiereMapper.toResponse(entity.getMatiere()),
-                periodeMapper.toResponse(entity.getPeriode()),
-                professeurMapper.toResponse(entity.getProfesseur()),
-                utilisateurMapper.toResponse(entity.getUtilisateur())
+                entity.getEleve() != null ? eleveMapper.toResponse(entity.getEleve()) : null,
+                entity.getMatiere() != null ? matiereMapper.toResponse(entity.getMatiere()) : null,
+                entity.getPeriode() != null ? periodeMapper.toResponse(entity.getPeriode()) : null,
+                entity.getProfesseur() != null ? professeurMapper.toResponse(entity.getProfesseur()) : null
         );
     }
 }

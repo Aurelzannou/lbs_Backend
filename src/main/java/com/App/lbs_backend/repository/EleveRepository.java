@@ -20,6 +20,8 @@ public interface EleveRepository extends BaseRepository<Eleve> {
 
     List<Eleve> findByTuteurId(Long tuteurId);
 
+    List<Eleve> findByClasseId(Long classeId);
+
     @Query("""
         SELECT e FROM Eleve e
         WHERE (:classeId IS NULL OR e.classeId = :classeId)

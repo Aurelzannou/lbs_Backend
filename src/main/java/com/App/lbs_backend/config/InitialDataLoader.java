@@ -51,10 +51,12 @@ public class InitialDataLoader implements CommandLineRunner {
         // 0. Synchronisation avec Keycloak - Créer les rôles s'ils n'existent pas
         keycloakAdminService.createRole("ADMIN", "Administrateur Système");
         keycloakAdminService.createRole("TUTEUR", "Parent / Tuteur");
+        keycloakAdminService.createRole("PROFESSEUR", "Professeur");
 
         // 1. Initialisation des Profils (DB locale)
         Profil admin = createProfilIfNotFound("ADMIN", "Administrateur Système");
         createProfilIfNotFound("TUTEUR", "Parent / Tuteur");
+        createProfilIfNotFound("PROFESSEUR", "Professeur");
 
         // 1bis. Compte super-admin par défaut, pour pouvoir administrer dès le premier démarrage
         createSuperAdminIfNotFound(admin);
@@ -79,14 +81,39 @@ public class InitialDataLoader implements CommandLineRunner {
         // Référentiel (Parent)
         Menu refGroup = createOrUpdateMenu("REFERENTIEL", "Référentiel", "Données de référence", "settings-2-outline", null, 4, List.of(admin));
         createOrUpdateSubMenu("NIVEAUX", "Niveaux Scolaires", "Gestion des niveaux", "layers-outline", "/referentiel/niveaux", 1, refGroup, admin);
+        createOrUpdateSubMenu("PERIODE_ACADEMIQUE", "Périodes académiques", "Gestion des trimestres", "calendar-outline", "/referentiel/periodes-academiques", 2, refGroup, admin);
         createOrUpdateSubMenu("ANNEE_SCOLAIRE", "Années Scolaires", "Gestion des années scolaires", "calendar-outline", "/referentiel/annees-scolaires", 3, refGroup, admin);
         createOrUpdateSubMenu("PERIODE_INSCRIPTION", "Périodes d'inscription", "Gestion des périodes d'inscription", "calendar-check-outline", "/referentiel/periodes-inscription", 4, refGroup, admin);
+        createOrUpdateSubMenu("ETAPES", "Étapes", "Gestion des étapes du dossier", "timer-outline", "/referentiel/etapes", 5, refGroup, admin);
+        createOrUpdateSubMenu("CLASSES", "Classes", "Gestion des classes", "grid-outline", "/referentiel/classes", 6, refGroup, admin);
+        createOrUpdateSubMenu("PROFESSEURS", "Professeurs", "Gestion des professeurs", "briefcase-outline", "/referentiel/professeurs", 7, refGroup, admin);
+        createOrUpdateSubMenu("MATIERES", "Matières", "Gestion des matières", "book-outline", "/referentiel/matieres", 8, refGroup, admin);
+        createOrUpdateSubMenu("COEFFICIENTS", "Coefficients", "Gestion des coefficients", "calculator-outline", "/referentiel/coefficients", 9, refGroup, admin);
+        createOrUpdateSubMenu("CAISSES", "Caisses", "Gestion des caisses", "wallet-outline", "/referentiel/caisses", 10, refGroup, admin);
+        createOrUpdateSubMenu("CATEGORIES_DEPENSES", "Catégories de dépenses", "Gestion des catégories de dépenses", "folder-outline", "/referentiel/categories-depenses", 11, refGroup, admin);
+        createOrUpdateSubMenu("FRAIS_SCOLAIRES", "Frais scolaires", "Gestion des frais scolaires", "cash-outline", "/referentiel/frais-scolaires", 12, refGroup, admin);
+        createOrUpdateSubMenu("MODES_PAIEMENT", "Modes de paiement", "Gestion des modes de paiement", "credit-card-outline", "/referentiel/modes-paiements", 13, refGroup, admin);
+        createOrUpdateSubMenu("TYPES_ACTES", "Types d'actes", "Gestion des types d'actes", "file-text-outline", "/referentiel/types-actes", 14, refGroup, admin);
+        createOrUpdateSubMenu("TYPES_FRAIS", "Types de frais", "Gestion des types de frais", "pricetags-outline", "/referentiel/types-frais", 15, refGroup, admin);
+        createOrUpdateSubMenu("TYPES_OPERATIONS", "Types d'opérations", "Gestion des types d'opérations", "swap-outline", "/referentiel/types-operations", 16, refGroup, admin);
+        createOrUpdateSubMenu("STATUTS_INSCRIPTIONS", "Statuts d'inscription", "Gestion des statuts d'inscription", "flag-outline", "/referentiel/statuts-inscriptions", 17, refGroup, admin);
 
         // Scolarité (Parent)
         Menu scolariteGroup = createOrUpdateMenu("SCOLARITE", "Scolarité", "Gestion scolaire", "book-open-outline", null, 5, List.of(admin));
         createOrUpdateSubMenu("ELEVES", "Élèves", "Gestion des élèves", "people-outline", "/scolarite/eleves", 1, scolariteGroup, admin);
         createOrUpdateSubMenu("INSCRIPTIONS", "Inscriptions", "Gestion des dossiers d'inscription", "file-text-outline", "/scolarite/inscriptions", 2, scolariteGroup, admin);
         createOrUpdateSubMenu("VALIDATIONS", "Validations", "Validation des dossiers d'inscription", "checkmark-circle-outline", "/scolarite/validations", 3, scolariteGroup, admin);
+
+        // Gestion des emplois du temps (menu autonome, pas un sous-menu)
+        createOrUpdateMenu("EMPLOI_DU_TEMPS", "Gestion des emplois du temps", "Planification des cours par classe", "clock-outline", "/emploi-du-temps", 6, List.of(admin));
+
+        // Présences (menu autonome, pas un sous-menu)
+        createOrUpdateMenu("PRESENCES", "Présences", "Suivi des présences élèves et professeurs", "clipboard-outline", "/presences", 7, List.of(admin));
+
+        // 6ter. Menu Notes (autonome, premier niveau)
+        Menu notesGroup = createOrUpdateMenu("NOTES", "Notes", "Gestion des notes et bulletins", "award-outline", null, 8, List.of(admin));
+        createOrUpdateSubMenu("SAISIE_NOTES", "Saisie des notes", "Saisie des notes par classe et matière", "edit-2-outline", "/notes/saisie", 1, notesGroup, admin);
+        createOrUpdateSubMenu("VALIDATION_BULLETINS", "Validation des bulletins", "Validation et impression des bulletins", "checkmark-square-2-outline", "/notes/validation", 2, notesGroup, admin);
 
         // 3. Statuts d'inscription
         log.info("Vérification des statuts d'inscription...");

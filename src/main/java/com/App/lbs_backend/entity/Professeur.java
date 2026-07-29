@@ -2,6 +2,8 @@ package com.App.lbs_backend.entity;
 
 import com.App.lbs_backend.core.AuditableEntity;
 import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import com.App.lbs_backend.core.Timestamps;
@@ -20,6 +22,9 @@ public class Professeur extends AuditableEntity implements Timestamps {
 
     @Column(name = "lbs_prfs_uuid", length = 50, unique = true, nullable = false)
     private String uuid;
+
+    @Column(name = "lbs_prfs_keycloak_id", length = 100, unique = true)
+    private String keycloakId;
 
     @Column(name = "lbs_prfs_code", length = 20)
     private String code;
@@ -42,6 +47,13 @@ public class Professeur extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_prfs_actif")
     private Boolean actif;
 
+    /** Matières enseignées par ce professeur — utilisé pour filtrer les profs disponibles
+        pour une matière donnée sur l'écran Emploi du temps. */
+    @ElementCollection
+    @CollectionTable(name = "lbs_professeur_matiere", schema = "lbs", joinColumns = @JoinColumn(name = "lbs_prfs_id"))
+    @Column(name = "lbs_mati_id")
+    private List<Long> matiereIds = new ArrayList<>();
+
     @PrePersist
     public void prePersist() {
         if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
@@ -54,6 +66,9 @@ public class Professeur extends AuditableEntity implements Timestamps {
 
     public String getUuid() { return uuid; }
     public void setUuid(String uuid) { this.uuid = uuid; }
+
+    public String getKeycloakId() { return keycloakId; }
+    public void setKeycloakId(String keycloakId) { this.keycloakId = keycloakId; }
 
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }
@@ -75,4 +90,7 @@ public class Professeur extends AuditableEntity implements Timestamps {
 
     public Boolean getActif() { return actif; }
     public void setActif(Boolean actif) { this.actif = actif; }
+
+    public List<Long> getMatiereIds() { return matiereIds; }
+    public void setMatiereIds(List<Long> matiereIds) { this.matiereIds = matiereIds; }
 }

@@ -9,7 +9,7 @@ import com.App.lbs_backend.core.Timestamps;
 
 @Entity
 @Table(name = "lbs_note", schema = "lbs", indexes = {
-    @Index(name = "idx_note_dossier", columnList = "lbs_note_dossier_eleve_id"),
+    @Index(name = "idx_note_eleve", columnList = "lbs_note_eleve_id"),
     @Index(name = "idx_note_matiere", columnList = "lbs_note_matiere_id"),
     @Index(name = "idx_note_periode", columnList = "lbs_note_periode_id")
 })
@@ -29,8 +29,8 @@ public class Note extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_note_code", length = 20)
     private String code;
 
-    @Column(name = "lbs_note_dossier_eleve_id", nullable = false)
-    private Long dossierEleveId;
+    @Column(name = "lbs_note_eleve_id", nullable = false)
+    private Long eleveId;
 
     @Column(name = "lbs_note_matiere_id", nullable = false)
     private Long matiereId;
@@ -47,27 +47,26 @@ public class Note extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_note_bareme")
     private Double bareme;
 
+    /** "INTERROGATION" ou "DEVOIR" */
     @Column(name = "lbs_note_type_evaluation", length = 50)
     private String typeEvaluation;
+
+    /** Uniquement renseigné pour typeEvaluation="DEVOIR" (1 ou 2) — reconstruit les colonnes
+        "1er DEV"/"2e DEV" du bulletin et sert de clé naturelle pour l'upsert. */
+    @Column(name = "lbs_note_numero_devoir")
+    private Integer numeroDevoir;
 
     @Column(name = "lbs_note_date_evaluation")
     private LocalDate dateEvaluation;
 
-    @Column(name = "lbs_note_commentaire", length = 500)
-    private String commentaire;
-
-    @Column(name = "lbs_note_utilisateur_id")
-    private Long utilisateurId;
-
     // Relations
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lbs_note_dossier_eleve_id", insertable = false, updatable = false)
-    private DossierEleve dossierEleve;
+    @JoinColumn(name = "lbs_note_eleve_id", insertable = false, updatable = false)
+    private Eleve eleve;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lbs_note_matiere_id", insertable = false, updatable = false)
     private Matiere matiere;
-
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lbs_note_periode_id", insertable = false, updatable = false)
@@ -76,10 +75,6 @@ public class Note extends AuditableEntity implements Timestamps {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lbs_note_professeur_id", insertable = false, updatable = false)
     private Professeur professeur;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lbs_note_utilisateur_id", insertable = false, updatable = false)
-    private Utilisateur utilisateur;
 
     @PrePersist
     public void prePersist() {
@@ -99,8 +94,8 @@ public class Note extends AuditableEntity implements Timestamps {
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }
 
-    public Long getDossierEleveId() { return dossierEleveId; }
-    public void setDossierEleveId(Long dossierEleveId) { this.dossierEleveId = dossierEleveId; }
+    public Long getEleveId() { return eleveId; }
+    public void setEleveId(Long eleveId) { this.eleveId = eleveId; }
 
     public Long getMatiereId() { return matiereId; }
     public void setMatiereId(Long matiereId) { this.matiereId = matiereId; }
@@ -120,17 +115,14 @@ public class Note extends AuditableEntity implements Timestamps {
     public String getTypeEvaluation() { return typeEvaluation; }
     public void setTypeEvaluation(String typeEvaluation) { this.typeEvaluation = typeEvaluation; }
 
+    public Integer getNumeroDevoir() { return numeroDevoir; }
+    public void setNumeroDevoir(Integer numeroDevoir) { this.numeroDevoir = numeroDevoir; }
+
     public LocalDate getDateEvaluation() { return dateEvaluation; }
     public void setDateEvaluation(LocalDate dateEvaluation) { this.dateEvaluation = dateEvaluation; }
 
-    public String getCommentaire() { return commentaire; }
-    public void setCommentaire(String commentaire) { this.commentaire = commentaire; }
-
-    public Long getUtilisateurId() { return utilisateurId; }
-    public void setUtilisateurId(Long utilisateurId) { this.utilisateurId = utilisateurId; }
-
-    public DossierEleve getDossierEleve() { return dossierEleve; }
-    public void setDossierEleve(DossierEleve dossierEleve) { this.dossierEleve = dossierEleve; }
+    public Eleve getEleve() { return eleve; }
+    public void setEleve(Eleve eleve) { this.eleve = eleve; }
 
     public Matiere getMatiere() { return matiere; }
     public void setMatiere(Matiere matiere) { this.matiere = matiere; }
@@ -140,7 +132,4 @@ public class Note extends AuditableEntity implements Timestamps {
 
     public Professeur getProfesseur() { return professeur; }
     public void setProfesseur(Professeur professeur) { this.professeur = professeur; }
-
-    public Utilisateur getUtilisateur() { return utilisateur; }
-    public void setUtilisateur(Utilisateur utilisateur) { this.utilisateur = utilisateur; }
 }

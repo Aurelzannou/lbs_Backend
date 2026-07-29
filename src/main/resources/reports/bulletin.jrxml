@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports
+              http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="bulletin"
+              pageWidth="595" pageHeight="842"
+              columnWidth="535" leftMargin="30" rightMargin="30"
+              topMargin="30" bottomMargin="30"
+              uuid="b1c2d3e4-f5a6-7890-bcde-f12345678901">
+
+  <!-- Paramètres : informations d'en-tête et de résumé, communes à toutes les lignes de matière -->
+  <parameter name="eleveNomComplet"      class="java.lang.String"/>
+  <parameter name="classeLibelle"        class="java.lang.String"/>
+  <parameter name="effectifClasse"       class="java.lang.String"/>
+  <parameter name="periodeLibelle"       class="java.lang.String"/>
+  <parameter name="anneeScolaireLibelle" class="java.lang.String"/>
+  <parameter name="moyennePonderee"      class="java.lang.String"/>
+  <parameter name="rangTrimestre"        class="java.lang.String"/>
+  <parameter name="moyenneAnnuelle"      class="java.lang.String"/>
+  <parameter name="rangAnnuel"           class="java.lang.String"/>
+  <parameter name="tableauHonneur"       class="java.lang.String"/>
+  <parameter name="felicitations"        class="java.lang.String"/>
+  <parameter name="encouragement"        class="java.lang.String"/>
+  <parameter name="avertissement"        class="java.lang.String"/>
+  <parameter name="decisionConseil"      class="java.lang.String"/>
+  <parameter name="observationDirecteur" class="java.lang.String"/>
+
+  <!-- Champs : une ligne par matière -->
+  <field name="matiereLibelle" class="java.lang.String"/>
+  <field name="coefficient" class="java.lang.Double"/>
+  <field name="interrogation" class="java.lang.Double"/>
+  <field name="devoir1" class="java.lang.Double"/>
+  <field name="devoir2" class="java.lang.Double"/>
+  <field name="moyenne" class="java.lang.Double"/>
+  <field name="moyenneCoefficientee" class="java.lang.Double"/>
+  <field name="rang" class="java.lang.Integer"/>
+  <field name="appreciation" class="java.lang.String"/>
+
+  <queryString><![CDATA[]]></queryString>
+
+  <title>
+    <band height="150">
+      <rectangle>
+        <reportElement x="0" y="0" width="535" height="46" backcolor="#1e293b" forecolor="#1e293b"/>
+        <graphicElement><pen lineWidth="0"/></graphicElement>
+      </rectangle>
+      <staticText>
+        <reportElement x="10" y="6" width="300" height="24" forecolor="#FFFFFF"/>
+        <textElement verticalAlignment="Middle"><font size="16" isBold="true"/></textElement>
+        <text><![CDATA[LBS Education]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="10" y="28" width="300" height="14" forecolor="#cbd5e1"/>
+        <textElement><font size="9"/></textElement>
+        <text><![CDATA[Bulletin de notes]]></text>
+      </staticText>
+
+      <staticText>
+        <reportElement x="0" y="56" width="535" height="20"/>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="13" isBold="true"/></textElement>
+        <textFieldExpression><![CDATA[$P{periodeLibelle}]]></textFieldExpression>
+      </staticText>
+
+      <line><reportElement x="0" y="82" width="535" height="1" forecolor="#e2e8f0"/></line>
+
+      <staticText>
+        <reportElement x="0" y="90" width="80" height="18"/>
+        <textElement><font size="9" isBold="true"/></textElement>
+        <text><![CDATA[Élève :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="80" y="90" width="200" height="18"/>
+        <textElement><font size="9"/></textElement>
+        <textFieldExpression><![CDATA[$P{eleveNomComplet}]]></textFieldExpression>
+      </textField>
+
+      <staticText>
+        <reportElement x="290" y="90" width="60" height="18"/>
+        <textElement><font size="9" isBold="true"/></textElement>
+        <text><![CDATA[Classe :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="350" y="90" width="185" height="18"/>
+        <textElement><font size="9"/></textElement>
+        <textFieldExpression><![CDATA[$P{classeLibelle} + " (Effectif : " + $P{effectifClasse} + ")"]]></textFieldExpression>
+      </textField>
+
+      <staticText>
+        <reportElement x="0" y="110" width="80" height="18"/>
+        <textElement><font size="9" isBold="true"/></textElement>
+        <text><![CDATA[Année :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="80" y="110" width="200" height="18"/>
+        <textElement><font size="9"/></textElement>
+        <textFieldExpression><![CDATA[$P{anneeScolaireLibelle}]]></textFieldExpression>
+      </textField>
+
+      <!-- En-tête du tableau des matières -->
+      <rectangle>
+        <reportElement x="0" y="132" width="535" height="18" backcolor="#1e293b" forecolor="#1e293b"/>
+        <graphicElement><pen lineWidth="0"/></graphicElement>
+      </rectangle>
+      <staticText><reportElement x="4" y="132" width="140" height="18" forecolor="#FFFFFF"/><textElement verticalAlignment="Middle"><font size="8" isBold="true"/></textElement><text><![CDATA[Matière]]></text></staticText>
+      <staticText><reportElement x="144" y="132" width="35" height="18" forecolor="#FFFFFF"/><textElement textAlignment="Center" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement><text><![CDATA[Coef]]></text></staticText>
+      <staticText><reportElement x="179" y="132" width="55" height="18" forecolor="#FFFFFF"/><textElement textAlignment="Center" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement><text><![CDATA[Interro]]></text></staticText>
+      <staticText><reportElement x="234" y="132" width="50" height="18" forecolor="#FFFFFF"/><textElement textAlignment="Center" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement><text><![CDATA[1er Dev]]></text></staticText>
+      <staticText><reportElement x="284" y="132" width="50" height="18" forecolor="#FFFFFF"/><textElement textAlignment="Center" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement><text><![CDATA[2e Dev]]></text></staticText>
+      <staticText><reportElement x="334" y="132" width="45" height="18" forecolor="#FFFFFF"/><textElement textAlignment="Center" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement><text><![CDATA[Moy]]></text></staticText>
+      <staticText><reportElement x="379" y="132" width="55" height="18" forecolor="#FFFFFF"/><textElement textAlignment="Center" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement><text><![CDATA[Moy Coef]]></text></staticText>
+      <staticText><reportElement x="434" y="132" width="35" height="18" forecolor="#FFFFFF"/><textElement textAlignment="Center" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement><text><![CDATA[Rang]]></text></staticText>
+      <staticText><reportElement x="469" y="132" width="66" height="18" forecolor="#FFFFFF"/><textElement textAlignment="Center" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement><text><![CDATA[Appréciation]]></text></staticText>
+    </band>
+  </title>
+
+  <detail>
+    <band height="16">
+      <line><reportElement x="0" y="15" width="535" height="1" forecolor="#f1f5f9"/></line>
+      <textField><reportElement x="4" y="0" width="140" height="15"/><textElement verticalAlignment="Middle"><font size="8"/></textElement><textFieldExpression><![CDATA[$F{matiereLibelle}]]></textFieldExpression></textField>
+      <textField><reportElement x="144" y="0" width="35" height="15"/><textElement textAlignment="Center" verticalAlignment="Middle"><font size="8"/></textElement><textFieldExpression><![CDATA[$F{coefficient} != null ? new java.text.DecimalFormat("0.#").format($F{coefficient}) : "-"]]></textFieldExpression></textField>
+      <textField><reportElement x="179" y="0" width="55" height="15"/><textElement textAlignment="Center" verticalAlignment="Middle"><font size="8"/></textElement><textFieldExpression><![CDATA[$F{interrogation} != null ? new java.text.DecimalFormat("0.##").format($F{interrogation}) : "-"]]></textFieldExpression></textField>
+      <textField><reportElement x="234" y="0" width="50" height="15"/><textElement textAlignment="Center" verticalAlignment="Middle"><font size="8"/></textElement><textFieldExpression><![CDATA[$F{devoir1} != null ? new java.text.DecimalFormat("0.##").format($F{devoir1}) : "-"]]></textFieldExpression></textField>
+      <textField><reportElement x="284" y="0" width="50" height="15"/><textElement textAlignment="Center" verticalAlignment="Middle"><font size="8"/></textElement><textFieldExpression><![CDATA[$F{devoir2} != null ? new java.text.DecimalFormat("0.##").format($F{devoir2}) : "-"]]></textFieldExpression></textField>
+      <textField><reportElement x="334" y="0" width="45" height="15"/><textElement textAlignment="Center" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement><textFieldExpression><![CDATA[$F{moyenne} != null ? new java.text.DecimalFormat("0.##").format($F{moyenne}) : "-"]]></textFieldExpression></textField>
+      <textField><reportElement x="379" y="0" width="55" height="15"/><textElement textAlignment="Center" verticalAlignment="Middle"><font size="8"/></textElement><textFieldExpression><![CDATA[$F{moyenneCoefficientee} != null ? new java.text.DecimalFormat("0.##").format($F{moyenneCoefficientee}) : "-"]]></textFieldExpression></textField>
+      <textField><reportElement x="434" y="0" width="35" height="15"/><textElement textAlignment="Center" verticalAlignment="Middle"><font size="8"/></textElement><textFieldExpression><![CDATA[$F{rang} != null ? $F{rang} + "e" : "-"]]></textFieldExpression></textField>
+      <textField><reportElement x="469" y="0" width="66" height="15"/><textElement textAlignment="Center" verticalAlignment="Middle"><font size="8"/></textElement><textFieldExpression><![CDATA[$F{appreciation} != null ? $F{appreciation} : "-"]]></textFieldExpression></textField>
+    </band>
+  </detail>
+
+  <summary>
+    <band height="230">
+      <line><reportElement x="0" y="6" width="535" height="1" forecolor="#1e293b"/></line>
+
+      <staticText><reportElement x="0" y="16" width="180" height="18"/><textElement><font size="9" isBold="true"/></textElement><text><![CDATA[Moyenne de la période :]]></text></staticText>
+      <textField><reportElement x="180" y="16" width="100" height="18"/><textElement><font size="9" isBold="true"/></textElement><textFieldExpression><![CDATA[$P{moyennePonderee}]]></textFieldExpression></textField>
+
+      <staticText><reportElement x="290" y="16" width="80" height="18"/><textElement><font size="9" isBold="true"/></textElement><text><![CDATA[Rang :]]></text></staticText>
+      <textField><reportElement x="370" y="16" width="165" height="18"/><textElement><font size="9" isBold="true"/></textElement><textFieldExpression><![CDATA[$P{rangTrimestre}]]></textFieldExpression></textField>
+
+      <staticText><reportElement x="0" y="38" width="180" height="18"/><textElement><font size="9" isBold="true"/></textElement><text><![CDATA[Moyenne annuelle :]]></text></staticText>
+      <textField><reportElement x="180" y="38" width="100" height="18"/><textElement><font size="9" isBold="true"/></textElement><textFieldExpression><![CDATA[$P{moyenneAnnuelle}]]></textFieldExpression></textField>
+
+      <staticText><reportElement x="290" y="38" width="80" height="18"/><textElement><font size="9" isBold="true"/></textElement><text><![CDATA[Rang annuel :]]></text></staticText>
+      <textField><reportElement x="370" y="38" width="165" height="18"/><textElement><font size="9" isBold="true"/></textElement><textFieldExpression><![CDATA[$P{rangAnnuel}]]></textFieldExpression></textField>
+
+      <line><reportElement x="0" y="66" width="535" height="1" forecolor="#e2e8f0"/></line>
+
+      <staticText><reportElement x="0" y="76" width="120" height="18"/><textElement><font size="9" isBold="true"/></textElement><text><![CDATA[Tableau d'Honneur :]]></text></staticText>
+      <textField><reportElement x="120" y="76" width="50" height="18"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$P{tableauHonneur}]]></textFieldExpression></textField>
+      <staticText><reportElement x="290" y="76" width="90" height="18"/><textElement><font size="9" isBold="true"/></textElement><text><![CDATA[Félicitations :]]></text></staticText>
+      <textField><reportElement x="380" y="76" width="50" height="18"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$P{felicitations}]]></textFieldExpression></textField>
+
+      <staticText><reportElement x="0" y="96" width="120" height="18"/><textElement><font size="9" isBold="true"/></textElement><text><![CDATA[Encouragement :]]></text></staticText>
+      <textField><reportElement x="120" y="96" width="50" height="18"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$P{encouragement}]]></textFieldExpression></textField>
+      <staticText><reportElement x="290" y="96" width="90" height="18"/><textElement><font size="9" isBold="true"/></textElement><text><![CDATA[Avertissement :]]></text></staticText>
+      <textField><reportElement x="380" y="96" width="50" height="18"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$P{avertissement}]]></textFieldExpression></textField>
+
+      <line><reportElement x="0" y="124" width="535" height="1" forecolor="#e2e8f0"/></line>
+
+      <staticText><reportElement x="0" y="134" width="200" height="16"/><textElement><font size="9" isBold="true"/></textElement><text><![CDATA[Décision du conseil des professeurs :]]></text></staticText>
+      <textField><reportElement x="0" y="152" width="535" height="30"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$P{decisionConseil}]]></textFieldExpression></textField>
+
+      <staticText><reportElement x="0" y="186" width="200" height="16"/><textElement><font size="9" isBold="true"/></textElement><text><![CDATA[Observation du directeur :]]></text></staticText>
+      <textField><reportElement x="0" y="204" width="535" height="24"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$P{observationDirecteur}]]></textFieldExpression></textField>
+    </band>
+  </summary>
+
+  <pageFooter>
+    <band height="20">
+      <line><reportElement x="0" y="0" width="535" height="1" forecolor="#e2e8f0"/></line>
+      <staticText>
+        <reportElement x="0" y="4" width="535" height="14" forecolor="#94a3b8"/>
+        <textElement textAlignment="Center"><font size="7"/></textElement>
+        <text><![CDATA[LBS Education — Document généré automatiquement]]></text>
+      </staticText>
+    </band>
+  </pageFooter>
+
+</jasperReport>

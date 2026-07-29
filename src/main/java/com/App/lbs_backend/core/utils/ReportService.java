@@ -2,11 +2,16 @@ package com.App.lbs_backend.core.utils;
 
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
+import net.sf.jasperreports.pdf.JRPdfExporter;
+import net.sf.jasperreports.export.SimpleExporterInput;
+import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -25,21 +30,30 @@ public class ReportService {
      * @throws Exception Si une erreur survient lors de la génération
      */
     public byte[] generatePdfReport(String reportName, Map<String, Object> parameters, Collection<?> data) throws Exception {
-        // 1. Charger le fichier .jrxml
-        InputStream reportStream = new ClassPathResource("reports/" + reportName + ".jrxml").getInputStream();
+        JasperPrint jasperPrint = fillReport(reportName, parameters, data);
+        return exportToPdf(List.of(jasperPrint));
+    }
 
-        // 2. Compiler le rapport
+    /** Compile et remplit un rapport sans l'exporter — utile pour fusionner plusieurs rapports
+        (ex: un bulletin par élève d'une classe) en un seul PDF via {@link #exportToPdf}. */
+    public JasperPrint fillReport(String reportName, Map<String, Object> parameters, Collection<?> data) throws Exception {
+        InputStream reportStream = new ClassPathResource("reports/" + reportName + ".jrxml").getInputStream();
         JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);
 
-        // 3. Créer la source de données (si data n'est pas vide)
-        JRDataSource dataSource = (data != null && !data.isEmpty()) 
-                ? new JRBeanCollectionDataSource(data) 
+        JRDataSource dataSource = (data != null && !data.isEmpty())
+                ? new JRBeanCollectionDataSource(data)
                 : new JREmptyDataSource();
 
-        // 4. Remplir le rapport
-        JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, dataSource);
+        return JasperFillManager.fillReport(jasperReport, parameters, dataSource);
+    }
 
-        // 5. Exporter en PDF
-        return JasperExportManager.exportReportToPdf(jasperPrint);
+    /** Exporte une liste de rapports déjà remplis en un seul PDF (un rapport par page/groupe). */
+    public byte[] exportToPdf(List<JasperPrint> jasperPrints) throws Exception {
+        JRPdfExporter exporter = new JRPdfExporter();
+        exporter.setExporterInput(SimpleExporterInput.getInstance(jasperPrints));
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        exporter.setExporterOutput(new SimpleOutputStreamExporterOutput(out));
+        exporter.exportReport();
+        return out.toByteArray();
     }
 }

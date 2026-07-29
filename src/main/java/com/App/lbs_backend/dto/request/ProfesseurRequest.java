@@ -6,9 +6,12 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class ProfesseurRequest implements FormRequest {
-    @NotBlank(message = "Le code est obligatoire")
+    // Pas de matricule saisi par l'utilisateur — un code interne est généré automatiquement
+    // à la création (voir ProfesseurController.doCreate).
     @Size(max = 20, message = "Le code ne peut pas dépasser 20 caractères")
     private String code;
 
@@ -27,4 +30,5 @@ public class ProfesseurRequest implements FormRequest {
     private String residence;
     private String num;
     private Boolean actif;
+    private List<Long> matiereIds;
 }

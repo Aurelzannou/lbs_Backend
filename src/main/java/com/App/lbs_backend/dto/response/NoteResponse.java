@@ -6,21 +6,19 @@ import java.time.LocalDateTime;
 public record NoteResponse(
         Long id,
         String uuid,
-        Long dossierEleveId,
+        Long eleveId,
         Long matiereId,
         Long periodeId,
         Long professeurId,
         Double valeur,
         Double bareme,
         String typeEvaluation,
+        Integer numeroDevoir,
         LocalDate dateEvaluation,
-        String commentaire,
-        Long utilisateurId,
         LocalDateTime modifierLe,
         String modifierPar,
-        DossierEleveResponse dossierEleve,
+        EleveResponse eleve,
         MatiereResponse matiere,
         PeriodeAcademiqueResponse periode,
-        ProfesseurResponse professeur,
-        UtilisateurResponse utilisateur
+        ProfesseurResponse professeur
 ) {}

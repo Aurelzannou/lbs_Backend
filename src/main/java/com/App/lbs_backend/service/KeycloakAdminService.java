@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RolesResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -123,6 +124,26 @@ public class KeycloakAdminService {
         } catch (Exception e) {
             log.error("Exception lors de la création de l'utilisateur dans Keycloak: ", e);
             throw new RuntimeException("Erreur de synchronisation Keycloak", e);
+        }
+    }
+
+    /**
+     * Active ou désactive un compte Keycloak existant (ex: un professeur qui devient inactif
+     * dans le référentiel ne doit plus pouvoir se connecter à son portail).
+     *
+     * @param keycloakUserId L'ID unique Keycloak de l'utilisateur
+     * @param enabled true pour activer le compte, false pour le désactiver
+     */
+    public void setUserEnabled(String keycloakUserId, boolean enabled) {
+        log.info("{} le compte Keycloak ID: {}", enabled ? "Activation" : "Désactivation", keycloakUserId);
+        try {
+            UserResource userResource = keycloak.realm(targetRealm).users().get(keycloakUserId);
+            UserRepresentation user = userResource.toRepresentation();
+            user.setEnabled(enabled);
+            userResource.update(user);
+            log.info("Compte Keycloak {} avec succès.", enabled ? "activé" : "désactivé");
+        } catch (Exception e) {
+            log.error("Erreur lors de l'activation/désactivation du compte Keycloak : ", e);
         }
     }
 
