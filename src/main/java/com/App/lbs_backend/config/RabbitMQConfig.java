@@ -18,6 +18,10 @@ public class RabbitMQConfig {
     public static final String EMAIL_DLQ = "lbs.email.notification.dlq";
     public static final String EMAIL_ROUTING_KEY = "email.dossier.notification";
 
+    public static final String PROFESSEUR_ACTIVATION_QUEUE = "lbs.professeur.activation.queue";
+    public static final String PROFESSEUR_ACTIVATION_DLQ = "lbs.professeur.activation.dlq";
+    public static final String PROFESSEUR_ACTIVATION_ROUTING_KEY = "email.professeur.activation";
+
     @Bean
     public DirectExchange notificationExchange() {
         return new DirectExchange(NOTIFICATION_EXCHANGE, true, false);
@@ -39,6 +43,24 @@ public class RabbitMQConfig {
     @Bean
     public Binding emailNotificationBinding(Queue emailNotificationQueue, DirectExchange notificationExchange) {
         return BindingBuilder.bind(emailNotificationQueue).to(notificationExchange).with(EMAIL_ROUTING_KEY);
+    }
+
+    @Bean
+    public Queue professeurActivationDlq() {
+        return QueueBuilder.durable(PROFESSEUR_ACTIVATION_DLQ).build();
+    }
+
+    @Bean
+    public Queue professeurActivationQueue() {
+        return QueueBuilder.durable(PROFESSEUR_ACTIVATION_QUEUE)
+                .withArgument("x-dead-letter-exchange", "")
+                .withArgument("x-dead-letter-routing-key", PROFESSEUR_ACTIVATION_DLQ)
+                .build();
+    }
+
+    @Bean
+    public Binding professeurActivationBinding(Queue professeurActivationQueue, DirectExchange notificationExchange) {
+        return BindingBuilder.bind(professeurActivationQueue).to(notificationExchange).with(PROFESSEUR_ACTIVATION_ROUTING_KEY);
     }
 
     @Bean

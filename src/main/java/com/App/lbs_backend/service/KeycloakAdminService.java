@@ -1,5 +1,6 @@
 package com.App.lbs_backend.service;
 
+import com.App.lbs_backend.core.exception.KeycloakUserAlreadyExistsException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.admin.client.Keycloak;
@@ -109,22 +110,38 @@ public class KeycloakAdminService {
         try {
             UsersResource usersResource = keycloak.realm(targetRealm).users();
             Response response = usersResource.create(user);
-            
+
             if (response.getStatus() == 201) {
                 // Récupérer l'ID de l'utilisateur créé à partir du header Location
                 String userId = response.getLocation().getPath().replaceAll(".*/([^/]+)$", "$1");
                 log.info("Utilisateur créé avec succès. ID: {}", userId);
                 return userId;
-            } else {
-                String error = response.readEntity(String.class);
-                log.error("Erreur lors de la création de l'utilisateur Keycloak. Status: {}, Erreur: {}", 
-                          response.getStatus(), error);
-                throw new RuntimeException("Erreur de création d'utilisateur dans Keycloak: " + error);
             }
+
+            if (response.getStatus() == 409) {
+                // Un compte existe déjà avec ce login/email (ex: la même adresse sert déjà à un
+                // Tuteur) — le mot de passe demandé n'a PAS été appliqué à ce compte existant.
+                log.warn("Un compte Keycloak existe déjà pour {} — le mot de passe fourni n'a pas été appliqué.", username);
+                throw new KeycloakUserAlreadyExistsException(username);
+            }
+
+            String error = response.readEntity(String.class);
+            log.error("Erreur lors de la création de l'utilisateur Keycloak. Status: {}, Erreur: {}",
+                      response.getStatus(), error);
+            throw new RuntimeException("Erreur de création d'utilisateur dans Keycloak: " + error);
+        } catch (KeycloakUserAlreadyExistsException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Exception lors de la création de l'utilisateur dans Keycloak: ", e);
             throw new RuntimeException("Erreur de synchronisation Keycloak", e);
         }
+    }
+
+    /** Retrouve l'ID Keycloak d'un utilisateur existant par son login (username = email dans ce
+        système, cf. hasOtpConfigured) — utilisé quand createUser signale qu'un compte existe déjà. */
+    public String findUserIdByUsername(String username) {
+        List<UserRepresentation> matches = keycloak.realm(targetRealm).users().search(username, true);
+        return matches.isEmpty() ? null : matches.get(0).getId();
     }
 
     /**
@@ -144,6 +161,28 @@ public class KeycloakAdminService {
             log.info("Compte Keycloak {} avec succès.", enabled ? "activé" : "désactivé");
         } catch (Exception e) {
             log.error("Erreur lors de l'activation/désactivation du compte Keycloak : ", e);
+        }
+    }
+
+    /**
+     * Réinitialise le mot de passe d'un compte Keycloak existant (ex: l'admin veut renvoyer de
+     * nouveaux identifiants à un professeur qui a perdu les siens).
+     *
+     * @param keycloakUserId L'ID unique Keycloak de l'utilisateur
+     * @param newPassword Le nouveau mot de passe à appliquer
+     */
+    public void resetPassword(String keycloakUserId, String newPassword) {
+        log.info("Réinitialisation du mot de passe pour le compte Keycloak ID: {}", keycloakUserId);
+        try {
+            CredentialRepresentation credential = new CredentialRepresentation();
+            credential.setType(CredentialRepresentation.PASSWORD);
+            credential.setValue(newPassword);
+            credential.setTemporary(false);
+            keycloak.realm(targetRealm).users().get(keycloakUserId).resetPassword(credential);
+            log.info("Mot de passe réinitialisé avec succès.");
+        } catch (Exception e) {
+            log.error("Erreur lors de la réinitialisation du mot de passe Keycloak : ", e);
+            throw new RuntimeException("Erreur de synchronisation Keycloak", e);
         }
     }
 

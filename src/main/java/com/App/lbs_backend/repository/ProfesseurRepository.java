@@ -22,4 +22,7 @@ public interface ProfesseurRepository extends BaseRepository<Professeur> {
 
     /** Résout le professeur connecté au portail à partir de l'email du JWT (login Keycloak). */
     Optional<Professeur> findByEmail(String email);
+
+    /** Résout le professeur à partir du jeton d'activation contenu dans le lien envoyé par email. */
+    Optional<Professeur> findByActivationToken(String activationToken);
 }

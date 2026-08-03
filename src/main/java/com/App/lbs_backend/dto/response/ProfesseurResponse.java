@@ -18,7 +18,8 @@ public record ProfesseurResponse(
         String modifierPar,
         List<Long> matiereIds,
         List<String> matiereLibelles,
-        // Renseigné uniquement dans la réponse immédiate d'une création/mise à jour ayant généré
-        // un compte de connexion — jamais persisté, ne peut pas être récupéré ultérieurement.
-        String motDePasseGenere
+        // true uniquement dans la réponse immédiate d'une création/mise à jour ayant généré un
+        // nouveau compte de connexion (les identifiants ont alors été envoyés par email) — jamais
+        // persisté, le mot de passe en clair ne transite jamais par l'API.
+        boolean compteProvisionneMaintenant
 ) {}

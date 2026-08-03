@@ -19,12 +19,13 @@ public class ProfesseurMapper implements Mapper<Professeur, ProfesseurResponse> 
 
     @Override
     public ProfesseurResponse toResponse(Professeur entity) {
-        return toResponse(entity, null);
+        return toResponse(entity, false);
     }
 
-    /** Utilisé juste après une création/mise à jour ayant généré un mot de passe de connexion,
-        pour le renvoyer une seule fois dans la réponse HTTP sans jamais le persister. */
-    public ProfesseurResponse toResponse(Professeur entity, String motDePasseGenere) {
+    /** Utilisé juste après une création/mise à jour ayant provisionné un nouveau compte de
+        connexion (identifiants envoyés par email) — signale au frontend qu'un email vient de
+        partir, sans jamais faire transiter le mot de passe par l'API. */
+    public ProfesseurResponse toResponse(Professeur entity, boolean compteProvisionneMaintenant) {
         if (entity == null) return null;
 
         List<Long> matiereIds = entity.getMatiereIds() != null ? entity.getMatiereIds() : Collections.emptyList();
@@ -48,7 +49,7 @@ public class ProfesseurMapper implements Mapper<Professeur, ProfesseurResponse> 
                 entity.getModifierPar(),
                 matiereIds,
                 matiereLibelles,
-                motDePasseGenere
+                compteProvisionneMaintenant
         );
     }
 }

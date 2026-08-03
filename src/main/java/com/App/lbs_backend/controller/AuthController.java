@@ -1,9 +1,11 @@
 package com.App.lbs_backend.controller;
 
+import com.App.lbs_backend.dto.request.ActivationCompteRequest;
 import com.App.lbs_backend.dto.response.UtilisateurResponse;
 import com.App.lbs_backend.mapper.UtilisateurMapper;
 import com.App.lbs_backend.service.KeycloakAdminService;
 import com.App.lbs_backend.service.UtilisateurSyncService;
+import com.App.lbs_backend.service.referentiel.ProfesseurService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,6 +29,7 @@ public class AuthController {
     private final UtilisateurMapper utilisateurMapper;
     private final AuthService authService;
     private final KeycloakAdminService keycloakAdminService;
+    private final ProfesseurService professeurService;
 
     /**
      * Endpoint permettant à l'application Front-End de récupérer les 
@@ -56,6 +59,16 @@ public class AuthController {
     public ResponseEntity<Map<String, Boolean>> isOtpRequired(@RequestParam String username) {
         boolean otpRequired = keycloakAdminService.hasOtpConfigured(username);
         return ResponseEntity.ok(Map.of("otpRequired", otpRequired));
+    }
+
+    /**
+     * Endpoint public consommant un lien d'activation de compte professeur : le professeur
+     * choisit lui-même son mot de passe, jamais transmis en clair par email.
+     */
+    @PostMapping("/activer-compte-professeur")
+    public ResponseEntity<String> activerCompteProfesseur(@Valid @RequestBody ActivationCompteRequest request) {
+        professeurService.activerCompte(request.getToken(), request.getMotDePasse());
+        return ResponseEntity.ok("Compte activé avec succès. Vous pouvez maintenant vous connecter.");
     }
 
     /**

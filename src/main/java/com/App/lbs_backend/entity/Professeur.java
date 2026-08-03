@@ -2,6 +2,7 @@ package com.App.lbs_backend.entity;
 
 import com.App.lbs_backend.core.AuditableEntity;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -47,6 +48,15 @@ public class Professeur extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_prfs_actif")
     private Boolean actif;
 
+    /** Jeton à usage unique permettant au professeur de définir lui-même son mot de passe via un
+        lien d'activation (jamais de mot de passe en clair envoyé par email). Effacé une fois
+        utilisé ou remplacé à chaque nouvel envoi. */
+    @Column(name = "lbs_prfs_activation_token", length = 100, unique = true)
+    private String activationToken;
+
+    @Column(name = "lbs_prfs_activation_expiration")
+    private LocalDateTime activationTokenExpiration;
+
     /** Matières enseignées par ce professeur — utilisé pour filtrer les profs disponibles
         pour une matière donnée sur l'écran Emploi du temps. */
     @ElementCollection
@@ -90,6 +100,12 @@ public class Professeur extends AuditableEntity implements Timestamps {
 
     public Boolean getActif() { return actif; }
     public void setActif(Boolean actif) { this.actif = actif; }
+
+    public String getActivationToken() { return activationToken; }
+    public void setActivationToken(String activationToken) { this.activationToken = activationToken; }
+
+    public LocalDateTime getActivationTokenExpiration() { return activationTokenExpiration; }
+    public void setActivationTokenExpiration(LocalDateTime activationTokenExpiration) { this.activationTokenExpiration = activationTokenExpiration; }
 
     public List<Long> getMatiereIds() { return matiereIds; }
     public void setMatiereIds(List<Long> matiereIds) { this.matiereIds = matiereIds; }

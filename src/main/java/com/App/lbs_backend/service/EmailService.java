@@ -68,6 +68,20 @@ public class EmailService {
              ctx);
     }
 
+    public void sendProfesseurActivation(String toEmail, String nom, String prenom, String lienActivation) {
+        Context ctx = new Context();
+        ctx.setVariables(Map.of(
+            "toEmail",        toEmail,
+            "nom",            nom,
+            "prenom",         prenom,
+            "lienActivation", lienActivation
+        ));
+        send(toEmail,
+             "🔑 Votre compte professeur — LBS Education",
+             "email/professeur-activation",
+             ctx);
+    }
+
     private void send(String to, String subject, String template, Context ctx) {
         try {
             String html = templateEngine.process(template, ctx);
