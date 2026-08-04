@@ -83,7 +83,7 @@ public class PresenceService {
         EmploiDuTemps seance = emploiDuTempsRepository.findById(emploiTempsId)
                 .orElseThrow(() -> new IllegalArgumentException("Créneau introuvable"));
 
-        List<Eleve> eleves = eleveRepository.findByClasseId(seance.getClasseId());
+        List<Eleve> eleves = eleveRepository.findByClasseIdOrderByNomAscPrenomAsc(seance.getClasseId());
 
         Map<Long, String> statutsExistants = presenceEleveRepository
                 .findByEmploiTempsIdAndDate(emploiTempsId, date).stream()

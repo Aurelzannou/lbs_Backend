@@ -26,6 +26,8 @@
   <parameter name="decisionConseil"      class="java.lang.String"/>
   <parameter name="observationDirecteur" class="java.lang.String"/>
 
+  <queryString><![CDATA[]]></queryString>
+
   <!-- Champs : une ligne par matière -->
   <field name="matiereLibelle" class="java.lang.String"/>
   <field name="coefficient" class="java.lang.Double"/>
@@ -36,8 +38,6 @@
   <field name="moyenneCoefficientee" class="java.lang.Double"/>
   <field name="rang" class="java.lang.Integer"/>
   <field name="appreciation" class="java.lang.String"/>
-
-  <queryString><![CDATA[]]></queryString>
 
   <title>
     <band height="150">
@@ -56,11 +56,11 @@
         <text><![CDATA[Bulletin de notes]]></text>
       </staticText>
 
-      <staticText>
+      <textField>
         <reportElement x="0" y="56" width="535" height="20"/>
         <textElement textAlignment="Center" verticalAlignment="Middle"><font size="13" isBold="true"/></textElement>
         <textFieldExpression><![CDATA[$P{periodeLibelle}]]></textFieldExpression>
-      </staticText>
+      </textField>
 
       <line><reportElement x="0" y="82" width="535" height="1" forecolor="#e2e8f0"/></line>
 
@@ -129,6 +129,17 @@
     </band>
   </detail>
 
+  <pageFooter>
+    <band height="20">
+      <line><reportElement x="0" y="0" width="535" height="1" forecolor="#e2e8f0"/></line>
+      <staticText>
+        <reportElement x="0" y="4" width="535" height="14" forecolor="#94a3b8"/>
+        <textElement textAlignment="Center"><font size="7"/></textElement>
+        <text><![CDATA[LBS Education — Document généré automatiquement]]></text>
+      </staticText>
+    </band>
+  </pageFooter>
+
   <summary>
     <band height="230">
       <line><reportElement x="0" y="6" width="535" height="1" forecolor="#1e293b"/></line>
@@ -166,16 +177,5 @@
       <textField><reportElement x="0" y="204" width="535" height="24"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$P{observationDirecteur}]]></textFieldExpression></textField>
     </band>
   </summary>
-
-  <pageFooter>
-    <band height="20">
-      <line><reportElement x="0" y="0" width="535" height="1" forecolor="#e2e8f0"/></line>
-      <staticText>
-        <reportElement x="0" y="4" width="535" height="14" forecolor="#94a3b8"/>
-        <textElement textAlignment="Center"><font size="7"/></textElement>
-        <text><![CDATA[LBS Education — Document généré automatiquement]]></text>
-      </staticText>
-    </band>
-  </pageFooter>
 
 </jasperReport>

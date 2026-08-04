@@ -86,7 +86,7 @@ public class NoteService {
         PeriodeAcademique periode = periodeAcademiqueRepository.findById(periodeId)
                 .orElseThrow(() -> new IllegalArgumentException("Période introuvable"));
 
-        List<Eleve> eleves = eleveRepository.findByClasseId(classeId);
+        List<Eleve> eleves = eleveRepository.findByClasseIdOrderByNomAscPrenomAsc(classeId);
         List<Long> eleveIds = eleves.stream().map(Eleve::getId).toList();
 
         Map<Long, List<Note>> notesParEleve = noteRepository

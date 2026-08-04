@@ -7,6 +7,7 @@ import com.App.lbs_backend.dto.response.BulletinResponse;
 import com.App.lbs_backend.service.scolarite.BulletinService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.sf.jasperreports.engine.JasperPrint;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/bulletins")
 @RequiredArgsConstructor
@@ -72,6 +74,7 @@ public class BulletinController {
                     .contentType(MediaType.APPLICATION_PDF)
                     .body(pdf);
         } catch (Exception e) {
+            log.error("Erreur génération PDF bulletin élève {} période {}", eleveId, periodeId, e);
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -91,6 +94,7 @@ public class BulletinController {
                     .contentType(MediaType.APPLICATION_PDF)
                     .body(pdf);
         } catch (Exception e) {
+            log.error("Erreur génération PDF bulletins classe {} période {}", classeId, periodeId, e);
             return ResponseEntity.internalServerError().build();
         }
     }

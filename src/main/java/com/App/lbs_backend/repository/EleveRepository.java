@@ -20,7 +20,7 @@ public interface EleveRepository extends BaseRepository<Eleve> {
 
     List<Eleve> findByTuteurId(Long tuteurId);
 
-    List<Eleve> findByClasseId(Long classeId);
+    List<Eleve> findByClasseIdOrderByNomAscPrenomAsc(Long classeId);
 
     @Query("""
         SELECT e FROM Eleve e
