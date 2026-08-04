@@ -34,7 +34,7 @@ public class NoteMapper {
                 entity.getValeur(),
                 entity.getBareme(),
                 entity.getTypeEvaluation(),
-                entity.getNumeroDevoir(),
+                entity.getNumero(),
                 entity.getDateEvaluation(),
                 entity.getModifierLe(),
                 entity.getModifierPar(),

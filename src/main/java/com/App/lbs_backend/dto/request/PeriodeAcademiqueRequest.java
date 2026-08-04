@@ -9,7 +9,6 @@ import java.time.LocalDate;
 
 @Data
 public class PeriodeAcademiqueRequest implements FormRequest {
-    @NotBlank(message = "Le code est obligatoire")
     @Size(max = 20, message = "Le code ne peut pas dépasser 20 caractères")
     private String code;
 

@@ -64,6 +64,14 @@ public class Professeur extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_mati_id")
     private List<Long> matiereIds = new ArrayList<>();
 
+    /** Classes affectées à ce professeur — source de vérité pour "quelles classes peut-il noter"
+        (combiné à ses matières enseignées : il peut noter chacune de ses matières dans chacune de
+        ses classes affectées), indépendamment de l'emploi du temps. */
+    @ElementCollection
+    @CollectionTable(name = "lbs_professeur_classe", schema = "lbs", joinColumns = @JoinColumn(name = "lbs_prfs_id"))
+    @Column(name = "lbs_clas_id")
+    private List<Long> classeIds = new ArrayList<>();
+
     @PrePersist
     public void prePersist() {
         if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
@@ -109,4 +117,7 @@ public class Professeur extends AuditableEntity implements Timestamps {
 
     public List<Long> getMatiereIds() { return matiereIds; }
     public void setMatiereIds(List<Long> matiereIds) { this.matiereIds = matiereIds; }
+
+    public List<Long> getClasseIds() { return classeIds; }
+    public void setClasseIds(List<Long> classeIds) { this.classeIds = classeIds; }
 }

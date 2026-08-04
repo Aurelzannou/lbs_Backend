@@ -20,24 +20,6 @@ public interface EmploiDuTempsRepository extends BaseRepository<EmploiDuTemps> {
 
     long countByProfId(Long profId);
 
-    /** Couples distincts (classe, matière) qu'un professeur enseigne pour une année scolaire —
-        alimente son "Mes classes à noter" côté portail, et sert de base au contrôle d'accès
-        (un professeur ne peut noter que ce qu'il enseigne réellement). */
-    @Query("""
-        SELECT DISTINCT e.classeId AS classeId, e.matiereId AS matiereId
-        FROM EmploiDuTemps e
-        WHERE e.profId = :profId AND e.anneeScolaireId = :anneeScolaireId
-        """)
-    List<ClasseMatiereProjection> findDistinctClasseMatiereByProfIdAndAnneeScolaireId(
-        @Param("profId") Long profId,
-        @Param("anneeScolaireId") Long anneeScolaireId
-    );
-
-    interface ClasseMatiereProjection {
-        Long getClasseId();
-        Long getMatiereId();
-    }
-
     @Query("""
         SELECT COUNT(e) > 0 FROM EmploiDuTemps e
         WHERE e.profId = :profId

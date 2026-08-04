@@ -2,6 +2,7 @@ package com.App.lbs_backend.mapper;
 
 import com.App.lbs_backend.dto.response.ProfesseurResponse;
 import com.App.lbs_backend.entity.Professeur;
+import com.App.lbs_backend.repository.ClasseRepository;
 import com.App.lbs_backend.repository.MatiereRepository;
 import org.springframework.stereotype.Component;
 
@@ -12,9 +13,11 @@ import java.util.List;
 public class ProfesseurMapper implements Mapper<Professeur, ProfesseurResponse> {
 
     private final MatiereRepository matiereRepository;
+    private final ClasseRepository classeRepository;
 
-    public ProfesseurMapper(MatiereRepository matiereRepository) {
+    public ProfesseurMapper(MatiereRepository matiereRepository, ClasseRepository classeRepository) {
         this.matiereRepository = matiereRepository;
+        this.classeRepository = classeRepository;
     }
 
     @Override
@@ -34,6 +37,12 @@ public class ProfesseurMapper implements Mapper<Professeur, ProfesseurResponse> 
                 .filter(java.util.Objects::nonNull)
                 .toList();
 
+        List<Long> classeIds = entity.getClasseIds() != null ? entity.getClasseIds() : Collections.emptyList();
+        List<String> classeLibelles = classeIds.stream()
+                .map(id -> classeRepository.findById(id).map(com.App.lbs_backend.entity.Classe::getLibelle).orElse(null))
+                .filter(java.util.Objects::nonNull)
+                .toList();
+
         return new ProfesseurResponse(
                 entity.getId(),
                 entity.getUuid(),
@@ -49,6 +58,8 @@ public class ProfesseurMapper implements Mapper<Professeur, ProfesseurResponse> 
                 entity.getModifierPar(),
                 matiereIds,
                 matiereLibelles,
+                classeIds,
+                classeLibelles,
                 compteProvisionneMaintenant
         );
     }

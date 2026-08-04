@@ -51,10 +51,12 @@ public class Note extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_note_type_evaluation", length = 50)
     private String typeEvaluation;
 
-    /** Uniquement renseigné pour typeEvaluation="DEVOIR" (1 ou 2) — reconstruit les colonnes
-        "1er DEV"/"2e DEV" du bulletin et sert de clé naturelle pour l'upsert. */
-    @Column(name = "lbs_note_numero_devoir")
-    private Integer numeroDevoir;
+    /** Numéro d'ordre au sein du type d'évaluation : 1 ou 2 pour "DEVOIR" (colonnes "1er DEV"/
+        "2e DEV" du bulletin) ; 1..N pour "INTERROGATION" (le professeur peut en saisir autant
+        qu'il veut — leur moyenne alimente ensuite le calcul global). Sert de clé naturelle pour
+        l'upsert avec (eleveId, matiereId, periodeId, typeEvaluation). */
+    @Column(name = "lbs_note_numero")
+    private Integer numero;
 
     @Column(name = "lbs_note_date_evaluation")
     private LocalDate dateEvaluation;
@@ -115,8 +117,8 @@ public class Note extends AuditableEntity implements Timestamps {
     public String getTypeEvaluation() { return typeEvaluation; }
     public void setTypeEvaluation(String typeEvaluation) { this.typeEvaluation = typeEvaluation; }
 
-    public Integer getNumeroDevoir() { return numeroDevoir; }
-    public void setNumeroDevoir(Integer numeroDevoir) { this.numeroDevoir = numeroDevoir; }
+    public Integer getNumero() { return numero; }
+    public void setNumero(Integer numero) { this.numero = numero; }
 
     public LocalDate getDateEvaluation() { return dateEvaluation; }
     public void setDateEvaluation(LocalDate dateEvaluation) { this.dateEvaluation = dateEvaluation; }

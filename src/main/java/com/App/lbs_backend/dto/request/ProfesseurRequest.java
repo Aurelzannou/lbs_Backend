@@ -31,4 +31,5 @@ public class ProfesseurRequest implements FormRequest {
     private String num;
     private Boolean actif;
     private List<Long> matiereIds;
+    private List<Long> classeIds;
 }

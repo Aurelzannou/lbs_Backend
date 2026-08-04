@@ -164,9 +164,9 @@ public class BulletinService {
                 m.setMatiereId(matiereId);
                 m.setMatiereLibelle(matiereLibelles.get(matiereId));
                 m.setCoefficient(coef);
-                m.setInterrogation(NoteService.extraireValeur(notesEleveMatiere, "INTERROGATION", null));
-                m.setDevoir1(NoteService.extraireValeur(notesEleveMatiere, "DEVOIR", 1));
-                m.setDevoir2(NoteService.extraireValeur(notesEleveMatiere, "DEVOIR", 2));
+                m.setInterrogation(NoteService.calculerMoyenneInterrogations(notesEleveMatiere));
+                m.setDevoir1(NoteService.extraireValeur(notesEleveMatiere, NoteService.DEVOIR, 1));
+                m.setDevoir2(NoteService.extraireValeur(notesEleveMatiere, NoteService.DEVOIR, 2));
                 m.setMoyenne(moyenne);
                 m.setMoyenneCoefficientee(coef != null ? moyenne * coef : null);
                 m.setRang(rangParMatiereParEleve.get(matiereId).get(eleve.getId()));
@@ -285,10 +285,10 @@ public class BulletinService {
     }
 
     private Double extraireMoyenne(List<Note> notes) {
-        Double interrogation = NoteService.extraireValeur(notes, "INTERROGATION", null);
-        Double devoir1 = NoteService.extraireValeur(notes, "DEVOIR", 1);
-        Double devoir2 = NoteService.extraireValeur(notes, "DEVOIR", 2);
-        return NoteService.calculerMoyenne(interrogation, devoir1, devoir2);
+        Double moyenneInterrogations = NoteService.calculerMoyenneInterrogations(notes);
+        Double devoir1 = NoteService.extraireValeur(notes, NoteService.DEVOIR, 1);
+        Double devoir2 = NoteService.extraireValeur(notes, NoteService.DEVOIR, 2);
+        return NoteService.calculerMoyenne(moyenneInterrogations, devoir1, devoir2);
     }
 
     private static String appreciationPour(Double moyenne) {

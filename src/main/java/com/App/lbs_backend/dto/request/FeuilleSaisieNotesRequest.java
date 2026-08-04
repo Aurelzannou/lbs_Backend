@@ -17,7 +17,9 @@ public class FeuilleSaisieNotesRequest {
     @Data
     public static class EleveNoteEntry {
         private Long eleveId;
-        private Double interrogation;
+        /** Autant de valeurs que le professeur a saisi d'interrogations (position i = numéro i+1).
+            Une entrée à null représente une interrogation non notée pour cet élève (ex: absent). */
+        private List<Double> interrogations;
         private Double devoir1;
         private Double devoir2;
     }

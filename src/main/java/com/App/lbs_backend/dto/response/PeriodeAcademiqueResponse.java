@@ -14,5 +14,6 @@ public record PeriodeAcademiqueResponse(
         Boolean verrouille,
         LocalDateTime modifierLe,
         String modifierPar,
-        AnneeScolaireResponse anneeScolaire
+        AnneeScolaireResponse anneeScolaire,
+        String statut
 ) {}

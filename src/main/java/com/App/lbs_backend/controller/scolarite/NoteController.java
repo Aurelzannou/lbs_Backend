@@ -46,12 +46,12 @@ public class NoteController {
     }
 
     @GetMapping("/mes-classes")
-    public ResponseEntity<?> getMesClasses(@RequestParam Long anneeScolaireId, @AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<?> getMesClasses(@AuthenticationPrincipal Jwt jwt) {
         String email = extraireEmail(jwt);
         if (email == null) return ResponseEntity.ok(ApiResponse.apiSuccess("OK", Collections.emptyList(), httpRequest.getRequestURI()));
 
         List<ClasseMatiereANoterResponse> classes = professeurRepository.findByEmail(email)
-                .map(p -> noteService.getMesClassesANoter(p.getId(), anneeScolaireId))
+                .map(p -> noteService.getMesClassesANoter(p.getId()))
                 .orElse(Collections.emptyList());
         return ResponseEntity.ok(ApiResponse.apiSuccess("OK", classes, httpRequest.getRequestURI()));
     }

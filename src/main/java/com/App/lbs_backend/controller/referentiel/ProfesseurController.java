@@ -63,6 +63,7 @@ public class ProfesseurController extends MasterController<Professeur, Professeu
         entity.setNum(form.getNum());
         entity.setActif(form.getActif());
         entity.setMatiereIds(form.getMatiereIds());
+        entity.setClasseIds(form.getClasseIds());
 
         Professeur saved = professeurService.create(entity);
 
@@ -89,6 +90,7 @@ public class ProfesseurController extends MasterController<Professeur, Professeu
         entity.setNum(form.getNum());
         entity.setActif(form.getActif());
         entity.setMatiereIds(form.getMatiereIds());
+        entity.setClasseIds(form.getClasseIds());
 
         boolean compteProvisionne = false;
         if (!isBlank(entity.getEmail()) && isBlank(entity.getKeycloakId())) {

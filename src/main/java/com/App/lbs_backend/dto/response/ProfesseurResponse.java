@@ -18,6 +18,8 @@ public record ProfesseurResponse(
         String modifierPar,
         List<Long> matiereIds,
         List<String> matiereLibelles,
+        List<Long> classeIds,
+        List<String> classeLibelles,
         // true uniquement dans la réponse immédiate d'une création/mise à jour ayant généré un
         // nouveau compte de connexion (les identifiants ont alors été envoyés par email) — jamais
         // persisté, le mot de passe en clair ne transite jamais par l'API.

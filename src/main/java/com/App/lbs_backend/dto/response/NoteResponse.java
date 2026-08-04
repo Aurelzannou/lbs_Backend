@@ -13,7 +13,7 @@ public record NoteResponse(
         Double valeur,
         Double bareme,
         String typeEvaluation,
-        Integer numeroDevoir,
+        Integer numero,
         LocalDate dateEvaluation,
         LocalDateTime modifierLe,
         String modifierPar,
