@@ -11,6 +11,8 @@ public class ProgressionSaisieNoteResponse {
     private Long periodeId;
     private int interrogationsVerroueesJusqua;
     private int devoirsVerrouesJusqua;
+    private int interrogationsValideesJusqua;
+    private int devoirsValideesJusqua;
     /** BROUILLON / SOUMISE / VALIDEE */
     private String etape;
     private LocalDateTime dateSoumission;

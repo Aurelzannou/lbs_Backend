@@ -24,17 +24,21 @@ public class AnneeScolaireController extends MasterController<AnneeScolaire, Ann
 
     @Override
     protected AnneeScolaireResponse doCreate(AnneeScolaireRequest form) {
+        anneeScolaireService.verifierChevauchement(form.getDateDebut(), form.getDateFin(), null);
         AnneeScolaire entity = new AnneeScolaire();
         applyForm(entity, form);
         AnneeScolaire saved = anneeScolaireService.create(entity);
+        anneeScolaireService.assurerActiviteUnique(saved);
         return anneeScolaireService.toResponse(saved.getId());
     }
 
     @Override
     protected AnneeScolaireResponse doUpdate(String uuid, AnneeScolaireRequest form) {
         AnneeScolaire entity = anneeScolaireService.findByUuid(uuid);
+        anneeScolaireService.verifierChevauchement(form.getDateDebut(), form.getDateFin(), entity.getId());
         applyForm(entity, form);
         anneeScolaireService.update(entity);
+        anneeScolaireService.assurerActiviteUnique(entity);
         return anneeScolaireService.toResponse(entity.getId());
     }
 

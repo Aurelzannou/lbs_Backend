@@ -59,6 +59,12 @@ public class ProgressionSaisieNote extends AuditableEntity implements Timestamps
     @Column(name = "lbs_prgs_devoirs_verrouilles")
     private Integer devoirsVerrouesJusqua;
 
+    @Column(name = "lbs_prgs_interro_validees")
+    private Integer interrogationsValideesJusqua;
+
+    @Column(name = "lbs_prgs_devoirs_valides")
+    private Integer devoirsValideesJusqua;
+
     @Column(name = "lbs_prgs_etape_id")
     private Long etapeId;
 
@@ -80,6 +86,8 @@ public class ProgressionSaisieNote extends AuditableEntity implements Timestamps
         if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
         if (this.interrogationsVerroueesJusqua == null) this.interrogationsVerroueesJusqua = 0;
         if (this.devoirsVerrouesJusqua == null) this.devoirsVerrouesJusqua = 0;
+        if (this.interrogationsValideesJusqua == null) this.interrogationsValideesJusqua = 0;
+        if (this.devoirsValideesJusqua == null) this.devoirsValideesJusqua = 0;
     }
 
     public ProgressionSaisieNote() {}
@@ -107,6 +115,12 @@ public class ProgressionSaisieNote extends AuditableEntity implements Timestamps
 
     public Integer getDevoirsVerrouesJusqua() { return devoirsVerrouesJusqua; }
     public void setDevoirsVerrouesJusqua(Integer v) { this.devoirsVerrouesJusqua = v; }
+
+    public Integer getInterrogationsValideesJusqua() { return interrogationsValideesJusqua; }
+    public void setInterrogationsValideesJusqua(Integer v) { this.interrogationsValideesJusqua = v; }
+
+    public Integer getDevoirsValideesJusqua() { return devoirsValideesJusqua; }
+    public void setDevoirsValideesJusqua(Integer v) { this.devoirsValideesJusqua = v; }
 
     public Long getEtapeId() { return etapeId; }
     public void setEtapeId(Long etapeId) { this.etapeId = etapeId; }

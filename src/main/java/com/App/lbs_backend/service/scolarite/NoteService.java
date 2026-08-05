@@ -163,6 +163,10 @@ public class NoteService {
     public FeuilleSaisieNotesResponse enregistrerFeuille(FeuilleSaisieNotesRequest form) {
         verifierPeriodeNonValidee(form.getClasseId(), form.getPeriodeId());
         verifierEtapeModifiable(form);
+        // Une colonne déjà validée par l'admin est figée pour tout le monde, y compris l'admin lui-
+        // même — la seule façon d'y retoucher est de d'abord "Déverrouiller" cette colonne (ce qui
+        // annule aussi sa validation).
+        verifierColonnesNonValidees(form);
 
         if (form.getProfesseurId() != null) {
             Professeur professeur = professeurRepository.findById(form.getProfesseurId())
@@ -179,6 +183,12 @@ public class NoteService {
                     .orElseThrow(() -> new IllegalArgumentException("Période introuvable"));
             if (!PeriodeAcademiqueMapper.EN_COURS.equals(PeriodeAcademiqueMapper.calculerStatut(periode))) {
                 throw new IllegalArgumentException("Vous ne pouvez saisir des notes que pour la période en cours.");
+            }
+            // Le statut EN_COURS n'est calculé que sur les dates de la période — il ne suffit pas :
+            // si l'admin a désactivé l'année scolaire (par erreur, fin d'année, etc.), la saisie doit
+            // être bloquée même si la période tombe encore dans son intervalle de dates.
+            if (periode.getAnneeScolaire() == null || !Boolean.TRUE.equals(periode.getAnneeScolaire().getActif())) {
+                throw new IllegalArgumentException("L'année scolaire de cette période n'est plus active.");
             }
 
             // Colonne par colonne : le professeur ne peut pas modifier une colonne déjà verrouillée,
@@ -236,6 +246,44 @@ public class NoteService {
         }
     }
 
+    private void verifierColonnesNonValidees(FeuilleSaisieNotesRequest form) {
+        ProgressionSaisieNote progression = progressionSaisieNoteRepository
+                .findByClasseIdAndMatiereIdAndPeriodeId(form.getClasseId(), form.getMatiereId(), form.getPeriodeId())
+                .orElse(null);
+        int interroValidees = progression != null && progression.getInterrogationsValideesJusqua() != null
+                ? progression.getInterrogationsValideesJusqua() : 0;
+        int devoirsValidees = progression != null && progression.getDevoirsValideesJusqua() != null
+                ? progression.getDevoirsValideesJusqua() : 0;
+        if (interroValidees == 0 && devoirsValidees == 0) return;
+
+        for (FeuilleSaisieNotesRequest.EleveNoteEntry entree : form.getEleves()) {
+            List<Double> interrogations = entree.getInterrogations() != null ? entree.getInterrogations() : List.of();
+            for (int i = 1; i <= interrogations.size() && i <= interroValidees; i++) {
+                verifierValeurInchangee(entree.getEleveId(), form.getMatiereId(), form.getPeriodeId(),
+                        INTERROGATION, i, interrogations.get(i - 1));
+            }
+            if (devoirsValidees >= 1) {
+                verifierValeurInchangee(entree.getEleveId(), form.getMatiereId(), form.getPeriodeId(),
+                        DEVOIR, 1, entree.getDevoir1());
+            }
+            if (devoirsValidees >= 2) {
+                verifierValeurInchangee(entree.getEleveId(), form.getMatiereId(), form.getPeriodeId(),
+                        DEVOIR, 2, entree.getDevoir2());
+            }
+        }
+    }
+
+    private void verifierValeurInchangee(Long eleveId, Long matiereId, Long periodeId, String type,
+                                          int numero, Double valeurSoumise) {
+        Double valeurActuelle = noteRepository.findByEleveIdAndMatiereIdAndPeriodeIdAndTypeEvaluationAndNumero(
+                eleveId, matiereId, periodeId, type, numero).map(Note::getValeur).orElse(null);
+        if (!Objects.equals(valeurActuelle, valeurSoumise)) {
+            String label = INTERROGATION.equals(type) ? "L'interrogation " + numero : "Le devoir " + numero;
+            throw new IllegalArgumentException(
+                    label + " est validé(e) par l'administration et ne peut plus être modifié(e) (déverrouiller d'abord si besoin).");
+        }
+    }
+
     private void verifierColonnesModifiables(FeuilleSaisieNotesRequest form) {
         ProgressionSaisieNote progression = progressionSaisieNoteRepository
                 .findByClasseIdAndMatiereIdAndPeriodeId(form.getClasseId(), form.getMatiereId(), form.getPeriodeId())
@@ -244,26 +292,42 @@ public class NoteService {
                 ? progression.getInterrogationsVerroueesJusqua() : 0;
         int devoirsVerroues = progression != null && progression.getDevoirsVerrouesJusqua() != null
                 ? progression.getDevoirsVerrouesJusqua() : 0;
+        int interroValidees = progression != null && progression.getInterrogationsValideesJusqua() != null
+                ? progression.getInterrogationsValideesJusqua() : 0;
+        int devoirsValidees = progression != null && progression.getDevoirsValideesJusqua() != null
+                ? progression.getDevoirsValideesJusqua() : 0;
 
         for (FeuilleSaisieNotesRequest.EleveNoteEntry entree : form.getEleves()) {
             List<Double> interrogations = entree.getInterrogations() != null ? entree.getInterrogations() : List.of();
             for (int i = 1; i <= interrogations.size(); i++) {
                 verifierColonneModifiable(entree.getEleveId(), form.getMatiereId(), form.getPeriodeId(),
-                        INTERROGATION, i, interrogations.get(i - 1), interroVerrouees);
+                        INTERROGATION, i, interrogations.get(i - 1), interroVerrouees, interroValidees);
             }
             verifierColonneModifiable(entree.getEleveId(), form.getMatiereId(), form.getPeriodeId(),
-                    DEVOIR, 1, entree.getDevoir1(), devoirsVerroues);
+                    DEVOIR, 1, entree.getDevoir1(), devoirsVerroues, devoirsValidees);
             verifierColonneModifiable(entree.getEleveId(), form.getMatiereId(), form.getPeriodeId(),
-                    DEVOIR, 2, entree.getDevoir2(), devoirsVerroues);
+                    DEVOIR, 2, entree.getDevoir2(), devoirsVerroues, devoirsValidees);
         }
     }
 
     private void verifierColonneModifiable(Long eleveId, Long matiereId, Long periodeId, String type,
-                                            int numero, Double valeurSoumise, int verroueesJusqua) {
-        if (numero > verroueesJusqua + 1) {
+                                            int numero, Double valeurSoumise, int verroueesJusqua, int valideesJusqua) {
+        // Une colonne encore vide (valeur null) n'est pas une tentative d'écriture — seul un
+        // brouillon avec une vraie valeur doit être bloqué s'il dépasse la prochaine colonne
+        // autorisée. Sans ce garde-fou, "Enregistrer" échouait dès qu'un devoir/interrogation futur
+        // restait simplement non renseigné (aucune valeur à protéger, donc rien à refuser).
+        if (valeurSoumise != null && numero > verroueesJusqua + 1) {
             String label = INTERROGATION.equals(type) ? "l'interrogation " + numero : "le devoir " + numero;
             throw new IllegalArgumentException(
                     "Vous devez d'abord terminer la colonne précédente avant de renseigner " + label + ".");
+        }
+        // La colonne suivante (celle qui deviendrait la prochaine à verrouiller) reste totalement
+        // fermée à la saisie tant que la précédente n'est pas validée par l'administration — pas
+        // seulement au moment de cliquer "Terminer".
+        if (valeurSoumise != null && numero == verroueesJusqua + 1 && numero > 1 && valideesJusqua < numero - 1) {
+            String label = INTERROGATION.equals(type) ? "l'interrogation " + numero : "le devoir " + numero;
+            throw new IllegalArgumentException(
+                    "La colonne précédente doit d'abord être validée par l'administration avant de renseigner " + label + ".");
         }
         if (numero <= verroueesJusqua) {
             Double valeurActuelle = noteRepository.findByEleveIdAndMatiereIdAndPeriodeIdAndTypeEvaluationAndNumero(

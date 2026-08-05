@@ -94,6 +94,16 @@ public class NoteController {
         return ResponseEntity.ok(ApiResponse.apiSuccess("Colonne déverrouillée", dto, httpRequest.getRequestURI()));
     }
 
+    /** Réservé à l'admin côté frontend — valide la colonne verrouillée en attente (débloque la
+        colonne suivante pour le professeur). */
+    @PutMapping("/progression/valider-colonne")
+    public ResponseEntity<?> validerColonne(@RequestBody VerrouProgressionRequest form) {
+        ProgressionSaisieNoteResponse dto = "DEVOIR".equals(form.getTypeEvaluation())
+                ? progressionSaisieNoteService.validerDevoir(form.getClasseId(), form.getMatiereId(), form.getPeriodeId(), form.getNumero())
+                : progressionSaisieNoteService.validerInterrogation(form.getClasseId(), form.getMatiereId(), form.getPeriodeId(), form.getNumero());
+        return ResponseEntity.ok(ApiResponse.apiSuccess("Colonne validée", dto, httpRequest.getRequestURI()));
+    }
+
     /** Le professeur connecté soumet la matière entière pour validation admin — nécessite que
         toutes les colonnes soient déjà verrouillées. */
     @PutMapping("/progression/soumettre")
@@ -119,10 +129,19 @@ public class NoteController {
 
     /** Réservé à l'admin côté frontend — annule la validation (repasse à SOUMISE). */
     @PutMapping("/progression/devalider-matiere")
-    public ResponseEntity<?> devaliderMatiere(@RequestBody ProgressionMatiereRequest form) {
+    public ResponseEntity<?> devaliderMatiere(@RequestBody ProgressionMatiereRequest form, @AuthenticationPrincipal Jwt jwt) {
+        String email = extraireEmail(jwt);
         ProgressionSaisieNoteResponse dto = progressionSaisieNoteService.devaliderMatiere(
-                form.getClasseId(), form.getMatiereId(), form.getPeriodeId());
+                form.getClasseId(), form.getMatiereId(), form.getPeriodeId(), email);
         return ResponseEntity.ok(ApiResponse.apiSuccess("Validation annulée", dto, httpRequest.getRequestURI()));
+    }
+
+    /** Historique complet des transitions d'étape (BROUILLON/SOUMISE/VALIDEE) de cette matière. */
+    @GetMapping("/progression/historique")
+    public ResponseEntity<?> getHistorique(
+            @RequestParam Long classeId, @RequestParam Long matiereId, @RequestParam Long periodeId) {
+        var historique = progressionSaisieNoteService.getHistorique(classeId, matiereId, periodeId);
+        return ResponseEntity.ok(ApiResponse.apiSuccess("OK", historique, httpRequest.getRequestURI()));
     }
 
     private String extraireEmail(Jwt jwt) {
