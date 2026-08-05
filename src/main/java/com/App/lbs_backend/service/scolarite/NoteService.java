@@ -5,17 +5,21 @@ import com.App.lbs_backend.dto.response.ClasseMatiereANoterResponse;
 import com.App.lbs_backend.dto.response.FeuilleSaisieNotesResponse;
 import com.App.lbs_backend.entity.Classe;
 import com.App.lbs_backend.entity.Eleve;
+import com.App.lbs_backend.entity.Etape;
 import com.App.lbs_backend.entity.Matiere;
 import com.App.lbs_backend.entity.Note;
 import com.App.lbs_backend.entity.PeriodeAcademique;
 import com.App.lbs_backend.entity.Professeur;
+import com.App.lbs_backend.entity.ProgressionSaisieNote;
 import com.App.lbs_backend.mapper.PeriodeAcademiqueMapper;
 import com.App.lbs_backend.repository.ClasseRepository;
 import com.App.lbs_backend.repository.EleveRepository;
+import com.App.lbs_backend.repository.EtapeRepository;
 import com.App.lbs_backend.repository.MatiereRepository;
 import com.App.lbs_backend.repository.NoteRepository;
 import com.App.lbs_backend.repository.PeriodeAcademiqueRepository;
 import com.App.lbs_backend.repository.ProfesseurRepository;
+import com.App.lbs_backend.repository.ProgressionSaisieNoteRepository;
 import com.App.lbs_backend.repository.ValidationBulletinRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -43,6 +48,8 @@ public class NoteService {
     private final NoteRepository noteRepository;
     private final ValidationBulletinRepository validationBulletinRepository;
     private final ProfesseurRepository professeurRepository;
+    private final ProgressionSaisieNoteRepository progressionSaisieNoteRepository;
+    private final EtapeRepository etapeRepository;
 
     /** Moyenne des interrogations d'un élève pour une matière/période = Somme / Nombre des
         interrogations non nulles (le professeur peut en saisir autant qu'il veut). */
@@ -155,6 +162,7 @@ public class NoteService {
     @Transactional
     public FeuilleSaisieNotesResponse enregistrerFeuille(FeuilleSaisieNotesRequest form) {
         verifierPeriodeNonValidee(form.getClasseId(), form.getPeriodeId());
+        verifierEtapeModifiable(form);
 
         if (form.getProfesseurId() != null) {
             Professeur professeur = professeurRepository.findById(form.getProfesseurId())
@@ -172,6 +180,10 @@ public class NoteService {
             if (!PeriodeAcademiqueMapper.EN_COURS.equals(PeriodeAcademiqueMapper.calculerStatut(periode))) {
                 throw new IllegalArgumentException("Vous ne pouvez saisir des notes que pour la période en cours.");
             }
+
+            // Colonne par colonne : le professeur ne peut pas modifier une colonne déjà verrouillée,
+            // ni sauter directement à une colonne suivante sans avoir d'abord verrouillé la précédente.
+            verifierColonnesModifiables(form);
         }
 
         // Le nombre de colonnes envoyées peut être inférieur à ce qui existait déjà en base (si le
@@ -202,6 +214,65 @@ public class NoteService {
         }
 
         return getFeuille(form.getClasseId(), form.getMatiereId(), form.getPeriodeId());
+    }
+
+    /** Le workflow de validation (étape) bloque l'écriture indépendamment du verrou colonne par
+        colonne : le professeur ne peut plus rien modifier une fois la matière soumise ou validée ;
+        l'admin, lui, garde la main jusqu'à la validation, puis doit dévalider pour continuer. */
+    private void verifierEtapeModifiable(FeuilleSaisieNotesRequest form) {
+        ProgressionSaisieNote progression = progressionSaisieNoteRepository
+                .findByClasseIdAndMatiereIdAndPeriodeId(form.getClasseId(), form.getMatiereId(), form.getPeriodeId())
+                .orElse(null);
+        if (progression == null || progression.getEtapeId() == null) return;
+        String etape = etapeRepository.findById(progression.getEtapeId()).map(Etape::getCode).orElse(null);
+        if (form.getProfesseurId() != null) {
+            if ("SOUMISE".equals(etape) || "VALIDEE".equals(etape)) {
+                throw new IllegalArgumentException(
+                        "Cette matière a déjà été soumise pour validation, vous ne pouvez plus la modifier.");
+            }
+        } else if ("VALIDEE".equals(etape)) {
+            throw new IllegalArgumentException(
+                    "Cette matière est déjà validée. Vous devez d'abord la dévalider pour la modifier.");
+        }
+    }
+
+    private void verifierColonnesModifiables(FeuilleSaisieNotesRequest form) {
+        ProgressionSaisieNote progression = progressionSaisieNoteRepository
+                .findByClasseIdAndMatiereIdAndPeriodeId(form.getClasseId(), form.getMatiereId(), form.getPeriodeId())
+                .orElse(null);
+        int interroVerrouees = progression != null && progression.getInterrogationsVerroueesJusqua() != null
+                ? progression.getInterrogationsVerroueesJusqua() : 0;
+        int devoirsVerroues = progression != null && progression.getDevoirsVerrouesJusqua() != null
+                ? progression.getDevoirsVerrouesJusqua() : 0;
+
+        for (FeuilleSaisieNotesRequest.EleveNoteEntry entree : form.getEleves()) {
+            List<Double> interrogations = entree.getInterrogations() != null ? entree.getInterrogations() : List.of();
+            for (int i = 1; i <= interrogations.size(); i++) {
+                verifierColonneModifiable(entree.getEleveId(), form.getMatiereId(), form.getPeriodeId(),
+                        INTERROGATION, i, interrogations.get(i - 1), interroVerrouees);
+            }
+            verifierColonneModifiable(entree.getEleveId(), form.getMatiereId(), form.getPeriodeId(),
+                    DEVOIR, 1, entree.getDevoir1(), devoirsVerroues);
+            verifierColonneModifiable(entree.getEleveId(), form.getMatiereId(), form.getPeriodeId(),
+                    DEVOIR, 2, entree.getDevoir2(), devoirsVerroues);
+        }
+    }
+
+    private void verifierColonneModifiable(Long eleveId, Long matiereId, Long periodeId, String type,
+                                            int numero, Double valeurSoumise, int verroueesJusqua) {
+        if (numero > verroueesJusqua + 1) {
+            String label = INTERROGATION.equals(type) ? "l'interrogation " + numero : "le devoir " + numero;
+            throw new IllegalArgumentException(
+                    "Vous devez d'abord terminer la colonne précédente avant de renseigner " + label + ".");
+        }
+        if (numero <= verroueesJusqua) {
+            Double valeurActuelle = noteRepository.findByEleveIdAndMatiereIdAndPeriodeIdAndTypeEvaluationAndNumero(
+                    eleveId, matiereId, periodeId, type, numero).map(Note::getValeur).orElse(null);
+            if (!Objects.equals(valeurActuelle, valeurSoumise)) {
+                String label = INTERROGATION.equals(type) ? "L'interrogation " + numero : "Le devoir " + numero;
+                throw new IllegalArgumentException(label + " est verrouillé(e) et ne peut plus être modifié(e).");
+            }
+        }
     }
 
     private void upsertNote(Long eleveId, Long matiereId, Long periodeId, Long professeurId,

@@ -2,10 +2,15 @@ package com.App.lbs_backend.controller.scolarite;
 
 import com.App.lbs_backend.core.http.response.ApiResponse;
 import com.App.lbs_backend.dto.request.FeuilleSaisieNotesRequest;
+import com.App.lbs_backend.dto.request.ProgressionMatiereRequest;
+import com.App.lbs_backend.dto.request.VerrouProgressionRequest;
 import com.App.lbs_backend.dto.response.ClasseMatiereANoterResponse;
 import com.App.lbs_backend.dto.response.FeuilleSaisieNotesResponse;
+import com.App.lbs_backend.dto.response.ProgressionSaisieNoteResponse;
+import com.App.lbs_backend.entity.Professeur;
 import com.App.lbs_backend.repository.ProfesseurRepository;
 import com.App.lbs_backend.service.scolarite.NoteService;
+import com.App.lbs_backend.service.scolarite.ProgressionSaisieNoteService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +27,7 @@ import java.util.List;
 public class NoteController {
 
     private final NoteService noteService;
+    private final ProgressionSaisieNoteService progressionSaisieNoteService;
     private final ProfesseurRepository professeurRepository;
     private final HttpServletRequest httpRequest;
 
@@ -54,6 +60,69 @@ public class NoteController {
                 .map(p -> noteService.getMesClassesANoter(p.getId()))
                 .orElse(Collections.emptyList());
         return ResponseEntity.ok(ApiResponse.apiSuccess("OK", classes, httpRequest.getRequestURI()));
+    }
+
+    @GetMapping("/progression")
+    public ResponseEntity<?> getProgression(
+            @RequestParam Long classeId, @RequestParam Long matiereId, @RequestParam Long periodeId) {
+        ProgressionSaisieNoteResponse dto = progressionSaisieNoteService.getProgression(classeId, matiereId, periodeId);
+        return ResponseEntity.ok(ApiResponse.apiSuccess("OK", dto, httpRequest.getRequestURI()));
+    }
+
+    /** Le professeur connecté verrouille la prochaine colonne (interrogation ou devoir) de sa
+        classe/matière — plus personne ne pourra la modifier tant que l'admin ne la déverrouille pas. */
+    @PutMapping("/progression/verrouiller")
+    public ResponseEntity<?> verrouillerColonne(@RequestBody VerrouProgressionRequest form, @AuthenticationPrincipal Jwt jwt) {
+        String email = extraireEmail(jwt);
+        Professeur professeur = email != null ? professeurRepository.findByEmail(email).orElse(null) : null;
+        if (professeur == null) {
+            return ResponseEntity.status(403).body(ApiResponse.apiError("Réservé aux professeurs", httpRequest.getRequestURI()));
+        }
+        ProgressionSaisieNoteResponse dto = "DEVOIR".equals(form.getTypeEvaluation())
+                ? progressionSaisieNoteService.verrouillerDevoir(form.getClasseId(), form.getMatiereId(), form.getPeriodeId(), form.getNumero(), professeur.getId())
+                : progressionSaisieNoteService.verrouillerInterrogation(form.getClasseId(), form.getMatiereId(), form.getPeriodeId(), form.getNumero(), professeur.getId());
+        return ResponseEntity.ok(ApiResponse.apiSuccess("Colonne verrouillée", dto, httpRequest.getRequestURI()));
+    }
+
+    /** Réservé à l'admin côté frontend (aucun compte professeur n'affiche ce bouton) — permet de
+        corriger un verrouillage posé par erreur, en reculant d'une colonne. */
+    @PutMapping("/progression/deverrouiller")
+    public ResponseEntity<?> deverrouillerColonne(@RequestBody VerrouProgressionRequest form) {
+        ProgressionSaisieNoteResponse dto = "DEVOIR".equals(form.getTypeEvaluation())
+                ? progressionSaisieNoteService.deverrouillerDevoir(form.getClasseId(), form.getMatiereId(), form.getPeriodeId())
+                : progressionSaisieNoteService.deverrouillerInterrogation(form.getClasseId(), form.getMatiereId(), form.getPeriodeId());
+        return ResponseEntity.ok(ApiResponse.apiSuccess("Colonne déverrouillée", dto, httpRequest.getRequestURI()));
+    }
+
+    /** Le professeur connecté soumet la matière entière pour validation admin — nécessite que
+        toutes les colonnes soient déjà verrouillées. */
+    @PutMapping("/progression/soumettre")
+    public ResponseEntity<?> soumettreMatiere(@RequestBody ProgressionMatiereRequest form, @AuthenticationPrincipal Jwt jwt) {
+        String email = extraireEmail(jwt);
+        Professeur professeur = email != null ? professeurRepository.findByEmail(email).orElse(null) : null;
+        if (professeur == null) {
+            return ResponseEntity.status(403).body(ApiResponse.apiError("Réservé aux professeurs", httpRequest.getRequestURI()));
+        }
+        ProgressionSaisieNoteResponse dto = progressionSaisieNoteService.soumettre(
+                form.getClasseId(), form.getMatiereId(), form.getPeriodeId(), professeur.getId());
+        return ResponseEntity.ok(ApiResponse.apiSuccess("Matière soumise pour validation", dto, httpRequest.getRequestURI()));
+    }
+
+    /** Réservé à l'admin côté frontend — valide la matière soumise par le professeur. */
+    @PutMapping("/progression/valider")
+    public ResponseEntity<?> validerMatiere(@RequestBody ProgressionMatiereRequest form, @AuthenticationPrincipal Jwt jwt) {
+        String email = extraireEmail(jwt);
+        ProgressionSaisieNoteResponse dto = progressionSaisieNoteService.valider(
+                form.getClasseId(), form.getMatiereId(), form.getPeriodeId(), email);
+        return ResponseEntity.ok(ApiResponse.apiSuccess("Matière validée", dto, httpRequest.getRequestURI()));
+    }
+
+    /** Réservé à l'admin côté frontend — annule la validation (repasse à SOUMISE). */
+    @PutMapping("/progression/devalider-matiere")
+    public ResponseEntity<?> devaliderMatiere(@RequestBody ProgressionMatiereRequest form) {
+        ProgressionSaisieNoteResponse dto = progressionSaisieNoteService.devaliderMatiere(
+                form.getClasseId(), form.getMatiereId(), form.getPeriodeId());
+        return ResponseEntity.ok(ApiResponse.apiSuccess("Validation annulée", dto, httpRequest.getRequestURI()));
     }
 
     private String extraireEmail(Jwt jwt) {
