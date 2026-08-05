@@ -2,6 +2,8 @@ package com.App.lbs_backend.entity;
 
 import com.App.lbs_backend.core.AuditableEntity;
 import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import com.App.lbs_backend.core.Timestamps;
@@ -39,6 +41,13 @@ public class Classe extends AuditableEntity implements Timestamps {
 
     @Column(name = "lbs_clas_actif")
     private Boolean actif;
+
+    /** Matières enseignées dans cette classe — source de vérité pour "quelles matières y sont
+        évaluées" (bulletin, saisie des notes), indépendamment du niveau ou de l'emploi du temps. */
+    @ElementCollection
+    @CollectionTable(name = "lbs_classe_matiere", schema = "lbs", joinColumns = @JoinColumn(name = "lbs_clas_id"))
+    @Column(name = "lbs_mati_id")
+    private List<Long> matiereIds = new ArrayList<>();
 
     // ===== RELATION =====
     @ManyToOne(fetch = FetchType.LAZY)
@@ -85,4 +94,7 @@ public class Classe extends AuditableEntity implements Timestamps {
 
     public Niveau getNiveau() { return niveau; }
     public void setNiveau(Niveau niveau) { this.niveau = niveau; }
+
+    public List<Long> getMatiereIds() { return matiereIds; }
+    public void setMatiereIds(List<Long> matiereIds) { this.matiereIds = matiereIds; }
 }

@@ -18,6 +18,7 @@ import com.App.lbs_backend.repository.EtapeRepository;
 import com.App.lbs_backend.repository.MatiereRepository;
 import com.App.lbs_backend.repository.NoteRepository;
 import com.App.lbs_backend.repository.PeriodeAcademiqueRepository;
+import com.App.lbs_backend.repository.PresenceEleveRepository;
 import com.App.lbs_backend.repository.ProfesseurRepository;
 import com.App.lbs_backend.repository.ProgressionSaisieNoteRepository;
 import com.App.lbs_backend.repository.ValidationBulletinRepository;
@@ -50,6 +51,11 @@ public class NoteService {
     private final ProfesseurRepository professeurRepository;
     private final ProgressionSaisieNoteRepository progressionSaisieNoteRepository;
     private final EtapeRepository etapeRepository;
+    private final PresenceEleveRepository presenceEleveRepository;
+
+    /** Base de la suggestion automatique de conduite : 18, moins 1 point par absence enregistrée
+        sur la période (jamais persistée tant que l'admin n'a pas enregistré la feuille). */
+    private static final double CONDUITE_BASE = 18.0;
 
     /** Moyenne des interrogations d'un élève pour une matière/période = Somme / Nombre des
         interrogations non nulles (le professeur peut en saisir autant qu'il veut). */
@@ -62,15 +68,18 @@ public class NoteService {
         return valeurs.stream().mapToDouble(Double::doubleValue).sum() / valeurs.size();
     }
 
-    /** Moyenne d'une matière = moyenne simple des valeurs non nulles parmi {moyenne des
-        interrogations, devoir1, devoir2} — formule vérifiée contre un bulletin réel de l'école. */
-    public static Double calculerMoyenne(Double moyenneInterrogations, Double devoir1, Double devoir2) {
-        double somme = 0;
-        int count = 0;
-        if (moyenneInterrogations != null) { somme += moyenneInterrogations; count++; }
-        if (devoir1 != null) { somme += devoir1; count++; }
-        if (devoir2 != null) { somme += devoir2; count++; }
-        return count == 0 ? null : somme / count;
+    /** Moyenne d'une matière = moyenne sur 3 de {moyenne des interrogations, devoir1, devoir2} —
+        toute composante jamais saisie compte pour 0, y compris quand la matière n'a strictement
+        aucune note (une matière jamais évaluée compte 0, elle n'est jamais simplement exclue).
+        La matière "Conduite" (estConduite) déroge à la division par 3 : elle n'a qu'une seule
+        valeur (pas d'interrogations/devoirs multiples), donc sa moyenne est cette valeur telle
+        quelle (0 si jamais notée). */
+    public static Double calculerMoyenne(Double moyenneInterrogations, Double devoir1, Double devoir2, boolean estConduite) {
+        if (estConduite) return moyenneInterrogations != null ? moyenneInterrogations : 0.0;
+        double somme = (moyenneInterrogations != null ? moyenneInterrogations : 0)
+                + (devoir1 != null ? devoir1 : 0)
+                + (devoir2 != null ? devoir2 : 0);
+        return somme / 3;
     }
 
     /** Bloque toute saisie/modification de notes si le bulletin de cette classe/période est déjà
@@ -119,6 +128,8 @@ public class NoteService {
         response.setPeriodeLibelle(periode.getLibelle());
         response.setValide(valide);
         response.setNombreInterrogations(nombreInterrogations);
+        boolean estConduite = Boolean.TRUE.equals(matiere.getEstConduite());
+        response.setEstConduite(estConduite);
 
         int nbInterro = nombreInterrogations;
         response.setEleves(eleves.stream().map(el -> {
@@ -132,6 +143,15 @@ public class NoteService {
             Double devoir2 = extraireValeur(notes, DEVOIR, 2);
             Double moyenneInterro = calculerMoyenneInterrogations(notes);
 
+            // La matière "Conduite" n'a qu'une seule valeur (colonne Interrogation 1) — tant
+            // qu'aucune note n'a encore été saisie pour cet élève, on propose une suggestion basée
+            // sur ses absences (18 - nombre d'absences), jamais persistée avant enregistrement.
+            if (estConduite && !interrogations.isEmpty() && interrogations.get(0) == null) {
+                Double suggestion = suggererConduite(el.getId(), periode);
+                interrogations.set(0, suggestion);
+                moyenneInterro = suggestion;
+            }
+
             FeuilleSaisieNotesResponse.EleveNoteDto dto = new FeuilleSaisieNotesResponse.EleveNoteDto();
             dto.setEleveId(el.getId());
             dto.setNom(el.getNom());
@@ -140,11 +160,20 @@ public class NoteService {
             dto.setDevoir1(devoir1);
             dto.setDevoir2(devoir2);
             dto.setMoyenneInterrogations(moyenneInterro);
-            dto.setMoyenne(calculerMoyenne(moyenneInterro, devoir1, devoir2));
+            dto.setMoyenne(calculerMoyenne(moyenneInterro, devoir1, devoir2, estConduite));
             return dto;
         }).collect(Collectors.toList()));
 
         return response;
+    }
+
+    /** Suggestion automatique de conduite : 18 points de base, moins 1 point par absence
+        enregistrée sur l'intervalle de dates de la période — proposée à l'admin, jamais imposée. */
+    private Double suggererConduite(Long eleveId, PeriodeAcademique periode) {
+        if (periode.getDateDebut() == null || periode.getDateFin() == null) return CONDUITE_BASE;
+        long absences = presenceEleveRepository.countByEleveIdAndDateBetweenAndStatut(
+                eleveId, periode.getDateDebut(), periode.getDateFin(), "ABSENT");
+        return Math.max(0, CONDUITE_BASE - absences);
     }
 
     /** Extrait la valeur d'un type/numéro d'évaluation donné dans une liste de notes (réutilisé
@@ -194,6 +223,16 @@ public class NoteService {
             // Colonne par colonne : le professeur ne peut pas modifier une colonne déjà verrouillée,
             // ni sauter directement à une colonne suivante sans avoir d'abord verrouillé la précédente.
             verifierColonnesModifiables(form);
+        } else if (!Boolean.TRUE.equals(form.getContexteValidation())) {
+            // Écran de saisie directe de l'admin (pas "Validation des bulletins") : limité à l'année
+            // scolaire active. La consultation/correction d'une année inactive reste possible, mais
+            // uniquement depuis l'écran de validation, qui garde volontairement accès à l'historique.
+            PeriodeAcademique periode = periodeAcademiqueRepository.findById(form.getPeriodeId())
+                    .orElseThrow(() -> new IllegalArgumentException("Période introuvable"));
+            if (periode.getAnneeScolaire() == null || !Boolean.TRUE.equals(periode.getAnneeScolaire().getActif())) {
+                throw new IllegalArgumentException(
+                        "Cette période appartient à une année scolaire inactive. Utilisez l'écran de validation des bulletins pour la modifier.");
+            }
         }
 
         // Le nombre de colonnes envoyées peut être inférieur à ce qui existait déjà en base (si le

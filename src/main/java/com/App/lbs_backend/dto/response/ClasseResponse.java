@@ -1,6 +1,7 @@
 package com.App.lbs_backend.dto.response;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record ClasseResponse(
         Long id,
@@ -11,6 +12,7 @@ public record ClasseResponse(
         Long niveauId,
         Integer capaciteMax,
         Boolean actif,
+        List<Long> matiereIds,
         LocalDateTime modifierLe,
         String modifierPar,
         ProfesseurResponse professeur,

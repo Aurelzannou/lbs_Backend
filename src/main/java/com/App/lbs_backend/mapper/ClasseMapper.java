@@ -27,6 +27,7 @@ public class ClasseMapper implements Mapper<Classe, ClasseResponse> {
                 entity.getNiveauId(),
                 entity.getCapaciteMax(),
                 entity.getActif(),
+                entity.getMatiereIds(),
                 entity.getModifierLe(),
                 entity.getModifierPar(),
                 professeurMapper.toResponse(entity.getProfesseur()),

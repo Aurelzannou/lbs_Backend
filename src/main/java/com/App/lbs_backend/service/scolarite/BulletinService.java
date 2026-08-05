@@ -26,9 +26,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -95,23 +97,40 @@ public class BulletinService {
         Map<Long, Map<Long, List<Note>>> parMatiereParEleve = notes.stream()
                 .collect(Collectors.groupingBy(Note::getMatiereId, Collectors.groupingBy(Note::getEleveId)));
 
+        // Le bulletin doit lister TOUTES les matières attribuées à cette classe (référentiel
+        // Classes), pas seulement celles qui ont déjà au moins une note quelque part — une matière
+        // jamais évaluée reste affichée, avec 0 et la mention "N'a pas composé". Si la classe n'a
+        // encore aucune matière explicitement assignée (ancienne donnée), on retombe sur les
+        // matières ayant un coefficient pour son niveau, pour ne pas produire un bulletin vide.
+        Set<Long> toutesMatieresId = classe.getMatiereIds() != null && !classe.getMatiereIds().isEmpty()
+                ? new HashSet<>(classe.getMatiereIds())
+                : new HashSet<>(coefficientsParMatiere.keySet());
+        toutesMatieresId.addAll(parMatiereParEleve.keySet());
+
+        Map<Long, String> matiereLibelles = new HashMap<>();
+        Map<Long, Boolean> estConduiteParMatiere = new HashMap<>();
+        for (Long matiereId : toutesMatieresId) {
+            matiereRepository.findById(matiereId).ifPresent(m -> {
+                matiereLibelles.put(matiereId, m.getLibelle());
+                estConduiteParMatiere.put(matiereId, Boolean.TRUE.equals(m.getEstConduite()));
+            });
+        }
+
         Map<Long, Map<Long, Double>> moyenneParMatiereParEleve = new HashMap<>();
-        for (Map.Entry<Long, Map<Long, List<Note>>> matiereEntry : parMatiereParEleve.entrySet()) {
+        for (Long matiereId : toutesMatieresId) {
+            boolean estConduite = Boolean.TRUE.equals(estConduiteParMatiere.get(matiereId));
+            Map<Long, List<Note>> parEleveNotes = parMatiereParEleve.getOrDefault(matiereId, Map.of());
             Map<Long, Double> parEleve = new HashMap<>();
-            for (Map.Entry<Long, List<Note>> eleveEntry : matiereEntry.getValue().entrySet()) {
-                parEleve.put(eleveEntry.getKey(), extraireMoyenne(eleveEntry.getValue()));
+            for (Long eleveId : eleveIds) {
+                List<Note> notesEleve = parEleveNotes.getOrDefault(eleveId, List.of());
+                parEleve.put(eleveId, extraireMoyenne(notesEleve, estConduite));
             }
-            moyenneParMatiereParEleve.put(matiereEntry.getKey(), parEleve);
+            moyenneParMatiereParEleve.put(matiereId, parEleve);
         }
 
         Map<Long, Map<Long, Integer>> rangParMatiereParEleve = new HashMap<>();
         for (Map.Entry<Long, Map<Long, Double>> matiereEntry : moyenneParMatiereParEleve.entrySet()) {
             rangParMatiereParEleve.put(matiereEntry.getKey(), computeRanks(matiereEntry.getValue()));
-        }
-
-        Map<Long, String> matiereLibelles = new HashMap<>();
-        for (Long matiereId : parMatiereParEleve.keySet()) {
-            matiereRepository.findById(matiereId).ifPresent(m -> matiereLibelles.put(matiereId, m.getLibelle()));
         }
 
         Map<Long, Double> moyennePondereeParEleve = calculerMoyennesPonderees(
@@ -153,11 +172,12 @@ public class BulletinService {
             if (periode.getAnneeScolaire() != null) r.setAnneeScolaireLibelle(periode.getAnneeScolaire().getLibelle());
 
             List<BulletinMatiereResponse> matieres = new ArrayList<>();
-            for (Long matiereId : parMatiereParEleve.keySet()) {
-                Double moyenne = moyenneParMatiereParEleve.get(matiereId).get(eleve.getId());
-                if (moyenne == null) continue;
+            for (Long matiereId : toutesMatieresId) {
+                Double moyenne = moyenneParMatiereParEleve.getOrDefault(matiereId, Map.of()).get(eleve.getId());
 
-                List<Note> notesEleveMatiere = parMatiereParEleve.get(matiereId).getOrDefault(eleve.getId(), List.of());
+                List<Note> notesEleveMatiere = parMatiereParEleve.getOrDefault(matiereId, Map.of())
+                        .getOrDefault(eleve.getId(), List.of());
+                boolean nonCompose = notesEleveMatiere.isEmpty();
                 Double coef = coefficientsParMatiere.get(matiereId);
 
                 BulletinMatiereResponse m = new BulletinMatiereResponse();
@@ -168,9 +188,10 @@ public class BulletinService {
                 m.setDevoir1(NoteService.extraireValeur(notesEleveMatiere, NoteService.DEVOIR, 1));
                 m.setDevoir2(NoteService.extraireValeur(notesEleveMatiere, NoteService.DEVOIR, 2));
                 m.setMoyenne(moyenne);
-                m.setMoyenneCoefficientee(coef != null ? moyenne * coef : null);
-                m.setRang(rangParMatiereParEleve.get(matiereId).get(eleve.getId()));
-                m.setAppreciation(appreciationPour(moyenne));
+                m.setMoyenneCoefficientee(coef != null && moyenne != null ? moyenne * coef : null);
+                m.setRang(rangParMatiereParEleve.getOrDefault(matiereId, Map.of()).get(eleve.getId()));
+                m.setNonCompose(nonCompose);
+                m.setAppreciation(nonCompose ? "N'a pas composé" : appreciationPour(moyenne));
                 matieres.add(m);
             }
             matieres.sort(Comparator.comparing(BulletinMatiereResponse::getMatiereLibelle,
@@ -272,7 +293,9 @@ public class BulletinService {
             boolean auMoinsUne = false;
             for (Map.Entry<Long, List<Note>> e : parMatiere.entrySet()) {
                 Double coef = coefficientsParMatiere.get(e.getKey());
-                Double moyenne = extraireMoyenne(e.getValue());
+                boolean estConduite = matiereRepository.findById(e.getKey())
+                        .map(m -> Boolean.TRUE.equals(m.getEstConduite())).orElse(false);
+                Double moyenne = extraireMoyenne(e.getValue(), estConduite);
                 if (moyenne != null && coef != null) {
                     sommeCoef += coef;
                     sommePonderee += moyenne * coef;
@@ -284,11 +307,11 @@ public class BulletinService {
         return resultat;
     }
 
-    private Double extraireMoyenne(List<Note> notes) {
+    private Double extraireMoyenne(List<Note> notes, boolean estConduite) {
         Double moyenneInterrogations = NoteService.calculerMoyenneInterrogations(notes);
         Double devoir1 = NoteService.extraireValeur(notes, NoteService.DEVOIR, 1);
         Double devoir2 = NoteService.extraireValeur(notes, NoteService.DEVOIR, 2);
-        return NoteService.calculerMoyenne(moyenneInterrogations, devoir1, devoir2);
+        return NoteService.calculerMoyenne(moyenneInterrogations, devoir1, devoir2, estConduite);
     }
 
     private static String appreciationPour(Double moyenne) {

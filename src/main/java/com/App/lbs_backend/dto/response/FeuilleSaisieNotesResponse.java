@@ -16,6 +16,9 @@ public class FeuilleSaisieNotesResponse {
     private boolean valide;
     /** Nombre de colonnes "Interrogation" à afficher (le professeur peut en ajouter d'autres). */
     private int nombreInterrogations;
+    /** true pour la matière "Conduite" — sa moyenne n'est jamais divisée par 3 (une seule valeur
+        suffit) et le champ Interrogation 1 peut être pré-rempli d'une suggestion automatique. */
+    private boolean estConduite;
     private List<EleveNoteDto> eleves;
 
     @Data

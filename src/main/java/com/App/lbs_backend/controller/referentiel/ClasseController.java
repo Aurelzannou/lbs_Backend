@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/classes")
 @RequiredArgsConstructor
@@ -31,7 +33,8 @@ public class ClasseController extends MasterController<Classe, ClasseResponse, C
         entity.setProfId(form.getProfId());
         entity.setCapaciteMax(form.getCapaciteMax());
         entity.setActif(form.getActif());
-        
+        entity.setMatiereIds(form.getMatiereIds() != null ? form.getMatiereIds() : List.of());
+
         Classe saved = classeService.create(entity);
         return classeService.toResponse(saved.getId());
     }
@@ -45,7 +48,8 @@ public class ClasseController extends MasterController<Classe, ClasseResponse, C
         entity.setProfId(form.getProfId());
         entity.setCapaciteMax(form.getCapaciteMax());
         entity.setActif(form.getActif());
-        
+        entity.setMatiereIds(form.getMatiereIds() != null ? form.getMatiereIds() : List.of());
+
         classeService.update(entity);
         return classeService.toResponse(entity.getId());
     }

@@ -18,4 +18,8 @@ public interface PresenceEleveRepository extends BaseRepository<PresenceEleve> {
 
     @EntityGraph(attributePaths = {"emploiDuTemps", "emploiDuTemps.matiere"})
     List<PresenceEleve> findByEleveIdOrderByDateDesc(Long eleveId);
+
+    /** Nombre d'absences d'un élève sur une période donnée — sert à la suggestion automatique de
+        note de conduite (18 - nombre d'absences). */
+    long countByEleveIdAndDateBetweenAndStatut(Long eleveId, LocalDate dateDebut, LocalDate dateFin, String statut);
 }

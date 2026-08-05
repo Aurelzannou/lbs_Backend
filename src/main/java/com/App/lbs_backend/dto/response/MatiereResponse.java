@@ -8,6 +8,7 @@ public record MatiereResponse(
         String code,
         String libelle,
         Boolean actif,
+        Boolean estConduite,
         LocalDateTime modifierLe,
         String modifierPar
 ) {}

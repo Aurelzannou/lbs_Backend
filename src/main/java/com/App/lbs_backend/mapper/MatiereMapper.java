@@ -16,6 +16,7 @@ public class MatiereMapper implements Mapper<Matiere, MatiereResponse> {
                 entity.getCode(),
                 entity.getLibelle(),
                 entity.getActif(),
+                entity.getEstConduite(),
                 entity.getModifierLe(),
                 entity.getModifierPar()
         );

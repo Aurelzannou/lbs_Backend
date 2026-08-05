@@ -16,4 +16,5 @@ public class MatiereRequest implements FormRequest {
     private String libelle;
 
     private Boolean actif;
+    private Boolean estConduite;
 }

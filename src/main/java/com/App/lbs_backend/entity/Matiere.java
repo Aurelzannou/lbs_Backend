@@ -30,10 +30,16 @@ public class Matiere extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_mati_actif")
     private Boolean actif;
 
+    /** Marque la matière "Conduite" — sa moyenne n'est jamais divisée par 3 (une seule valeur
+        suffit) et une suggestion automatique (18 - nombre d'absences) est proposée à l'admin. */
+    @Column(name = "lbs_mati_est_conduite")
+    private Boolean estConduite;
+
     @PrePersist
     public void prePersist() {
         if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
         if (this.actif == null) this.actif = true;
+        if (this.estConduite == null) this.estConduite = false;
     }
 
     public Matiere() {}
@@ -52,4 +58,7 @@ public class Matiere extends AuditableEntity implements Timestamps {
 
     public Boolean getActif() { return actif; }
     public void setActif(Boolean actif) { this.actif = actif; }
+
+    public Boolean getEstConduite() { return estConduite; }
+    public void setEstConduite(Boolean estConduite) { this.estConduite = estConduite; }
 }

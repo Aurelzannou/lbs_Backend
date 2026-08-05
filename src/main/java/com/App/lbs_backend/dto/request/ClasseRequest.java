@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class ClasseRequest implements FormRequest {
     @NotBlank(message = "Le code est obligatoire")
@@ -22,4 +24,5 @@ public class ClasseRequest implements FormRequest {
     private Long profId;
     private Integer capaciteMax;
     private Boolean actif;
+    private List<Long> matiereIds;
 }
