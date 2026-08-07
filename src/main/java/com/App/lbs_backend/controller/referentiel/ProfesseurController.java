@@ -10,6 +10,7 @@ import com.App.lbs_backend.dto.request.ProfesseurRequest;
 import com.App.lbs_backend.dto.response.ProfesseurResponse;
 import com.App.lbs_backend.entity.Professeur;
 import com.App.lbs_backend.mapper.ProfesseurMapper;
+import com.App.lbs_backend.repository.ProfesseurRepository;
 import com.App.lbs_backend.service.KeycloakAdminService;
 import com.App.lbs_backend.service.referentiel.ProfesseurService;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,7 @@ public class ProfesseurController extends MasterController<Professeur, Professeu
     private final SecureRandom random = new SecureRandom();
 
     private final ProfesseurService professeurService;
+    private final ProfesseurRepository professeurRepository;
     private final ProfesseurMapper professeurMapper;
     private final KeycloakAdminService keycloakAdminService;
     private final RabbitTemplate rabbitTemplate;
@@ -53,6 +55,8 @@ public class ProfesseurController extends MasterController<Professeur, Professeu
 
     @Override
     protected ProfesseurResponse doCreate(ProfesseurRequest form) {
+        verifierEmailUnique(form.getEmail(), null);
+
         Professeur entity = new Professeur();
         // Un professeur n'a pas de matricule saisi — code interne généré automatiquement.
         entity.setCode(isBlank(form.getCode()) ? genererCode() : form.getCode());
@@ -79,6 +83,7 @@ public class ProfesseurController extends MasterController<Professeur, Professeu
     @Override
     protected ProfesseurResponse doUpdate(String uuid, ProfesseurRequest form) {
         Professeur entity = professeurService.findByUuid(uuid);
+        verifierEmailUnique(form.getEmail(), entity.getId());
         Boolean ancienActif = entity.getActif();
 
         // Le formulaire ne renvoie plus de code — on garde celui déjà en base tel quel.
@@ -169,6 +174,19 @@ public class ProfesseurController extends MasterController<Professeur, Professeu
             sb.append(PASSWORD_CHARS.charAt(random.nextInt(PASSWORD_CHARS.length())));
         }
         return sb.toString();
+    }
+
+    /** L'email sert d'identifiant de connexion Keycloak et de clé de résolution du professeur
+        connecté (ProfesseurRepository.findByEmail) — un doublon fait planter le portail
+        professeur, donc on le refuse ici avec un message clair plutôt que de laisser la
+        contrainte d'unicité en base échouer bruyamment. */
+    private void verifierEmailUnique(String email, Long excludeId) {
+        if (isBlank(email)) return;
+        professeurRepository.findByEmail(email).ifPresent(existing -> {
+            if (!existing.getId().equals(excludeId)) {
+                throw new IllegalArgumentException("Un autre professeur utilise déjà cet email : " + email);
+            }
+        });
     }
 
     private boolean isBlank(String s) {

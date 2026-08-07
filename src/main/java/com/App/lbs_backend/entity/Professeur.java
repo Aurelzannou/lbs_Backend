@@ -36,7 +36,10 @@ public class Professeur extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_prfs_prenom", length = 100)
     private String prenom;
 
-    @Column(name = "lbs_prfs_email", length = 150)
+    /** Sert d'identifiant de connexion Keycloak — doit être unique pour éviter qu'un même email ne
+        corresponde à plusieurs professeurs (ProfesseurRepository.findByEmail suppose un résultat
+        unique ; un doublon fait planter la connexion côté portail professeur). */
+    @Column(name = "lbs_prfs_email", length = 150, unique = true)
     private String email;
 
     @Column(name = "lbs_prfs_residence", length = 200)
