@@ -26,6 +26,10 @@ public class BulletinResponse {
     private Double moyenneAnnuelle;
     private Integer rangAnnuel;
 
+    /** Moyenne pondérée de chaque période (trimestre) de l'année scolaire, dans l'ordre
+        chronologique — alimente le récapitulatif "Moyenne du 1er/2e/3e Trimestre" du bulletin PDF. */
+    private List<MoyennePeriodeResponse> moyennesParPeriode;
+
     // Mentions — choix persistés de l'administrateur (jamais écrasés une fois enregistrés)
     private Boolean tableauHonneur;
     private Boolean felicitations;

@@ -17,10 +17,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
 @Slf4j
 @RestController
@@ -65,9 +62,8 @@ public class BulletinController {
 
     @GetMapping("/eleve/{eleveId}/pdf")
     public ResponseEntity<byte[]> getBulletinEleveePdf(@PathVariable Long eleveId, @RequestParam Long periodeId) {
-        BulletinResponse bulletin = bulletinService.genererBulletin(eleveId, periodeId);
         try {
-            byte[] pdf = reportService.generatePdfReport("bulletin", buildParams(bulletin), bulletin.getMatieres());
+            byte[] pdf = bulletinService.genererBulletinPdfBytes(eleveId, periodeId);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION,
                             "attachment; filename=\"bulletin-" + eleveId + "-" + periodeId + ".pdf\"")
@@ -85,7 +81,7 @@ public class BulletinController {
         try {
             List<JasperPrint> prints = new ArrayList<>();
             for (BulletinResponse b : bulletins) {
-                prints.add(reportService.fillReport("bulletin", buildParams(b), b.getMatieres()));
+                prints.add(reportService.fillReport("bulletin", bulletinService.construirePdfParams(b), b.getMatieres()));
             }
             byte[] pdf = reportService.exportToPdf(prints);
             return ResponseEntity.ok()
@@ -97,38 +93,6 @@ public class BulletinController {
             log.error("Erreur génération PDF bulletins classe {} période {}", classeId, periodeId, e);
             return ResponseEntity.internalServerError().build();
         }
-    }
-
-    private Map<String, Object> buildParams(BulletinResponse b) {
-        Map<String, Object> params = new HashMap<>();
-        params.put("eleveNomComplet", b.getEleveNomComplet());
-        params.put("classeLibelle", b.getClasseLibelle());
-        params.put("effectifClasse", String.valueOf(b.getEffectifClasse()));
-        params.put("periodeLibelle", b.getPeriodeLibelle());
-        params.put("anneeScolaireLibelle", b.getAnneeScolaireLibelle());
-        params.put("moyennePonderee", formatMoyenne(b.getMoyennePonderee()));
-        params.put("rangTrimestre", formatRang(b.getRangTrimestre()));
-        params.put("moyenneAnnuelle", formatMoyenne(b.getMoyenneAnnuelle()));
-        params.put("rangAnnuel", formatRang(b.getRangAnnuel()));
-        params.put("tableauHonneur", formatOuiNon(b.getTableauHonneur()));
-        params.put("felicitations", formatOuiNon(b.getFelicitations()));
-        params.put("encouragement", formatOuiNon(b.getEncouragement()));
-        params.put("avertissement", formatOuiNon(b.getAvertissement()));
-        params.put("decisionConseil", b.getDecisionConseil() != null ? b.getDecisionConseil() : "—");
-        params.put("observationDirecteur", b.getObservationDirecteur() != null ? b.getObservationDirecteur() : "—");
-        return params;
-    }
-
-    private String formatMoyenne(Double valeur) {
-        return valeur != null ? String.format(Locale.FRANCE, "%.2f", valeur) : "—";
-    }
-
-    private String formatRang(Integer rang) {
-        return rang != null ? rang + "e" : "—";
-    }
-
-    private String formatOuiNon(Boolean valeur) {
-        return Boolean.TRUE.equals(valeur) ? "Oui" : "Non";
     }
 
     private String extraireEmail(Jwt jwt) {

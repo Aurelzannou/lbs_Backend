@@ -10,6 +10,8 @@ public record ActeResponse(
         Long typeActeId,
         String cheminFichier,
         String nomFichier,
+        Long eleveId,
+        Long periodeId,
         LocalDateTime modifierLe,
         String modifierPar,
         TypeActeResponse typeActe

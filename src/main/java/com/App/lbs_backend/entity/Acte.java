@@ -36,6 +36,14 @@ public class Acte extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_acte_nom_fichier", length = 200)
     private String nomFichier;
 
+    /** Renseigné uniquement pour les actes générés automatiquement par le système (ex: bulletin
+        archivé à la validation) — null pour les actes saisis manuellement par l'administration. */
+    @Column(name = "lbs_acte_eleve_id")
+    private Long eleveId;
+
+    @Column(name = "lbs_acte_periode_id")
+    private Long periodeId;
+
     // ===== RELATIONS =====
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lbs_acte_type_acte_id", insertable = false, updatable = false)
@@ -68,6 +76,12 @@ public class Acte extends AuditableEntity implements Timestamps {
 
     public String getNomFichier() { return nomFichier; }
     public void setNomFichier(String nomFichier) { this.nomFichier = nomFichier; }
+
+    public Long getEleveId() { return eleveId; }
+    public void setEleveId(Long eleveId) { this.eleveId = eleveId; }
+
+    public Long getPeriodeId() { return periodeId; }
+    public void setPeriodeId(Long periodeId) { this.periodeId = periodeId; }
 
     public TypeActe getTypeActe() { return typeActe; }
     public void setTypeActe(TypeActe typeActe) { this.typeActe = typeActe; }

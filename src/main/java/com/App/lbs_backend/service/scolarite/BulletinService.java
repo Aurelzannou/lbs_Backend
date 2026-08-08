@@ -3,6 +3,8 @@ package com.App.lbs_backend.service.scolarite;
 import com.App.lbs_backend.dto.request.BulletinMentionRequest;
 import com.App.lbs_backend.dto.response.BulletinMatiereResponse;
 import com.App.lbs_backend.dto.response.BulletinResponse;
+import com.App.lbs_backend.dto.response.MoyennePeriodeResponse;
+import com.App.lbs_backend.core.utils.ReportService;
 import com.App.lbs_backend.entity.BulletinMention;
 import com.App.lbs_backend.entity.Classe;
 import com.App.lbs_backend.entity.Coefficient;
@@ -20,6 +22,7 @@ import com.App.lbs_backend.repository.PeriodeAcademiqueRepository;
 import com.App.lbs_backend.repository.TuteurRepository;
 import com.App.lbs_backend.repository.ValidationBulletinRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,6 +52,63 @@ public class BulletinService {
     private final BulletinMentionRepository bulletinMentionRepository;
     private final ValidationBulletinRepository validationBulletinRepository;
     private final TuteurRepository tuteurRepository;
+    private final ReportService reportService;
+
+    /** Génère le PDF d'un bulletin (un seul élève) via JasperReports. */
+    public byte[] genererBulletinPdfBytes(Long eleveId, Long periodeId) throws Exception {
+        BulletinResponse bulletin = genererBulletin(eleveId, periodeId);
+        return reportService.generatePdfReport("bulletin", construirePdfParams(bulletin), bulletin.getMatieres());
+    }
+
+    /** Construit les paramètres Jasper (en-tête, résumé, logo, filigrane) pour un bulletin déjà
+        calculé — utilisé aussi bien pour un PDF unique que pour fusionner les bulletins d'une
+        classe entière (un {@link net.sf.jasperreports.engine.JasperPrint} par élève). */
+    public Map<String, Object> construirePdfParams(BulletinResponse b) throws java.io.IOException {
+        Map<String, Object> params = new HashMap<>();
+        params.put("logoImage", new ClassPathResource("images/logo.png").getInputStream());
+        params.put("watermarkImage", new ClassPathResource("images/watermark.png").getInputStream());
+        params.put("eleveNomComplet", b.getEleveNomComplet());
+        params.put("eleveMatricule", b.getEleveMatricule() != null ? b.getEleveMatricule() : "—");
+        params.put("classeLibelle", b.getClasseLibelle());
+        params.put("effectifClasse", String.valueOf(b.getEffectifClasse()));
+        params.put("periodeLibelle", b.getPeriodeLibelle());
+        params.put("anneeScolaireLibelle", b.getAnneeScolaireLibelle());
+        params.put("moyennePonderee", formatMoyenne(b.getMoyennePonderee()));
+        params.put("rangTrimestre", formatRang(b.getRangTrimestre()));
+        params.put("moyenneAnnuelle", formatMoyenne(b.getMoyenneAnnuelle()));
+        params.put("rangAnnuel", formatRang(b.getRangAnnuel()));
+        params.put("tableauHonneur", formatOuiNon(b.getTableauHonneur()));
+        params.put("felicitations", formatOuiNon(b.getFelicitations()));
+        params.put("encouragement", formatOuiNon(b.getEncouragement()));
+        params.put("avertissement", formatOuiNon(b.getAvertissement()));
+        params.put("decisionConseil", b.getDecisionConseil() != null ? b.getDecisionConseil() : "—");
+        params.put("observationDirecteur", b.getObservationDirecteur() != null ? b.getObservationDirecteur() : "—");
+
+        List<MoyennePeriodeResponse> periodes = b.getMoyennesParPeriode() != null ? b.getMoyennesParPeriode() : List.of();
+        for (int i = 0; i < 3; i++) {
+            String suffixe = String.valueOf(i + 1);
+            if (i < periodes.size()) {
+                params.put("trimestre" + suffixe + "Libelle", periodes.get(i).getPeriodeLibelle());
+                params.put("trimestre" + suffixe + "Moyenne", formatMoyenne(periodes.get(i).getMoyenne()));
+            } else {
+                params.put("trimestre" + suffixe + "Libelle", "—");
+                params.put("trimestre" + suffixe + "Moyenne", "—");
+            }
+        }
+        return params;
+    }
+
+    private static String formatMoyenne(Double valeur) {
+        return valeur != null ? String.format(Locale.FRANCE, "%.2f", valeur) : "—";
+    }
+
+    private static String formatRang(Integer rang) {
+        return rang != null ? rang + "e" : "—";
+    }
+
+    private static String formatOuiNon(Boolean valeur) {
+        return Boolean.TRUE.equals(valeur) ? "Oui" : "Non";
+    }
 
     public BulletinResponse genererBulletin(Long eleveId, Long periodeId) {
         Eleve eleve = eleveRepository.findById(eleveId)
@@ -142,10 +202,14 @@ public class BulletinService {
                 : periodeAcademiqueRepository.findByAnneeScolaireIdOrderByDateDebutAsc(periode.getAnneeScolaireId());
 
         Map<Long, List<Double>> moyennesAnnuelles = new HashMap<>();
+        // Conserve la moyenne pondérée de CHAQUE période de l'année (pas seulement celle demandée)
+        // pour alimenter le récapitulatif "Moyenne du 1er/2e/3e Trimestre" du bulletin.
+        Map<Long, Map<Long, Double>> moyenneParPeriodeParEleve = new HashMap<>();
         for (PeriodeAcademique p : periodesAnnee) {
             Map<Long, Double> moyennesPeriode = p.getId().equals(periodeId)
                     ? moyennePondereeParEleve
                     : moyennesPartiellesParEleve(p.getId(), eleveIds, coefficientsParMatiere);
+            moyenneParPeriodeParEleve.put(p.getId(), moyennesPeriode);
             for (Long eleveId : eleveIds) {
                 Double v = moyennesPeriode.get(eleveId);
                 if (v != null) moyennesAnnuelles.computeIfAbsent(eleveId, k -> new ArrayList<>()).add(v);
@@ -164,6 +228,7 @@ public class BulletinService {
             BulletinResponse r = new BulletinResponse();
             r.setEleveId(eleve.getId());
             r.setEleveNomComplet(eleve.getNom() + " " + eleve.getPrenom());
+            r.setEleveMatricule(eleve.getCode());
             r.setClasseId(classeId);
             r.setClasseLibelle(classe.getLibelle());
             r.setEffectifClasse(eleves.size());
@@ -194,14 +259,27 @@ public class BulletinService {
                 m.setAppreciation(nonCompose ? "N'a pas composé" : appreciationPour(moyenne));
                 matieres.add(m);
             }
-            matieres.sort(Comparator.comparing(BulletinMatiereResponse::getMatiereLibelle,
-                    Comparator.nullsLast(Comparator.naturalOrder())));
+            // CONDUITE est notée à part par l'administrateur (pas de professeur assigné) — on la
+            // fait toujours apparaître en dernière ligne du tableau, comme sur le bulletin papier
+            // de référence, plutôt qu'au tri alphabétique.
+            matieres.sort(Comparator
+                    .comparing((BulletinMatiereResponse m) -> Boolean.TRUE.equals(estConduiteParMatiere.get(m.getMatiereId())))
+                    .thenComparing(BulletinMatiereResponse::getMatiereLibelle, Comparator.nullsLast(Comparator.naturalOrder())));
             r.setMatieres(matieres);
 
             r.setMoyennePonderee(moyennePondereeParEleve.get(eleve.getId()));
             r.setRangTrimestre(rangTrimestreParEleve.get(eleve.getId()));
             r.setMoyenneAnnuelle(moyenneAnnuelleParEleve.get(eleve.getId()));
             r.setRangAnnuel(rangAnnuelParEleve.get(eleve.getId()));
+
+            List<MoyennePeriodeResponse> moyennesParPeriode = new ArrayList<>();
+            for (PeriodeAcademique p : periodesAnnee) {
+                MoyennePeriodeResponse mp = new MoyennePeriodeResponse();
+                mp.setPeriodeLibelle(p.getLibelle());
+                mp.setMoyenne(moyenneParPeriodeParEleve.getOrDefault(p.getId(), Map.of()).get(eleve.getId()));
+                moyennesParPeriode.add(mp);
+            }
+            r.setMoyennesParPeriode(moyennesParPeriode);
 
             appliquerMentions(r, eleve.getId(), periodeId);
 

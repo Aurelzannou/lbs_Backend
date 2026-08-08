@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 import static java.util.Objects.requireNonNull;
@@ -57,6 +58,24 @@ public class MinioStorageService {
         minioClient.putObject(bucketFileData);
 
         return fileName;
+    }
+
+    /** Variante de {@link #uploadFile} pour un contenu déjà en mémoire (ex: PDF généré par
+        JasperReports) plutôt qu'un {@link MultipartFile} issu d'un upload HTTP. */
+    @Transactional
+    public String uploadBytes(String directory, String fileName, String contentType, byte[] data) throws Exception {
+        String dir = directory == null || directory.isEmpty() ? "" : directory + "/";
+        String objectName = String.format("%s%s-%s", dir, System.currentTimeMillis(), fileName.toLowerCase());
+
+        PutObjectArgs bucketFileData = PutObjectArgs.builder()
+                .bucket(bucketName())
+                .object(objectName)
+                .stream(new ByteArrayInputStream(data), data.length, -1)
+                .contentType(contentType)
+                .build();
+        minioClient.putObject(bucketFileData);
+
+        return objectName;
     }
 
     public FileResponse downloadFile(String fileName) throws Exception {

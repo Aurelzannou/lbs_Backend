@@ -24,6 +24,8 @@ public class ActeMapper implements Mapper<Acte, ActeResponse> {
                 entity.getTypeActeId(),
                 entity.getCheminFichier(),
                 entity.getNomFichier(),
+                entity.getEleveId(),
+                entity.getPeriodeId(),
                 entity.getModifierLe(),
                 entity.getModifierPar(),
                 typeActeMapper.toResponse(entity.getTypeActe())
