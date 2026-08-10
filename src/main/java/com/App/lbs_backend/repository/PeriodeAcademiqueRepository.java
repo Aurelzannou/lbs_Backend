@@ -16,6 +16,10 @@ public interface PeriodeAcademiqueRepository extends BaseRepository<PeriodeAcade
         moyenne annuelle (moyenne simple des moyennes des trimestres disponibles). */
     List<PeriodeAcademique> findByAnneeScolaireIdOrderByDateDebutAsc(Long anneeScolaireId);
 
+    /** Périodes déjà terminées (dateFin dans le passé) — sert à l'auto-soumission des matières
+        encore en brouillon quand la période s'est achevée sans que le professeur ait soumis. */
+    List<PeriodeAcademique> findByDateFinBefore(LocalDate date);
+
     @Query("""
         SELECT p FROM PeriodeAcademique p
         WHERE (:anneeId IS NULL OR p.anneeScolaireId = :anneeId)

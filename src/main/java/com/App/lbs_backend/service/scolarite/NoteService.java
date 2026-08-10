@@ -106,7 +106,7 @@ public class NoteService {
         List<Long> eleveIds = eleves.stream().map(Eleve::getId).toList();
 
         Map<Long, List<Note>> notesParEleve = noteRepository
-                .findByEleveIdInAndMatiereIdAndPeriodeId(eleveIds, matiereId, periodeId).stream()
+                .findByEleveIdInAndMatiereIdAndPeriodeIdAndClasseId(eleveIds, matiereId, periodeId, classeId).stream()
                 .collect(Collectors.groupingBy(Note::getEleveId));
 
         boolean valide = validationBulletinRepository.findByClasseIdAndPeriodeId(classeId, periodeId)
@@ -116,7 +116,7 @@ public class NoteService {
         // Nombre de colonnes d'interrogation à afficher : le plus grand numéro déjà saisi pour
         // cette classe/matière/période, au moins 1 pour laisser une colonne de départ.
         Integer maxNumero = eleveIds.isEmpty() ? null
-                : noteRepository.findMaxNumero(eleveIds, matiereId, periodeId, INTERROGATION);
+                : noteRepository.findMaxNumero(eleveIds, classeId, matiereId, periodeId, INTERROGATION);
         int nombreInterrogations = Math.min(maxNumero != null ? maxNumero : 1, MAX_INTERROGATIONS);
 
         FeuilleSaisieNotesResponse response = new FeuilleSaisieNotesResponse();
@@ -187,61 +187,103 @@ public class NoteService {
                 .orElse(null);
     }
 
-    /** Enregistre (upsert) la feuille de notes d'une classe/matière/période. */
+    /** Enregistre (upsert) la feuille de notes d'une classe/matière/période — point d'entrée du
+        service de SAISIE (portail professeur + écran admin "Saisie des notes"). La correction
+        depuis l'écran "Validation des bulletins" est un service à part entière, voir
+        {@link #enregistrerFeuilleCorrection} et {@code ValidationBulletinService.corrigerNotes} —
+        elle ne transite jamais par cette méthode, pour qu'aucune restriction de l'une ne puisse
+        fuiter (ou manquer) sur l'autre. */
     @Transactional
     public FeuilleSaisieNotesResponse enregistrerFeuille(FeuilleSaisieNotesRequest form) {
+        verifierRestrictionsUniverselles(form);
+
+        if (form.getProfesseurId() != null) {
+            enregistrerFeuilleProfesseur(form);
+        } else {
+            enregistrerFeuilleSaisieAdmin(form);
+        }
+
+        return getFeuille(form.getClasseId(), form.getMatiereId(), form.getPeriodeId());
+    }
+
+    private void verifierRestrictionsUniverselles(FeuilleSaisieNotesRequest form) {
         verifierPeriodeNonValidee(form.getClasseId(), form.getPeriodeId());
         verifierEtapeModifiable(form);
         // Une colonne déjà validée par l'admin est figée pour tout le monde, y compris l'admin lui-
         // même — la seule façon d'y retoucher est de d'abord "Déverrouiller" cette colonne (ce qui
         // annule aussi sa validation).
         verifierColonnesNonValidees(form);
+    }
 
-        if (form.getProfesseurId() != null) {
-            Professeur professeur = professeurRepository.findById(form.getProfesseurId())
-                    .orElseThrow(() -> new IllegalArgumentException("Professeur introuvable"));
-            boolean autorise = professeur.getClasseIds() != null && professeur.getClasseIds().contains(form.getClasseId())
-                    && professeur.getMatiereIds() != null && professeur.getMatiereIds().contains(form.getMatiereId());
-            if (!autorise) {
-                throw new IllegalArgumentException("Vous n'êtes pas autorisé à noter cette classe/matière.");
-            }
-
-            // Le professeur ne peut saisir que la période en cours (l'admin, lui, n'a pas cette
-            // restriction — professeurId est null quand l'appel vient de l'écran admin).
-            PeriodeAcademique periode = periodeAcademiqueRepository.findById(form.getPeriodeId())
-                    .orElseThrow(() -> new IllegalArgumentException("Période introuvable"));
-            if (!PeriodeAcademiqueMapper.EN_COURS.equals(PeriodeAcademiqueMapper.calculerStatut(periode))) {
-                throw new IllegalArgumentException("Vous ne pouvez saisir des notes que pour la période en cours.");
-            }
-            // Le statut EN_COURS n'est calculé que sur les dates de la période — il ne suffit pas :
-            // si l'admin a désactivé l'année scolaire (par erreur, fin d'année, etc.), la saisie doit
-            // être bloquée même si la période tombe encore dans son intervalle de dates.
-            if (periode.getAnneeScolaire() == null || !Boolean.TRUE.equals(periode.getAnneeScolaire().getActif())) {
-                throw new IllegalArgumentException("L'année scolaire de cette période n'est plus active.");
-            }
-
-            // Colonne par colonne : le professeur ne peut pas modifier une colonne déjà verrouillée,
-            // ni sauter directement à une colonne suivante sans avoir d'abord verrouillé la précédente.
-            verifierColonnesModifiables(form);
-        } else if (!Boolean.TRUE.equals(form.getContexteValidation())) {
-            // Écran de saisie directe de l'admin (pas "Validation des bulletins") : limité à l'année
-            // scolaire active. La consultation/correction d'une année inactive reste possible, mais
-            // uniquement depuis l'écran de validation, qui garde volontairement accès à l'historique.
-            PeriodeAcademique periode = periodeAcademiqueRepository.findById(form.getPeriodeId())
-                    .orElseThrow(() -> new IllegalArgumentException("Période introuvable"));
-            if (periode.getAnneeScolaire() == null || !Boolean.TRUE.equals(periode.getAnneeScolaire().getActif())) {
-                throw new IllegalArgumentException(
-                        "Cette période appartient à une année scolaire inactive. Utilisez l'écran de validation des bulletins pour la modifier.");
-            }
+    /** Service de saisie professeur (portail prof) : limité à sa/ses classe(s)+matière(s)
+        assignées, à la période EN_COURS d'une année active, colonne par colonne dans l'ordre. */
+    private void enregistrerFeuilleProfesseur(FeuilleSaisieNotesRequest form) {
+        Professeur professeur = professeurRepository.findById(form.getProfesseurId())
+                .orElseThrow(() -> new IllegalArgumentException("Professeur introuvable"));
+        boolean autorise = professeur.getClasseIds() != null && professeur.getClasseIds().contains(form.getClasseId())
+                && professeur.getMatiereIds() != null && professeur.getMatiereIds().contains(form.getMatiereId());
+        if (!autorise) {
+            throw new IllegalArgumentException("Vous n'êtes pas autorisé à noter cette classe/matière.");
         }
 
+        PeriodeAcademique periode = periodeAcademiqueRepository.findById(form.getPeriodeId())
+                .orElseThrow(() -> new IllegalArgumentException("Période introuvable"));
+        if (!PeriodeAcademiqueMapper.EN_COURS.equals(PeriodeAcademiqueMapper.calculerStatut(periode))) {
+            throw new IllegalArgumentException("Vous ne pouvez saisir des notes que pour la période en cours.");
+        }
+        // Le statut EN_COURS n'est calculé que sur les dates de la période — il ne suffit pas :
+        // si l'admin a désactivé l'année scolaire (par erreur, fin d'année, etc.), la saisie doit
+        // être bloquée même si la période tombe encore dans son intervalle de dates.
+        if (periode.getAnneeScolaire() == null || !Boolean.TRUE.equals(periode.getAnneeScolaire().getActif())) {
+            throw new IllegalArgumentException("L'année scolaire de cette période n'est plus active.");
+        }
+
+        // Colonne par colonne : le professeur ne peut pas modifier une colonne déjà verrouillée,
+        // ni sauter directement à une colonne suivante sans avoir d'abord verrouillé la précédente.
+        verifierColonnesModifiables(form);
+        ecrireNotes(form);
+    }
+
+    /** Service de saisie directe admin (écran "Saisie des notes") : mêmes restrictions de période
+        que le professeur (EN_COURS + année active) — c'est un écran de saisie du quotidien, pas de
+        correction historique — mais sans vérification d'autorisation ni d'ordre des colonnes,
+        l'admin pouvant toujours saisir librement dans n'importe quel ordre. */
+    private void enregistrerFeuilleSaisieAdmin(FeuilleSaisieNotesRequest form) {
+        PeriodeAcademique periode = periodeAcademiqueRepository.findById(form.getPeriodeId())
+                .orElseThrow(() -> new IllegalArgumentException("Période introuvable"));
+        if (periode.getAnneeScolaire() == null || !Boolean.TRUE.equals(periode.getAnneeScolaire().getActif())) {
+            throw new IllegalArgumentException(
+                    "Cette période appartient à une année scolaire inactive. Utilisez l'écran de validation des bulletins pour la modifier.");
+        }
+        if (!PeriodeAcademiqueMapper.EN_COURS.equals(PeriodeAcademiqueMapper.calculerStatut(periode))) {
+            throw new IllegalArgumentException(
+                    "Vous ne pouvez saisir des notes que pour la période en cours depuis cet écran. Utilisez l'écran de validation des bulletins pour une autre période.");
+        }
+        ecrireNotes(form);
+    }
+
+    /** Service de correction, appelé exclusivement par {@code ValidationBulletinService.corrigerNotes}
+        (écran "Validation des bulletins") — jamais directement par le contrôleur de saisie.
+        Aucune restriction de période, d'étape ou de colonne : l'admin doit pouvoir corriger
+        n'importe quelle note à tout moment depuis cet écran. Seul le verrou de classe
+        ({@link #verifierPeriodeNonValidee}) s'applique encore — c'est le seul verrou piloté par
+        cet écran lui-même (bouton Valider/Dévalider les bulletins de la classe) ; le dévalider
+        suffit alors à débloquer de nouveau la correction. */
+    @Transactional
+    public FeuilleSaisieNotesResponse enregistrerFeuilleCorrection(FeuilleSaisieNotesRequest form) {
+        verifierPeriodeNonValidee(form.getClasseId(), form.getPeriodeId());
+        ecrireNotes(form);
+        return getFeuille(form.getClasseId(), form.getMatiereId(), form.getPeriodeId());
+    }
+
+    private void ecrireNotes(FeuilleSaisieNotesRequest form) {
         // Le nombre de colonnes envoyées peut être inférieur à ce qui existait déjà en base (si le
         // professeur a réduit le nombre d'interrogations) — on va jusqu'au plus grand des deux pour
         // pouvoir vider (valeur=null) les numéros qui ne sont plus soumis, sans les perdre en silence.
         List<Long> eleveIds = form.getEleves().stream()
                 .map(FeuilleSaisieNotesRequest.EleveNoteEntry::getEleveId).toList();
         Integer maxNumeroExistant = eleveIds.isEmpty() ? null
-                : noteRepository.findMaxNumero(eleveIds, form.getMatiereId(), form.getPeriodeId(), INTERROGATION);
+                : noteRepository.findMaxNumero(eleveIds, form.getClasseId(), form.getMatiereId(), form.getPeriodeId(), INTERROGATION);
         int maxNumeroSoumis = form.getEleves().stream()
                 .map(e -> e.getInterrogations() == null ? 0 : e.getInterrogations().size())
                 .max(Integer::compareTo).orElse(0);
@@ -253,16 +295,14 @@ public class NoteService {
             List<Double> interrogations = entree.getInterrogations() != null ? entree.getInterrogations() : List.of();
             for (int i = 1; i <= nombreInterrogations; i++) {
                 Double valeur = i <= interrogations.size() ? interrogations.get(i - 1) : null;
-                upsertNote(entree.getEleveId(), form.getMatiereId(), form.getPeriodeId(),
+                upsertNote(entree.getEleveId(), form.getClasseId(), form.getMatiereId(), form.getPeriodeId(),
                         form.getProfesseurId(), INTERROGATION, i, valeur);
             }
-            upsertNote(entree.getEleveId(), form.getMatiereId(), form.getPeriodeId(),
+            upsertNote(entree.getEleveId(), form.getClasseId(), form.getMatiereId(), form.getPeriodeId(),
                     form.getProfesseurId(), DEVOIR, 1, entree.getDevoir1());
-            upsertNote(entree.getEleveId(), form.getMatiereId(), form.getPeriodeId(),
+            upsertNote(entree.getEleveId(), form.getClasseId(), form.getMatiereId(), form.getPeriodeId(),
                     form.getProfesseurId(), DEVOIR, 2, entree.getDevoir2());
         }
-
-        return getFeuille(form.getClasseId(), form.getMatiereId(), form.getPeriodeId());
     }
 
     /** Le workflow de validation (étape) bloque l'écriture indépendamment du verrou colonne par
@@ -298,24 +338,24 @@ public class NoteService {
         for (FeuilleSaisieNotesRequest.EleveNoteEntry entree : form.getEleves()) {
             List<Double> interrogations = entree.getInterrogations() != null ? entree.getInterrogations() : List.of();
             for (int i = 1; i <= interrogations.size() && i <= interroValidees; i++) {
-                verifierValeurInchangee(entree.getEleveId(), form.getMatiereId(), form.getPeriodeId(),
+                verifierValeurInchangee(entree.getEleveId(), form.getClasseId(), form.getMatiereId(), form.getPeriodeId(),
                         INTERROGATION, i, interrogations.get(i - 1));
             }
             if (devoirsValidees >= 1) {
-                verifierValeurInchangee(entree.getEleveId(), form.getMatiereId(), form.getPeriodeId(),
+                verifierValeurInchangee(entree.getEleveId(), form.getClasseId(), form.getMatiereId(), form.getPeriodeId(),
                         DEVOIR, 1, entree.getDevoir1());
             }
             if (devoirsValidees >= 2) {
-                verifierValeurInchangee(entree.getEleveId(), form.getMatiereId(), form.getPeriodeId(),
+                verifierValeurInchangee(entree.getEleveId(), form.getClasseId(), form.getMatiereId(), form.getPeriodeId(),
                         DEVOIR, 2, entree.getDevoir2());
             }
         }
     }
 
-    private void verifierValeurInchangee(Long eleveId, Long matiereId, Long periodeId, String type,
+    private void verifierValeurInchangee(Long eleveId, Long classeId, Long matiereId, Long periodeId, String type,
                                           int numero, Double valeurSoumise) {
-        Double valeurActuelle = noteRepository.findByEleveIdAndMatiereIdAndPeriodeIdAndTypeEvaluationAndNumero(
-                eleveId, matiereId, periodeId, type, numero).map(Note::getValeur).orElse(null);
+        Double valeurActuelle = noteRepository.findByEleveIdAndClasseIdAndMatiereIdAndPeriodeIdAndTypeEvaluationAndNumero(
+                eleveId, classeId, matiereId, periodeId, type, numero).map(Note::getValeur).orElse(null);
         if (!Objects.equals(valeurActuelle, valeurSoumise)) {
             String label = INTERROGATION.equals(type) ? "L'interrogation " + numero : "Le devoir " + numero;
             throw new IllegalArgumentException(
@@ -339,23 +379,29 @@ public class NoteService {
         for (FeuilleSaisieNotesRequest.EleveNoteEntry entree : form.getEleves()) {
             List<Double> interrogations = entree.getInterrogations() != null ? entree.getInterrogations() : List.of();
             for (int i = 1; i <= interrogations.size(); i++) {
-                verifierColonneModifiable(entree.getEleveId(), form.getMatiereId(), form.getPeriodeId(),
+                verifierColonneModifiable(entree.getEleveId(), form.getClasseId(), form.getMatiereId(), form.getPeriodeId(),
                         INTERROGATION, i, interrogations.get(i - 1), interroVerrouees, interroValidees);
             }
-            verifierColonneModifiable(entree.getEleveId(), form.getMatiereId(), form.getPeriodeId(),
+            verifierColonneModifiable(entree.getEleveId(), form.getClasseId(), form.getMatiereId(), form.getPeriodeId(),
                     DEVOIR, 1, entree.getDevoir1(), devoirsVerroues, devoirsValidees);
-            verifierColonneModifiable(entree.getEleveId(), form.getMatiereId(), form.getPeriodeId(),
+            verifierColonneModifiable(entree.getEleveId(), form.getClasseId(), form.getMatiereId(), form.getPeriodeId(),
                     DEVOIR, 2, entree.getDevoir2(), devoirsVerroues, devoirsValidees);
         }
     }
 
-    private void verifierColonneModifiable(Long eleveId, Long matiereId, Long periodeId, String type,
+    private void verifierColonneModifiable(Long eleveId, Long classeId, Long matiereId, Long periodeId, String type,
                                             int numero, Double valeurSoumise, int verroueesJusqua, int valideesJusqua) {
         // Une colonne encore vide (valeur null) n'est pas une tentative d'écriture — seul un
         // brouillon avec une vraie valeur doit être bloqué s'il dépasse la prochaine colonne
         // autorisée. Sans ce garde-fou, "Enregistrer" échouait dès qu'un devoir/interrogation futur
         // restait simplement non renseigné (aucune valeur à protéger, donc rien à refuser).
-        if (valeurSoumise != null && numero > verroueesJusqua + 1) {
+        //
+        // Ces deux gardes ne doivent bloquer qu'une VRAIE tentative de saisie (valeur différente de
+        // celle déjà en base) — le formulaire renvoie systématiquement l'état complet de la feuille,
+        // colonnes non modifiables comprises ; sans cette comparaison, une valeur résiduelle déjà
+        // enregistrée dans une colonne future non verrouillée bloquait "Enregistrer"/"Terminer" sur
+        // les colonnes précédentes, alors qu'aucune nouvelle donnée n'était réellement soumise.
+        if (valeurSoumise != null && numero > verroueesJusqua + 1 && aChange(eleveId, classeId, matiereId, periodeId, type, numero, valeurSoumise)) {
             String label = INTERROGATION.equals(type) ? "l'interrogation " + numero : "le devoir " + numero;
             throw new IllegalArgumentException(
                     "Vous devez d'abord terminer la colonne précédente avant de renseigner " + label + ".");
@@ -363,34 +409,38 @@ public class NoteService {
         // La colonne suivante (celle qui deviendrait la prochaine à verrouiller) reste totalement
         // fermée à la saisie tant que la précédente n'est pas validée par l'administration — pas
         // seulement au moment de cliquer "Terminer".
-        if (valeurSoumise != null && numero == verroueesJusqua + 1 && numero > 1 && valideesJusqua < numero - 1) {
+        if (valeurSoumise != null && numero == verroueesJusqua + 1 && numero > 1 && valideesJusqua < numero - 1
+                && aChange(eleveId, classeId, matiereId, periodeId, type, numero, valeurSoumise)) {
             String label = INTERROGATION.equals(type) ? "l'interrogation " + numero : "le devoir " + numero;
             throw new IllegalArgumentException(
                     "La colonne précédente doit d'abord être validée par l'administration avant de renseigner " + label + ".");
         }
-        if (numero <= verroueesJusqua) {
-            Double valeurActuelle = noteRepository.findByEleveIdAndMatiereIdAndPeriodeIdAndTypeEvaluationAndNumero(
-                    eleveId, matiereId, periodeId, type, numero).map(Note::getValeur).orElse(null);
-            if (!Objects.equals(valeurActuelle, valeurSoumise)) {
-                String label = INTERROGATION.equals(type) ? "L'interrogation " + numero : "Le devoir " + numero;
-                throw new IllegalArgumentException(label + " est verrouillé(e) et ne peut plus être modifié(e).");
-            }
+        if (numero <= verroueesJusqua && aChange(eleveId, classeId, matiereId, periodeId, type, numero, valeurSoumise)) {
+            String label = INTERROGATION.equals(type) ? "L'interrogation " + numero : "Le devoir " + numero;
+            throw new IllegalArgumentException(label + " est verrouillé(e) et ne peut plus être modifié(e).");
         }
     }
 
-    private void upsertNote(Long eleveId, Long matiereId, Long periodeId, Long professeurId,
+    private boolean aChange(Long eleveId, Long classeId, Long matiereId, Long periodeId, String type, int numero, Double valeurSoumise) {
+        Double valeurActuelle = noteRepository.findByEleveIdAndClasseIdAndMatiereIdAndPeriodeIdAndTypeEvaluationAndNumero(
+                eleveId, classeId, matiereId, periodeId, type, numero).map(Note::getValeur).orElse(null);
+        return !Objects.equals(valeurActuelle, valeurSoumise);
+    }
+
+    private void upsertNote(Long eleveId, Long classeId, Long matiereId, Long periodeId, Long professeurId,
                              String typeEvaluation, Integer numero, Double valeur) {
         if (valeur == null) {
-            noteRepository.findByEleveIdAndMatiereIdAndPeriodeIdAndTypeEvaluationAndNumero(
-                    eleveId, matiereId, periodeId, typeEvaluation, numero)
+            noteRepository.findByEleveIdAndClasseIdAndMatiereIdAndPeriodeIdAndTypeEvaluationAndNumero(
+                    eleveId, classeId, matiereId, periodeId, typeEvaluation, numero)
                     .ifPresent(n -> { n.setValeur(null); noteRepository.save(n); });
             return;
         }
 
-        Note note = noteRepository.findByEleveIdAndMatiereIdAndPeriodeIdAndTypeEvaluationAndNumero(
-                eleveId, matiereId, periodeId, typeEvaluation, numero)
+        Note note = noteRepository.findByEleveIdAndClasseIdAndMatiereIdAndPeriodeIdAndTypeEvaluationAndNumero(
+                eleveId, classeId, matiereId, periodeId, typeEvaluation, numero)
                 .orElseGet(Note::new);
         note.setEleveId(eleveId);
+        note.setClasseId(classeId);
         note.setMatiereId(matiereId);
         note.setPeriodeId(periodeId);
         note.setProfesseurId(professeurId);

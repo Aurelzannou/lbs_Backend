@@ -152,20 +152,27 @@ public class BulletinService {
                 : coefficientRepository.findByNiveauId(classe.getNiveauId()).stream()
                     .collect(Collectors.toMap(Coefficient::getMatiereId, Coefficient::getValeur));
 
-        List<Note> notes = noteRepository.findByEleveIdInAndPeriodeId(eleveIds, periodeId);
+        List<Note> notes = noteRepository.findByEleveIdInAndPeriodeIdAndClasseId(eleveIds, periodeId, classeId);
 
         Map<Long, Map<Long, List<Note>>> parMatiereParEleve = notes.stream()
                 .collect(Collectors.groupingBy(Note::getMatiereId, Collectors.groupingBy(Note::getEleveId)));
 
         // Le bulletin doit lister TOUTES les matières attribuées à cette classe (référentiel
         // Classes), pas seulement celles qui ont déjà au moins une note quelque part — une matière
-        // jamais évaluée reste affichée, avec 0 et la mention "N'a pas composé". Si la classe n'a
-        // encore aucune matière explicitement assignée (ancienne donnée), on retombe sur les
-        // matières ayant un coefficient pour son niveau, pour ne pas produire un bulletin vide.
-        Set<Long> toutesMatieresId = classe.getMatiereIds() != null && !classe.getMatiereIds().isEmpty()
-                ? new HashSet<>(classe.getMatiereIds())
-                : new HashSet<>(coefficientsParMatiere.keySet());
-        toutesMatieresId.addAll(parMatiereParEleve.keySet());
+        // jamais évaluée reste affichée, avec 0 et la mention "N'a pas composé". La liste de la
+        // classe est la SEULE source de vérité dès qu'elle est renseignée : si une matière en est
+        // retirée, elle disparaît du bulletin même si d'anciennes notes existent encore pour elle
+        // (l'historique reste consultable en rouvrant l'écran de saisie pour cette matière).
+        // Ce n'est que si la classe n'a encore AUCUNE matière explicitement assignée (ancienne
+        // donnée) qu'on retombe sur les matières ayant un coefficient pour son niveau, complétées
+        // par toute matière ayant déjà des notes, pour ne pas produire un bulletin vide.
+        Set<Long> toutesMatieresId;
+        if (classe.getMatiereIds() != null && !classe.getMatiereIds().isEmpty()) {
+            toutesMatieresId = new HashSet<>(classe.getMatiereIds());
+        } else {
+            toutesMatieresId = new HashSet<>(coefficientsParMatiere.keySet());
+            toutesMatieresId.addAll(parMatiereParEleve.keySet());
+        }
 
         Map<Long, String> matiereLibelles = new HashMap<>();
         Map<Long, Boolean> estConduiteParMatiere = new HashMap<>();

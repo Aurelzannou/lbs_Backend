@@ -1,6 +1,8 @@
 package com.App.lbs_backend.controller.scolarite;
 
 import com.App.lbs_backend.core.http.response.ApiResponse;
+import com.App.lbs_backend.dto.request.FeuilleSaisieNotesRequest;
+import com.App.lbs_backend.dto.response.FeuilleSaisieNotesResponse;
 import com.App.lbs_backend.dto.response.ValidationBulletinResponse;
 import com.App.lbs_backend.service.scolarite.ValidationBulletinService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,6 +43,15 @@ public class ValidationBulletinController {
         String email = extraireEmail(jwt);
         ValidationBulletinResponse resultat = validationBulletinService.valider(classeId, periodeId, anneeScolaireId, email);
         return ResponseEntity.ok(ApiResponse.apiSuccess("Bulletins validés", resultat, httpRequest.getRequestURI()));
+    }
+
+    /** Enregistre des notes corrigées depuis l'écran "Validation des bulletins" — service à part
+        entière (voir ValidationBulletinService.corrigerNotes), distinct de PUT /api/notes/feuille
+        qui reste réservé à la saisie (professeur + écran admin "Saisie des notes"). */
+    @PutMapping("/notes")
+    public ResponseEntity<?> corrigerNotes(@RequestBody FeuilleSaisieNotesRequest form) {
+        FeuilleSaisieNotesResponse dto = validationBulletinService.corrigerNotes(form);
+        return ResponseEntity.ok(ApiResponse.apiSuccess("Notes mises à jour", dto, httpRequest.getRequestURI()));
     }
 
     @PutMapping("/{classeId}/{periodeId}/devalider")

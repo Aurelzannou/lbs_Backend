@@ -32,6 +32,13 @@ public class Note extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_note_eleve_id", nullable = false)
     private Long eleveId;
 
+    /** Classe dans laquelle la note a été saisie — indispensable pour qu'un élève changeant de
+        classe en cours d'année ne conserve pas d'anciennes notes sur le bulletin de sa nouvelle
+        classe (et pour qu'un nouveau professeur ne puisse pas écraser silencieusement une note
+        saisie sous une autre classe pour la même élève/matière/période). */
+    @Column(name = "lbs_note_classe_id")
+    private Long classeId;
+
     @Column(name = "lbs_note_matiere_id", nullable = false)
     private Long matiereId;
 
@@ -98,6 +105,9 @@ public class Note extends AuditableEntity implements Timestamps {
 
     public Long getEleveId() { return eleveId; }
     public void setEleveId(Long eleveId) { this.eleveId = eleveId; }
+
+    public Long getClasseId() { return classeId; }
+    public void setClasseId(Long classeId) { this.classeId = classeId; }
 
     public Long getMatiereId() { return matiereId; }
     public void setMatiereId(Long matiereId) { this.matiereId = matiereId; }

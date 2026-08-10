@@ -1,5 +1,7 @@
 package com.App.lbs_backend.service.scolarite;
 
+import com.App.lbs_backend.dto.request.FeuilleSaisieNotesRequest;
+import com.App.lbs_backend.dto.response.FeuilleSaisieNotesResponse;
 import com.App.lbs_backend.dto.response.ValidationBulletinResponse;
 import com.App.lbs_backend.entity.Acte;
 import com.App.lbs_backend.entity.Classe;
@@ -40,6 +42,16 @@ public class ValidationBulletinService {
     private final TypeActeRepository typeActeRepository;
     private final BulletinService bulletinService;
     private final MinioStorageService minioStorageService;
+    private final NoteService noteService;
+
+    /** Service de correction des notes propre à cet écran — voir
+        {@link NoteService#enregistrerFeuilleCorrection}. Aucune restriction de période/année :
+        l'admin peut corriger les notes de n'importe quelle période depuis cet écran, contrairement
+        au service de saisie (portail professeur + écran "Saisie des notes") qui, lui, reste limité
+        à la période en cours. */
+    public FeuilleSaisieNotesResponse corrigerNotes(FeuilleSaisieNotesRequest form) {
+        return noteService.enregistrerFeuilleCorrection(form);
+    }
 
     /** Statut de validation de chaque classe pour une période — alimente l'écran de validation. */
     public List<ValidationBulletinResponse> listerParPeriode(Long periodeId, Long anneeScolaireId) {

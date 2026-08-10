@@ -2,10 +2,12 @@ package com.App.lbs_backend.service.scolarite;
 
 import com.App.lbs_backend.dto.response.ProgressionEtapeHistoriqueResponse;
 import com.App.lbs_backend.dto.response.ProgressionSaisieNoteResponse;
+import com.App.lbs_backend.entity.Classe;
 import com.App.lbs_backend.entity.Etape;
 import com.App.lbs_backend.entity.ProgressionEtapeHistorique;
 import com.App.lbs_backend.entity.ProgressionSaisieNote;
 import com.App.lbs_backend.entity.Professeur;
+import com.App.lbs_backend.repository.ClasseRepository;
 import com.App.lbs_backend.repository.EtapeRepository;
 import com.App.lbs_backend.repository.ProfesseurRepository;
 import com.App.lbs_backend.repository.ProgressionEtapeHistoriqueRepository;
@@ -31,6 +33,7 @@ public class ProgressionSaisieNoteService {
     private final ProfesseurRepository professeurRepository;
     private final EtapeRepository etapeRepository;
     private final ProgressionEtapeHistoriqueRepository historiqueRepository;
+    private final ClasseRepository classeRepository;
 
     public static final String BROUILLON = "BROUILLON";
     public static final String SOUMISE = "SOUMISE";
@@ -54,6 +57,31 @@ public class ProgressionSaisieNoteService {
             dto.setValideParEmail(p.getValideParEmail());
         }
         return dto;
+    }
+
+    /** Étape de chaque matière de la classe pour cette période — alimente l'écran de validation
+        des bulletins, qui n'autorise l'admin à ouvrir/modifier une matière qu'une fois que le
+        professeur l'a soumise (étape SOUMISE ou VALIDEE), jamais tant qu'elle est en BROUILLON. */
+    public List<ProgressionSaisieNoteResponse> getProgressionsClasse(Long classeId, Long periodeId) {
+        Classe classe = classeRepository.findById(classeId).orElse(null);
+        List<Long> matiereIds = classe != null && classe.getMatiereIds() != null ? classe.getMatiereIds() : List.of();
+        return matiereIds.stream().map(matiereId -> getProgression(classeId, matiereId, periodeId)).toList();
+    }
+
+    /** Auto-soumission déclenchée par {@link ClotureAutomatiqueService} quand la période est déjà
+        terminée et que le professeur n'a jamais cliqué "Soumettre" — contrairement à
+        {@link #soumettre}, ne vérifie aucune précondition sur les colonnes (le but est justement de
+        débloquer une matière restée incomplète) et n'agit que si elle est encore en BROUILLON.
+        @return true si une transition a effectivement eu lieu. */
+    @Transactional
+    public boolean soumettreAutomatiquementSiBrouillon(Long classeId, Long matiereId, Long periodeId) {
+        ProgressionSaisieNote p = obtenirOuCreer(classeId, matiereId, periodeId);
+        if (!BROUILLON.equals(codeEtape(p))) return false;
+        p.setEtapeId(etapeIdPour(SOUMISE));
+        p.setDateSoumission(LocalDateTime.now());
+        progressionRepository.save(p);
+        enregistrerHistorique(p, SOUMISE, "SYSTÈME (auto-soumission — fin de période)");
+        return true;
     }
 
     /** Le professeur soumet la matière entière pour validation admin — nécessite que toutes les

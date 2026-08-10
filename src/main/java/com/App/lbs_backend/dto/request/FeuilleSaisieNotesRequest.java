@@ -12,10 +12,6 @@ public class FeuilleSaisieNotesRequest {
     /** Renseigné uniquement quand l'appel vient du portail professeur — sert à vérifier qu'il
         enseigne bien cette (classe, matière) et à attribuer les notes à son nom. */
     private Long professeurId;
-    /** Renseigné uniquement par l'écran "Validation des bulletins" — cet écran garde volontairement
-        accès à l'historique complet (années inactives comprises), contrairement à l'écran de saisie
-        directe de l'admin qui se limite à l'année scolaire active. */
-    private Boolean contexteValidation;
     private List<EleveNoteEntry> eleves;
 
     @Data

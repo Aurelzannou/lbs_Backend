@@ -69,6 +69,14 @@ public class NoteController {
         return ResponseEntity.ok(ApiResponse.apiSuccess("OK", dto, httpRequest.getRequestURI()));
     }
 
+    /** Étape de chaque matière de la classe pour cette période — alimente l'écran admin
+        "Validation des bulletins" (une matière encore en BROUILLON ne peut pas y être ouverte). */
+    @GetMapping("/progression/classe")
+    public ResponseEntity<?> getProgressionsClasse(@RequestParam Long classeId, @RequestParam Long periodeId) {
+        List<ProgressionSaisieNoteResponse> liste = progressionSaisieNoteService.getProgressionsClasse(classeId, periodeId);
+        return ResponseEntity.ok(ApiResponse.apiSuccess("OK", liste, httpRequest.getRequestURI()));
+    }
+
     /** Le professeur connecté verrouille la prochaine colonne (interrogation ou devoir) de sa
         classe/matière — plus personne ne pourra la modifier tant que l'admin ne la déverrouille pas. */
     @PutMapping("/progression/verrouiller")
