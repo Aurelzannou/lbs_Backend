@@ -78,7 +78,7 @@ public class DemoDataLoader implements CommandLineRunner {
 //        }
 
         // 3. Frais scolaires + échéanciers par classe
-        TypeFraisRefs tf = seedTypesFrais();
+//        TypeFraisRefs tf = seedTypesFrais();
 //        seedFraisScolaires(annee, tf);
 
         // 4. Élèves + dossiers de démo (pour tester Paiements / Suivi / Journal)
