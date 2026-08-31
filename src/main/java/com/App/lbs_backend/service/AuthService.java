@@ -83,6 +83,36 @@ public class AuthService {
         log.info("Parent d'élève enregistré avec succès : {}", request.getEmail());
     }
 
+    /**
+     * Changement de mot de passe par l'utilisateur connecté depuis son profil.
+     * L'ancien mot de passe est vérifié auprès de Keycloak avant d'appliquer le nouveau,
+     * ce qui évite d'exposer les pages Keycloak à l'utilisateur.
+     *
+     * @param keycloakId      identifiant Keycloak (claim "sub" du JWT)
+     * @param username        login Keycloak (claim "preferred_username")
+     * @param currentPassword mot de passe actuel, à valider
+     * @param newPassword     nouveau mot de passe
+     */
+    public void changePassword(String keycloakId, String username,
+                               String currentPassword, String newPassword) {
+        if (username == null || keycloakId == null) {
+            throw new IllegalArgumentException("Session invalide : impossible d'identifier l'utilisateur.");
+        }
+        if (currentPassword.equals(newPassword)) {
+            throw new IllegalArgumentException("Le nouveau mot de passe doit être différent de l'actuel.");
+        }
+        if (keycloakAdminService.hasOtpConfigured(username)) {
+            throw new IllegalArgumentException(
+                    "Votre compte utilise la double authentification. "
+                    + "Modifiez votre mot de passe depuis « Gérer mon compte ».");
+        }
+        if (!keycloakAdminService.verifyPassword(username, currentPassword)) {
+            throw new IllegalArgumentException("Le mot de passe actuel est incorrect.");
+        }
+        keycloakAdminService.resetPassword(keycloakId, newPassword);
+        log.info("Mot de passe modifié avec succès pour l'utilisateur {}", username);
+    }
+
     @Transactional
     public void updateUserProfils(Long userId, List<String> profilCodes) {
         Utilisateur user = utilisateurRepository.findById(userId)

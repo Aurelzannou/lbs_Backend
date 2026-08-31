@@ -12,7 +12,12 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import jakarta.ws.rs.core.Response;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.util.Collections;
 import java.util.List;
@@ -24,8 +29,17 @@ public class KeycloakAdminService {
 
     private final Keycloak keycloak;
 
+    private final RestClient restClient = RestClient.create();
+
     @Value("${keycloak.admin.target-realm:lbs-realm}")
     private String targetRealm;
+
+    @Value("${keycloak.admin.server-url}")
+    private String serverUrl;
+
+    /** Client public (Direct Access Grant) utilisé pour vérifier un mot de passe utilisateur. */
+    @Value("${keycloak.frontend-client-id:lbs-client}")
+    private String frontendClientId;
 
     /**
      * Crée un rôle dynamiquement dans Keycloak
@@ -183,6 +197,43 @@ public class KeycloakAdminService {
         } catch (Exception e) {
             log.error("Erreur lors de la réinitialisation du mot de passe Keycloak : ", e);
             throw new RuntimeException("Erreur de synchronisation Keycloak", e);
+        }
+    }
+
+    /**
+     * Vérifie qu'un couple (login, mot de passe) est valide auprès de Keycloak, via une
+     * demande de token en Direct Access Grant sur le client public du front.
+     * Sert à confirmer l'identité de l'utilisateur avant de changer son mot de passe.
+     *
+     * @return true si les identifiants sont corrects, false s'ils sont refusés (invalid_grant).
+     */
+    public boolean verifyPassword(String username, String password) {
+        String url = serverUrl + "/realms/" + targetRealm + "/protocol/openid-connect/token";
+
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("grant_type", "password");
+        form.add("client_id", frontendClientId);
+        form.add("username", username);
+        form.add("password", password);
+        form.add("scope", "openid");
+
+        try {
+            restClient.post()
+                    .uri(url)
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(form)
+                    .retrieve()
+                    .toBodilessEntity();
+            return true;
+        } catch (RestClientResponseException e) {
+            int status = e.getStatusCode().value();
+            if (status == 400 || status == 401) {
+                // invalid_grant : mot de passe erroné (ou compte non totalement configuré)
+                return false;
+            }
+            log.error("Échec de la vérification du mot de passe pour {} (HTTP {}) : {}",
+                      username, status, e.getResponseBodyAsString());
+            throw new RuntimeException("Impossible de vérifier le mot de passe actuel", e);
         }
     }
 

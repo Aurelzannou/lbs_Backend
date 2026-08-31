@@ -1,6 +1,8 @@
 package com.App.lbs_backend.controller;
 
+import com.App.lbs_backend.core.http.response.ApiResponse;
 import com.App.lbs_backend.dto.request.ActivationCompteRequest;
+import com.App.lbs_backend.dto.request.ChangePasswordRequest;
 import com.App.lbs_backend.dto.response.UtilisateurResponse;
 import com.App.lbs_backend.mapper.UtilisateurMapper;
 import com.App.lbs_backend.service.KeycloakAdminService;
@@ -8,6 +10,8 @@ import com.App.lbs_backend.service.UtilisateurSyncService;
 import com.App.lbs_backend.service.referentiel.ProfesseurService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -59,6 +63,24 @@ public class AuthController {
     public ResponseEntity<Map<String, Boolean>> isOtpRequired(@RequestParam String username) {
         boolean otpRequired = keycloakAdminService.hasOtpConfigured(username);
         return ResponseEntity.ok(Map.of("otpRequired", otpRequired));
+    }
+
+    /**
+     * Changement de mot de passe par l'utilisateur connecté (depuis l'écran « Mon Profil »).
+     * Nécessite un JWT valide ; l'ancien mot de passe est vérifié avant application.
+     */
+    @PostMapping("/change-password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        authService.changePassword(
+                jwt.getSubject(),
+                jwt.getClaimAsString("preferred_username"),
+                request.getCurrentPassword(),
+                request.getNewPassword());
+        return ResponseEntity.ok(
+                ApiResponse.apiSuccess("Votre mot de passe a été modifié avec succès.", null,
+                        "/api/auth/change-password"));
     }
 
     /**
