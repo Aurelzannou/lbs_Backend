@@ -4,6 +4,8 @@ import com.App.lbs_backend.config.RabbitMQConfig;
 import com.App.lbs_backend.core.AbstractBaseService;
 import com.App.lbs_backend.core.MasterController;
 import com.App.lbs_backend.core.exception.KeycloakUserAlreadyExistsException;
+import com.App.lbs_backend.core.http.request.UuidsRequest;
+import org.springframework.dao.DataIntegrityViolationException;
 import com.App.lbs_backend.core.http.response.ApiResponse;
 import com.App.lbs_backend.dto.message.ProfesseurActivationMessage;
 import com.App.lbs_backend.dto.request.ProfesseurRequest;
@@ -56,6 +58,7 @@ public class ProfesseurController extends MasterController<Professeur, Professeu
     @Override
     protected ProfesseurResponse doCreate(ProfesseurRequest form) {
         verifierEmailUnique(form.getEmail(), null);
+        verifierCompteConnexionDisponible(form.getEmail(), null);
 
         Professeur entity = new Professeur();
         // Un professeur n'a pas de matricule saisi — code interne généré automatiquement.
@@ -84,6 +87,7 @@ public class ProfesseurController extends MasterController<Professeur, Professeu
     protected ProfesseurResponse doUpdate(String uuid, ProfesseurRequest form) {
         Professeur entity = professeurService.findByUuid(uuid);
         verifierEmailUnique(form.getEmail(), entity.getId());
+        verifierCompteConnexionDisponible(form.getEmail(), entity.getId());
         Boolean ancienActif = entity.getActif();
 
         // Le formulaire ne renvoie plus de code — on garde celui déjà en base tel quel.
@@ -107,6 +111,34 @@ public class ProfesseurController extends MasterController<Professeur, Professeu
 
         professeurService.update(entity);
         return professeurMapper.toResponse(entity, compteProvisionne);
+    }
+
+    /**
+     * Suppression d'un professeur. On tente une suppression définitive ; si des données y sont
+     * rattachées (classes, emploi du temps, notes, présences…), on bascule en désactivation
+     * (actif = false). Dans les deux cas, le compte de connexion Keycloak est désactivé.
+     */
+    @Override
+    protected boolean doDelete(UuidsRequest uuids) {
+        for (String uuid : uuids.ids()) {
+            Professeur prof = professeurService.findByUuid(uuid);
+
+            if (!isBlank(prof.getKeycloakId())) {
+                keycloakAdminService.setUserEnabled(prof.getKeycloakId(), false);
+            }
+
+            try {
+                professeurRepository.delete(prof);
+                professeurRepository.flush();
+                log.info("Professeur {} {} supprimé définitivement.", prof.getNom(), prof.getPrenom());
+            } catch (DataIntegrityViolationException e) {
+                log.warn("Professeur {} lié à d'autres données — désactivation au lieu de suppression : {}",
+                        uuid, e.getMostSpecificCause().getMessage());
+                prof.setActif(false);
+                professeurRepository.saveAndFlush(prof);
+            }
+        }
+        return true;
     }
 
     /** Génère un nouveau lien d'activation pour ce professeur — utile s'il a perdu le précédent
@@ -145,11 +177,45 @@ public class ProfesseurController extends MasterController<Professeur, Professeu
             log.warn("Compte Keycloak déjà existant pour {} — réutilisation sans envoi de lien d'activation.", entity.getEmail());
             String existingId = keycloakAdminService.findUserIdByUsername(entity.getEmail());
             if (existingId != null) {
+                // Garde-fou : ce compte de connexion est-il déjà relié à une autre fiche professeur ?
+                // (colonne keycloak_id unique) — on refuse proprement plutôt que de laisser la
+                // contrainte d'unicité échouer en base.
+                professeurRepository.findByKeycloakId(existingId).ifPresent(autre -> {
+                    if (!autre.getId().equals(entity.getId())) {
+                        throw new IllegalArgumentException(compteDejaUtiliseMessage(entity.getEmail(), autre));
+                    }
+                });
                 entity.setKeycloakId(existingId);
                 keycloakAdminService.assignRoleToUser(existingId, ROLE_PROFESSEUR);
+                // Le compte a pu être désactivé lors d'une suppression précédente de cette fiche —
+                // on le réactive si le professeur réintégré est actif.
+                if (Boolean.TRUE.equals(entity.getActif())) {
+                    keycloakAdminService.setUserEnabled(existingId, true);
+                }
             }
             return false;
         }
+    }
+
+    /** Vérifie qu'aucune autre fiche professeur n'est déjà rattachée au compte de connexion
+        Keycloak correspondant à cet email. Appelé AVANT toute écriture en base pour éviter de
+        créer une fiche orpheline, puis la contrainte d'unicité keycloak_id qui échoue en 500. */
+    private void verifierCompteConnexionDisponible(String email, Long excludeId) {
+        if (isBlank(email)) return;
+        String existingId = keycloakAdminService.findUserIdByUsername(email);
+        if (existingId == null) return;
+        professeurRepository.findByKeycloakId(existingId).ifPresent(autre -> {
+            if (!autre.getId().equals(excludeId)) {
+                throw new IllegalArgumentException(compteDejaUtiliseMessage(email, autre));
+            }
+        });
+    }
+
+    private String compteDejaUtiliseMessage(String email, Professeur autre) {
+        return "Un compte de connexion existe déjà pour « " + email + " » et il est rattaché au professeur "
+                + autre.getPrenom() + " " + autre.getNom()
+                + (isBlank(autre.getEmail()) ? "" : " (" + autre.getEmail() + ")")
+                + ". Utilisez une autre adresse email, ou corrigez la fiche de ce professeur.";
     }
 
     private void genererEtEnvoyerLienActivation(Professeur entity) {

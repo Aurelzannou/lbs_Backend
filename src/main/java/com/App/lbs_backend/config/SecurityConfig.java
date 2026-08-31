@@ -49,9 +49,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/me", "/api/auth/change-password").authenticated()
                 // Sonde de santé (Docker / reverse-proxy) — pas d'info sensible
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-                // Endpoints publics (Auth, Inscription, Docs)
+                // Endpoints publics (Auth, Webhooks signés, Docs)
                 .requestMatchers(
                     "/api/auth/**",
+                    "/api/webhooks/**",
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
                     "/swagger-ui.html",

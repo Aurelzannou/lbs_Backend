@@ -25,4 +25,9 @@ public interface ProfesseurRepository extends BaseRepository<Professeur> {
 
     /** Résout le professeur à partir du jeton d'activation contenu dans le lien envoyé par email. */
     Optional<Professeur> findByActivationToken(String activationToken);
+
+    /** Résout le professeur rattaché à un compte de connexion Keycloak donné — sert à détecter
+        qu'un email/compte est déjà utilisé par une autre fiche avant d'y relier un nouveau
+        professeur (la colonne keycloak_id est unique). */
+    Optional<Professeur> findByKeycloakId(String keycloakId);
 }
