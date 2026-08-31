@@ -60,14 +60,14 @@ public class DemoDataLoader implements CommandLineRunner {
         log.info("[demo-data] Initialisation du jeu de données de démonstration...");
 
         // 1. Référentiel structurel (prérequis des frais / dossiers)
-        seedAnneesScolaires();
+//        seedAnneesScolaires();
         seedEtapes();
-        seedNiveauxEtClasses();
+//        seedNiveauxEtClasses();
 
         // 2. Référentiel comptable
-        seedModesPaiement();
-        seedCaisses();
-        seedCategoriesDepense();
+//        seedModesPaiement();
+//        seedCaisses();
+//        seedCategoriesDepense();
         seedTypesOperation();
 
 //        AnneeScolaire annee = anneeScolaireActive();
@@ -131,29 +131,29 @@ public class DemoDataLoader implements CommandLineRunner {
     private static final String[][] NIVEAUX = {
     };
 
-    private void seedNiveauxEtClasses() {
-        for (String[] n : NIVEAUX) {
-            Niveau niveau = (Niveau) niveauRepository.findByCode(n[0]).orElseGet(() -> {
-                log.info("[demo-data] niveau : {}", n[0]);
-                Niveau x = new Niveau();
-                x.setCode(n[0]);
-                x.setLibelle(n[1]);
-                return niveauRepository.save(x);
-            });
-
-            String classeCode = n[0] + "-A";
-            if (classeRepository.findByCode(classeCode).isEmpty()) {
-                log.info("[demo-data] classe : {}", classeCode);
-                Classe c = new Classe();
-                c.setCode(classeCode);
-                c.setLibelle(n[1] + " A");
-                c.setNiveauId(niveau.getId());
-                c.setCapaciteMax(40);
-                c.setActif(true);
-                classeRepository.save(c);
-            }
-        }
-    }
+//    private void seedNiveauxEtClasses() {
+//        for (String[] n : NIVEAUX) {
+//            Niveau niveau = (Niveau) niveauRepository.findByCode(n[0]).orElseGet(() -> {
+//                log.info("[demo-data] niveau : {}", n[0]);
+//                Niveau x = new Niveau();
+//                x.setCode(n[0]);
+//                x.setLibelle(n[1]);
+//                return niveauRepository.save(x);
+//            });
+//
+//            String classeCode = n[0] + "-A";
+//            if (classeRepository.findByCode(classeCode).isEmpty()) {
+//                log.info("[demo-data] classe : {}", classeCode);
+//                Classe c = new Classe();
+//                c.setCode(classeCode);
+//                c.setLibelle(n[1] + " A");
+//                c.setNiveauId(niveau.getId());
+//                c.setCapaciteMax(40);
+//                c.setActif(true);
+//                classeRepository.save(c);
+//            }
+//        }
+//    }
 
     // ─────────────────────────────────────────────────────────────
     //  Modes de paiement
