@@ -14,6 +14,7 @@ public record DepenseScolaireResponse(
         LocalDate dateDepense,
         String motif,
         Long utilisateurId,
+        Boolean annule,
         LocalDateTime modifierLe,
         CaisseResponse caisse,
         CategorieDepenseResponse categorieDepense,

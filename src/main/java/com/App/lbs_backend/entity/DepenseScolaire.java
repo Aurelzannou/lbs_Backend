@@ -46,6 +46,9 @@ public class DepenseScolaire extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_desc_utilisateur_id")
     private Long utilisateurId;
 
+    @Column(name = "lbs_desc_annule")
+    private Boolean annule = false;
+
     // ===== RELATIONS =====
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lbs_desc_caisse_id", insertable = false, updatable = false)
@@ -95,6 +98,9 @@ public class DepenseScolaire extends AuditableEntity implements Timestamps {
 
     public Long getUtilisateurId() { return utilisateurId; }
     public void setUtilisateurId(Long utilisateurId) { this.utilisateurId = utilisateurId; }
+
+    public Boolean getAnnule() { return annule; }
+    public void setAnnule(Boolean annule) { this.annule = annule; }
 
     public Caisse getCaisse() { return caisse; }
     public void setCaisse(Caisse caisse) { this.caisse = caisse; }

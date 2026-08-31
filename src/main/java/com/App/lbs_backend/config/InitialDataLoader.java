@@ -112,6 +112,15 @@ public class InitialDataLoader implements CommandLineRunner {
 
         // 6ter. Menu Notes (autonome, premier niveau)
         Menu notesGroup = createOrUpdateMenu("NOTES", "Notes", "Gestion des notes et bulletins", "award-outline", null, 8, List.of(admin));
+
+        // Comptabilité (Parent, autonome, premier niveau) — écrans transactionnels ; les écrans de
+        // configuration (Caisses, Frais scolaires, Types de frais, Modes de paiement, Catégories de
+        // dépenses) restent sous Référentiel.
+        Menu comptaGroup = createOrUpdateMenu("COMPTABILITE", "Comptabilité", "Paiements, dépenses et caisse", "credit-card-outline", null, 9, List.of(admin));
+        createOrUpdateSubMenu("PAIEMENTS", "Paiements", "Encaissement des frais scolaires", "cash-outline", "/comptabilite/paiements", 1, comptaGroup, admin);
+        createOrUpdateSubMenu("DEPENSES_SCOLAIRES", "Dépenses", "Décaissements", "trending-down-outline", "/comptabilite/depenses", 2, comptaGroup, admin);
+        createOrUpdateSubMenu("MOUVEMENTS_CAISSE", "Journal de caisse", "Historique des mouvements", "list-outline", "/comptabilite/mouvements", 3, comptaGroup, admin);
+        createOrUpdateSubMenu("SUIVI_PAIEMENTS", "Suivi des paiements", "Reste à payer par élève", "pie-chart-outline", "/comptabilite/suivi", 4, comptaGroup, admin);
         createOrUpdateSubMenu("SAISIE_NOTES", "Saisie des notes", "Saisie des notes par classe et matière", "edit-2-outline", "/notes/saisie", 1, notesGroup, admin);
         createOrUpdateSubMenu("VALIDATION_BULLETINS", "Validation des bulletins", "Validation et impression des bulletins", "checkmark-square-2-outline", "/notes/validation", 2, notesGroup, admin);
 

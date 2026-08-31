@@ -46,7 +46,7 @@ public class ValidationService {
     public DossierEleveResponse accepter(String uuid) {
         log.info("Acceptation du dossier : {}", uuid);
         DossierEleve dossier = dossierEleveService.findByUuid(uuid);
-        creerEleveSiAbsent(dossier);
+        creerOuMettreAJourEleve(dossier);
         return changerStatutEtNotifier(dossier, "ACCEPTE", null);
     }
 
@@ -99,26 +99,39 @@ public class ValidationService {
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * Crée réellement la ligne Eleve au moment de l'acceptation, si le dossier n'en a pas
-     * déjà un (cas d'un nouveau candidat — un enfant déjà inscrit par le passé a déjà son
-     * eleveId dès le dépôt). En profite pour renseigner la classe sur l'Eleve.
+     * Deux cas à l'acceptation d'un dossier :
+     *  - Nouveau candidat (pas encore d'eleveId) : la ligne Eleve est créée maintenant, à partir
+     *    de l'identité saisie dans le dossier.
+     *  - Réinscription d'un élève déjà existant (eleveId déjà renseigné dès le dépôt, voir
+     *    DossierEleveController.doCreate) : on ne recrée jamais l'Eleve — on se contente de
+     *    reporter sur sa fiche la classe (et éventuellement le tuteur) de ce nouveau dossier,
+     *    c'est justement le passage en classe supérieure qui se joue ici.
      */
-    private void creerEleveSiAbsent(DossierEleve dossier) {
-        if (dossier.getEleveId() != null) return;
+    private void creerOuMettreAJourEleve(DossierEleve dossier) {
+        if (dossier.getEleveId() == null) {
+            Eleve eleve = new Eleve();
+            eleve.setNom(dossier.getNom());
+            eleve.setPrenom(dossier.getPrenom());
+            eleve.setSexe(dossier.getSexe());
+            eleve.setDateNaissance(dossier.getDateNaissance());
+            eleve.setSouffrant(dossier.getSouffrant());
+            eleve.setProvenance(dossier.getProvenance());
+            eleve.setTuteurId(dossier.getTuteurId());
+            eleve.setClasseId(dossier.getClasseId());
+            Eleve saved = eleveRepository.save(eleve);
 
-        Eleve eleve = new Eleve();
-        eleve.setNom(dossier.getNom());
-        eleve.setPrenom(dossier.getPrenom());
-        eleve.setSexe(dossier.getSexe());
-        eleve.setDateNaissance(dossier.getDateNaissance());
-        eleve.setSouffrant(dossier.getSouffrant());
-        eleve.setProvenance(dossier.getProvenance());
-        eleve.setTuteurId(dossier.getTuteurId());
-        eleve.setClasseId(dossier.getClasseId());
-        Eleve saved = eleveRepository.save(eleve);
-
-        dossier.setEleveId(saved.getId());
-        log.info("Eleve créé à l'acceptation du dossier {} : eleveId={}", dossier.getUuid(), saved.getId());
+            dossier.setEleveId(saved.getId());
+            log.info("Eleve créé à l'acceptation du dossier {} : eleveId={}", dossier.getUuid(), saved.getId());
+        } else {
+            Eleve eleve = eleveRepository.findById(dossier.getEleveId())
+                    .orElseThrow(() -> new IllegalArgumentException("Élève introuvable"));
+            eleve.setClasseId(dossier.getClasseId());
+            if (dossier.getTuteurId() != null) eleve.setTuteurId(dossier.getTuteurId());
+            if (dossier.getSouffrant() != null) eleve.setSouffrant(dossier.getSouffrant());
+            eleveRepository.save(eleve);
+            log.info("Réinscription acceptée pour le dossier {} : eleveId={} déplacé vers classeId={}",
+                    dossier.getUuid(), eleve.getId(), dossier.getClasseId());
+        }
     }
 
     private DossierEleveResponse changerStatutEtNotifier(DossierEleve dossier, String statutCode, String motif) {

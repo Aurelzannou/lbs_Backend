@@ -33,6 +33,7 @@ public class DepenseScolaireMapper implements Mapper<DepenseScolaire, DepenseSco
                 entity.getDateDepense(),
                 entity.getMotif(),
                 entity.getUtilisateurId(),
+                entity.getAnnule(),
                 entity.getModifierLe(),
                 caisseMapper.toResponse(entity.getCaisse()),
                 categorieDepenseMapper.toResponse(entity.getCategorieDepense()),

@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports
+              http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="recu"
+              pageWidth="595" pageHeight="842"
+              columnWidth="535" leftMargin="30" rightMargin="30"
+              topMargin="30" bottomMargin="30"
+              uuid="b2c3d4e5-f6a7-8901-bcde-f12345678901">
+
+  <!-- Paramètres -->
+  <parameter name="code"          class="java.lang.String"/>
+  <parameter name="reference"     class="java.lang.String"/>
+  <parameter name="eleveNom"      class="java.lang.String"/>
+  <parameter name="elevePrenom"   class="java.lang.String"/>
+  <parameter name="classe"        class="java.lang.String"/>
+  <parameter name="frais"         class="java.lang.String"/>
+  <parameter name="datePaiement"  class="java.lang.String"/>
+  <parameter name="montant"       class="java.lang.Double"/>
+  <parameter name="modePaiement"  class="java.lang.String"/>
+  <parameter name="caisse"        class="java.lang.String"/>
+  <parameter name="resteAPayer"   class="java.lang.Double"/>
+
+  <queryString><![CDATA[]]></queryString>
+
+  <!-- En-tête -->
+  <title>
+    <band height="120">
+      <rectangle>
+        <reportElement x="0" y="0" width="535" height="60" backcolor="#1e3a8a" forecolor="#1e3a8a"/>
+        <graphicElement>
+          <pen lineWidth="0"/>
+        </graphicElement>
+      </rectangle>
+      <staticText>
+        <reportElement x="10" y="8" width="200" height="30" forecolor="#FFFFFF"/>
+        <textElement verticalAlignment="Middle">
+          <font size="18" isBold="true"/>
+        </textElement>
+        <text><![CDATA[LBS Education]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="10" y="38" width="300" height="16" forecolor="#bfdbfe"/>
+        <textElement>
+          <font size="10"/>
+        </textElement>
+        <text><![CDATA[Système de Gestion Scolaire]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="0" y="70" width="535" height="24"/>
+        <textElement textAlignment="Center" verticalAlignment="Middle">
+          <font size="14" isBold="true"/>
+        </textElement>
+        <text><![CDATA[REÇU DE PAIEMENT]]></text>
+      </staticText>
+      <line>
+        <reportElement x="0" y="98" width="535" height="1" forecolor="#e2e8f0"/>
+      </line>
+    </band>
+  </title>
+
+  <!-- Corps -->
+  <detail>
+    <band height="330">
+
+      <staticText>
+        <reportElement x="0" y="10" width="160" height="20"/>
+        <textElement><font size="10" isBold="true"/></textElement>
+        <text><![CDATA[N° Reçu :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="160" y="10" width="375" height="20"/>
+        <textElement><font size="10"/></textElement>
+        <textFieldExpression><![CDATA[$P{code}]]></textFieldExpression>
+      </textField>
+
+      <line><reportElement x="0" y="32" width="535" height="1" forecolor="#f1f5f9"/></line>
+
+      <staticText>
+        <reportElement x="0" y="40" width="160" height="20"/>
+        <textElement><font size="10" isBold="true"/></textElement>
+        <text><![CDATA[Référence :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="160" y="40" width="375" height="20"/>
+        <textElement><font size="10"/></textElement>
+        <textFieldExpression><![CDATA[$P{reference}]]></textFieldExpression>
+      </textField>
+
+      <line><reportElement x="0" y="62" width="535" height="1" forecolor="#f1f5f9"/></line>
+
+      <staticText>
+        <reportElement x="0" y="70" width="160" height="20"/>
+        <textElement><font size="10" isBold="true"/></textElement>
+        <text><![CDATA[Élève :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="160" y="70" width="375" height="20"/>
+        <textElement><font size="10"/></textElement>
+        <textFieldExpression><![CDATA[$P{eleveNom} + " " + $P{elevePrenom}]]></textFieldExpression>
+      </textField>
+
+      <line><reportElement x="0" y="92" width="535" height="1" forecolor="#f1f5f9"/></line>
+
+      <staticText>
+        <reportElement x="0" y="100" width="160" height="20"/>
+        <textElement><font size="10" isBold="true"/></textElement>
+        <text><![CDATA[Classe :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="160" y="100" width="375" height="20"/>
+        <textElement><font size="10"/></textElement>
+        <textFieldExpression><![CDATA[$P{classe}]]></textFieldExpression>
+      </textField>
+
+      <line><reportElement x="0" y="122" width="535" height="1" forecolor="#f1f5f9"/></line>
+
+      <staticText>
+        <reportElement x="0" y="130" width="160" height="20"/>
+        <textElement><font size="10" isBold="true"/></textElement>
+        <text><![CDATA[Frais concerné :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="160" y="130" width="375" height="20"/>
+        <textElement><font size="10"/></textElement>
+        <textFieldExpression><![CDATA[$P{frais}]]></textFieldExpression>
+      </textField>
+
+      <line><reportElement x="0" y="152" width="535" height="1" forecolor="#f1f5f9"/></line>
+
+      <staticText>
+        <reportElement x="0" y="160" width="160" height="20"/>
+        <textElement><font size="10" isBold="true"/></textElement>
+        <text><![CDATA[Date de paiement :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="160" y="160" width="375" height="20"/>
+        <textElement><font size="10"/></textElement>
+        <textFieldExpression><![CDATA[$P{datePaiement}]]></textFieldExpression>
+      </textField>
+
+      <line><reportElement x="0" y="182" width="535" height="1" forecolor="#f1f5f9"/></line>
+
+      <staticText>
+        <reportElement x="0" y="190" width="160" height="20"/>
+        <textElement><font size="10" isBold="true"/></textElement>
+        <text><![CDATA[Mode de paiement :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="160" y="190" width="375" height="20"/>
+        <textElement><font size="10"/></textElement>
+        <textFieldExpression><![CDATA[$P{modePaiement}]]></textFieldExpression>
+      </textField>
+
+      <line><reportElement x="0" y="212" width="535" height="1" forecolor="#f1f5f9"/></line>
+
+      <staticText>
+        <reportElement x="0" y="220" width="160" height="20"/>
+        <textElement><font size="10" isBold="true"/></textElement>
+        <text><![CDATA[Caisse :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="160" y="220" width="375" height="20"/>
+        <textElement><font size="10"/></textElement>
+        <textFieldExpression><![CDATA[$P{caisse}]]></textFieldExpression>
+      </textField>
+
+      <!-- Montant payé (mis en avant) -->
+      <rectangle>
+        <reportElement x="0" y="250" width="535" height="34" backcolor="#f0fdf4" forecolor="#f0fdf4"/>
+        <graphicElement><pen lineWidth="0"/></graphicElement>
+      </rectangle>
+      <staticText>
+        <reportElement x="10" y="257" width="160" height="20" forecolor="#166534"/>
+        <textElement><font size="11" isBold="true"/></textElement>
+        <text><![CDATA[Montant payé :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="170" y="257" width="355" height="20" forecolor="#166534"/>
+        <textElement><font size="11" isBold="true"/></textElement>
+        <textFieldExpression><![CDATA[$P{montant} + " FCFA"]]></textFieldExpression>
+      </textField>
+
+      <staticText>
+        <reportElement x="0" y="292" width="160" height="20"/>
+        <textElement><font size="10" isBold="true"/></textElement>
+        <text><![CDATA[Reste à payer :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="160" y="292" width="375" height="20"/>
+        <textElement><font size="10"/></textElement>
+        <textFieldExpression><![CDATA[($P{resteAPayer} == null ? "—" : $P{resteAPayer} + " FCFA")]]></textFieldExpression>
+      </textField>
+
+    </band>
+  </detail>
+
+  <!-- Pied de page -->
+  <pageFooter>
+    <band height="30">
+      <line><reportElement x="0" y="0" width="535" height="1" forecolor="#e2e8f0"/></line>
+      <staticText>
+        <reportElement x="0" y="8" width="535" height="16" forecolor="#94a3b8"/>
+        <textElement textAlignment="Center"><font size="8"/></textElement>
+        <text><![CDATA[LBS Education — Document généré automatiquement — © 2026]]></text>
+      </staticText>
+    </band>
+  </pageFooter>
+
+</jasperReport>
