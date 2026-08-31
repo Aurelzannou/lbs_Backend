@@ -1,0 +1,12 @@
+.git
+.github
+target
+.idea
+.mvn/wrapper/maven-wrapper.jar
+.vscode
+*.log
+*.iml
+HELP.md
+deploy
+keycloak
+*.sql

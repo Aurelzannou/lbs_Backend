@@ -1,0 +1,188 @@
+# ============================================================
+#  LBS — stack de PRODUCTION
+#  À déployer sur le serveur dans  /opt/lbs/
+#  Copier .env.example -> .env et renseigner toutes les valeurs.
+#  Lancement :  docker compose up -d
+# ============================================================
+
+name: lbs
+
+networks:
+  lbs:
+
+volumes:
+  pg_app_data:
+  pg_keycloak_data:
+  minio_data:
+  rabbitmq_data:
+  traefik_acme:
+
+services:
+  # ---------- Reverse-proxy + HTTPS automatique ----------
+  traefik:
+    image: traefik:v3.3
+    restart: unless-stopped
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --certificatesresolvers.le.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.le.acme.storage=/acme/acme.json
+      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_acme:/acme
+    networks: [lbs]
+
+  # ---------- Frontend (Angular + nginx) ----------
+  frontend:
+    image: ghcr.io/${GHCR_OWNER}/lbs-frontend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      API_URL: ""                                   # même origine -> /api relayé par nginx
+      KEYCLOAK_URL: ${KEYCLOAK_URL}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
+    depends_on: [backend]
+    networks: [lbs]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.frontend.rule=Host(`${APP_DOMAIN}`)
+      - traefik.http.routers.frontend.entrypoints=websecure
+      - traefik.http.routers.frontend.tls.certresolver=le
+      - traefik.http.services.frontend.loadbalancer.server.port=80
+
+  # ---------- Backend (Spring Boot) ----------
+  backend:
+    image: ghcr.io/${GHCR_OWNER}/lbs-backend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      # Base de données applicative
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${APP_DB_NAME}?currentSchema=lbs
+      SPRING_DATASOURCE_USERNAME: ${APP_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${APP_DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${DDL_AUTO:-update}
+      # Keycloak (validation des JWT) — l'issuer DOIT correspondre à KC_HOSTNAME
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}
+      # Keycloak (client admin)
+      KEYCLOAK_ADMIN_SERVER_URL: ${KEYCLOAK_URL}
+      KEYCLOAK_ADMIN_REALM: master
+      KEYCLOAK_ADMIN_CLIENT_ID: admin-cli
+      KEYCLOAK_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KEYCLOAK_ADMIN_TARGET_REALM: ${KEYCLOAK_REALM}
+      KEYCLOAK_FRONTEND_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
+      # CORS + liens e-mail
+      APP_CORS_ALLOWED_ORIGINS: https://${APP_DOMAIN}
+      APP_FRONTEND_URL: https://${APP_DOMAIN}
+      # E-mail (SMTP transactionnel, ex. Brevo)
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_FROM: ${MAIL_FROM}
+      # MinIO
+      MINIO_URL: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      # RabbitMQ
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      # Super-admin seedé au 1er démarrage
+      SUPERADMIN_USERNAME: ${SUPERADMIN_USERNAME}
+      SUPERADMIN_EMAIL: ${SUPERADMIN_EMAIL}
+      SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD}
+    depends_on:
+      postgres: { condition: service_healthy }
+      keycloak: { condition: service_started }
+      rabbitmq: { condition: service_started }
+      minio: { condition: service_started }
+    networks: [lbs]
+
+  # ---------- Base de données applicative ----------
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${APP_DB_NAME}
+      POSTGRES_USER: ${APP_DB_USER}
+      POSTGRES_PASSWORD: ${APP_DB_PASSWORD}
+    volumes:
+      - pg_app_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${APP_DB_USER} -d ${APP_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [lbs]
+
+  # ---------- Base de données Keycloak ----------
+  keycloak-postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: ${KC_DB_USER}
+      POSTGRES_PASSWORD: ${KC_DB_PASSWORD}
+    volumes:
+      - pg_keycloak_data:/var/lib/postgresql/data
+    networks: [lbs]
+
+  # ---------- Keycloak ----------
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    restart: unless-stopped
+    command: ["start", "--import-realm"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-postgres:5432/keycloak
+      KC_DB_USERNAME: ${KC_DB_USER}
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
+      KC_HOSTNAME: ${KEYCLOAK_URL}
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HEALTH_ENABLED: "true"
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+    volumes:
+      - ./keycloak/import:/opt/keycloak/data/import:ro
+    depends_on: [keycloak-postgres]
+    networks: [lbs]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.keycloak.rule=Host(`${KEYCLOAK_DOMAIN}`)
+      - traefik.http.routers.keycloak.entrypoints=websecure
+      - traefik.http.routers.keycloak.tls.certresolver=le
+      - traefik.http.services.keycloak.loadbalancer.server.port=8080
+
+  # ---------- Stockage de fichiers ----------
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    networks: [lbs]
+
+  # ---------- File de messages (e-mails asynchrones) ----------
+  rabbitmq:
+    image: rabbitmq:4-management
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks: [lbs]

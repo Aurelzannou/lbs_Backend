@@ -1,6 +1,7 @@
 package com.App.lbs_backend.config;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -24,6 +25,13 @@ public class SecurityConfig {
 
     private final JwtAuthConverter jwtAuthConverter;
 
+    /**
+     * Origines autorisées pour le CORS (front). En local : localhost.
+     * En production : renseigner via APP_CORS_ALLOWED_ORIGINS (ex: https://ecole.mondomaine.com).
+     */
+    @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:4200}")
+    private List<String> allowedOrigins;
+
     @Bean
     public org.springframework.security.crypto.password.PasswordEncoder passwordEncoder() {
         return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
@@ -39,13 +47,15 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // /api/auth/me et /change-password nécessitent un JWT valide
                 .requestMatchers("/api/auth/me", "/api/auth/change-password").authenticated()
+                // Sonde de santé (Docker / reverse-proxy) — pas d'info sensible
+                .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 // Endpoints publics (Auth, Inscription, Docs)
                 .requestMatchers(
                     "/api/auth/**",
                     "/v3/api-docs/**",
-                    "/swagger-ui/**", 
-                    "/swagger-ui.html", 
-                    "/api/files/download/**", 
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/api/files/download/**",
                     "/api/test-report/**"
                 ).permitAll()
                 // Toutes les autres requêtes vers l'API nécessitent une authentification via Keycloak
@@ -66,8 +76,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Spécifiez les origines du backend si nécessaire
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:4200"));
+        // Origines configurables (app.cors.allowed-origins / APP_CORS_ALLOWED_ORIGINS)
+        configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
