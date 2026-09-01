@@ -82,6 +82,18 @@ public class EmailService {
              ctx);
     }
 
+    public void sendPasswordReset(String toEmail, String prenom, String lienReset) {
+        Context ctx = new Context();
+        ctx.setVariables(Map.of(
+            "prenom",   prenom != null ? prenom : "",
+            "lienReset", lienReset
+        ));
+        send(toEmail,
+             "🔒 Réinitialisation de votre mot de passe — LBS Education",
+             "email/password-reset",
+             ctx);
+    }
+
     private void send(String to, String subject, String template, Context ctx) {
         try {
             String html = templateEngine.process(template, ctx);

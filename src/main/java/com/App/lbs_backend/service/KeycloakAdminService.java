@@ -158,6 +158,39 @@ public class KeycloakAdminService {
         return matches.isEmpty() ? null : matches.get(0).getId();
     }
 
+    /** Représentation complète d'un compte à partir de son login (username = email ici), ou null.
+        Utilisé par le parcours « mot de passe oublié » pour personnaliser l'email et savoir si le
+        compte est actif. */
+    public UserRepresentation findLoginRepresentation(String login) {
+        List<UserRepresentation> matches = keycloak.realm(targetRealm).users().search(login, true);
+        return matches.isEmpty() ? null : matches.get(0);
+    }
+
+    /** Applique un nouveau mot de passe puis lève l'action requise UPDATE_PASSWORD si elle est
+        positionnée (compte jamais activé) et marque l'email vérifié — de sorte que l'utilisateur
+        puisse se connecter immédiatement après. N'active PAS un compte désactivé (suppression). */
+    public void resetPasswordAndEnableLogin(String keycloakUserId, String newPassword) {
+        resetPassword(keycloakUserId, newPassword);
+        try {
+            UserResource userResource = keycloak.realm(targetRealm).users().get(keycloakUserId);
+            UserRepresentation user = userResource.toRepresentation();
+            boolean changed = false;
+            if (user.getRequiredActions() != null && user.getRequiredActions().remove("UPDATE_PASSWORD")) {
+                changed = true;
+            }
+            if (!Boolean.TRUE.equals(user.isEmailVerified())) {
+                user.setEmailVerified(true);
+                changed = true;
+            }
+            if (changed) {
+                userResource.update(user);
+            }
+        } catch (Exception e) {
+            log.warn("Réinitialisation : impossible de lever l'action requise UPDATE_PASSWORD pour {} : {}",
+                    keycloakUserId, e.getMessage());
+        }
+    }
+
     /**
      * Active ou désactive un compte Keycloak existant (ex: un professeur qui devient inactif
      * dans le référentiel ne doit plus pouvoir se connecter à son portail).

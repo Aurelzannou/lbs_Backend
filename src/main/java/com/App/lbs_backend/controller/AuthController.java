@@ -3,6 +3,9 @@ package com.App.lbs_backend.controller;
 import com.App.lbs_backend.core.http.response.ApiResponse;
 import com.App.lbs_backend.dto.request.ActivationCompteRequest;
 import com.App.lbs_backend.dto.request.ChangePasswordRequest;
+import com.App.lbs_backend.dto.request.ForgotPasswordRequest;
+import com.App.lbs_backend.dto.request.ResetPasswordRequest;
+import com.App.lbs_backend.service.PasswordResetService;
 import com.App.lbs_backend.dto.response.UtilisateurResponse;
 import com.App.lbs_backend.mapper.UtilisateurMapper;
 import com.App.lbs_backend.service.KeycloakAdminService;
@@ -34,6 +37,7 @@ public class AuthController {
     private final AuthService authService;
     private final KeycloakAdminService keycloakAdminService;
     private final ProfesseurService professeurService;
+    private final PasswordResetService passwordResetService;
 
     /**
      * Endpoint permettant à l'application Front-End de récupérer les 
@@ -81,6 +85,30 @@ public class AuthController {
         return ResponseEntity.ok(
                 ApiResponse.apiSuccess("Votre mot de passe a été modifié avec succès.", null,
                         "/api/auth/change-password"));
+    }
+
+    /**
+     * Étape 1 du parcours « Mot de passe oublié » : envoie (si le compte existe) un lien de
+     * réinitialisation par email. Réponse volontairement identique que le compte existe ou non.
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.demanderReinitialisation(request.getEmail());
+        return ResponseEntity.ok(ApiResponse.apiSuccess(
+                "Si un compte est associé à cette adresse, un email de réinitialisation vient d'être envoyé.",
+                null, "/api/auth/forgot-password"));
+    }
+
+    /**
+     * Étape 2 du parcours « Mot de passe oublié » : consomme le jeton reçu par email et applique
+     * le nouveau mot de passe choisi par l'utilisateur.
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.reinitialiser(request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok(ApiResponse.apiSuccess(
+                "Votre mot de passe a été réinitialisé. Vous pouvez maintenant vous connecter.",
+                null, "/api/auth/reset-password"));
     }
 
     /**

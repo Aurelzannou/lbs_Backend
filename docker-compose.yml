@@ -30,7 +30,8 @@ services:
     image: maildev/maildev:latest
     container_name: lbs-maildev
     ports:
-      - "1081:1080"
+      - "1081:1080"   # interface web : http://localhost:1081
+      - "1025:1025"    # SMTP : le backend (IntelliJ) envoie ici via localhost:1025
 
   keycloak-postgres:
     image: postgres:latest
