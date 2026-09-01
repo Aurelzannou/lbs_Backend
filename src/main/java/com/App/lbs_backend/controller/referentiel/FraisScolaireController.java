@@ -2,6 +2,7 @@ package com.App.lbs_backend.controller.referentiel;
 
 import com.App.lbs_backend.core.AbstractBaseService;
 import com.App.lbs_backend.core.MasterController;
+import com.App.lbs_backend.core.http.response.ApiResponse;
 import com.App.lbs_backend.dto.request.FraisScolaireRequest;
 import com.App.lbs_backend.dto.response.FraisScolaireResponse;
 import com.App.lbs_backend.entity.FraisScolaire;
@@ -9,8 +10,6 @@ import com.App.lbs_backend.service.referentiel.FraisScolaireService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/frais-scolaires")
@@ -39,10 +38,14 @@ public class FraisScolaireController extends MasterController<FraisScolaire, Fra
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<FraisScolaireResponse>> search(
+    public ResponseEntity<?> search(
             @RequestParam Long classeId,
             @RequestParam Long anneeScolaireId) {
-        return ResponseEntity.ok(fraisScolaireService.findByClasseAndAnnee(classeId, anneeScolaireId));
+        // Enveloppe ApiResponse comme le reste de l'API : le front (ApiService) déballe
+        // systématiquement `.data`, un tableau nu renvoyait donc `undefined` côté client.
+        return ResponseEntity.ok(ApiResponse.apiSuccess("OK",
+                fraisScolaireService.findByClasseAndAnnee(classeId, anneeScolaireId),
+                request.getRequestURI()));
     }
 
     @Override

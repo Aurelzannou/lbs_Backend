@@ -41,6 +41,7 @@ public class NoteService {
     public static final String INTERROGATION = "INTERROGATION";
     public static final String DEVOIR = "DEVOIR";
     public static final int MAX_INTERROGATIONS = 4;
+    public static final int MAX_DEVOIRS = 2;
 
     private final EleveRepository eleveRepository;
     private final ClasseRepository classeRepository;
@@ -57,29 +58,48 @@ public class NoteService {
         sur la période (jamais persistée tant que l'admin n'a pas enregistré la feuille). */
     private static final double CONDUITE_BASE = 18.0;
 
-    /** Moyenne des interrogations d'un élève pour une matière/période = Somme / Nombre des
-        interrogations non nulles (le professeur peut en saisir autant qu'il veut). */
-    public static Double calculerMoyenneInterrogations(List<Note> notes) {
-        List<Double> valeurs = notes.stream()
-                .filter(n -> INTERROGATION.equals(n.getTypeEvaluation()) && n.getValeur() != null)
-                .map(Note::getValeur)
-                .toList();
-        if (valeurs.isEmpty()) return null;
-        return valeurs.stream().mapToDouble(Double::doubleValue).sum() / valeurs.size();
+    /** Nombre d'évaluations d'un type réellement organisées pour la classe = le plus grand numéro
+        présent dans les notes de la classe (borné). Sert de dénominateur des moyennes : une
+        évaluation prévue mais non composée par l'élève compte 0. */
+    public static int nombreEvaluationsOrganisees(List<Note> notesClasseMatiere, String type, int max) {
+        int n = notesClasseMatiere.stream()
+                .filter(x -> type.equals(x.getTypeEvaluation()) && x.getNumero() != null && x.getValeur() != null)
+                .mapToInt(Note::getNumero)
+                .max().orElse(0);
+        return Math.min(n, max);
     }
 
-    /** Moyenne d'une matière = moyenne sur 3 de {moyenne des interrogations, devoir1, devoir2} —
-        toute composante jamais saisie compte pour 0, y compris quand la matière n'a strictement
-        aucune note (une matière jamais évaluée compte 0, elle n'est jamais simplement exclue).
-        La matière "Conduite" (estConduite) déroge à la division par 3 : elle n'a qu'une seule
-        valeur (pas d'interrogations/devoirs multiples), donc sa moyenne est cette valeur telle
-        quelle (0 si jamais notée). */
-    public static Double calculerMoyenne(Double moyenneInterrogations, Double devoir1, Double devoir2, boolean estConduite) {
+    /** Moyenne d'une composante (interrogations OU devoirs) pour un élève =
+        somme de ses notes (0 pour chaque évaluation organisée mais non composée)
+        ÷ nombre d'évaluations organisées pour la classe. null si aucune n'a été organisée. */
+    public static Double moyenneComposante(List<Note> notesEleve, String type, int nombreOrganise) {
+        if (nombreOrganise <= 0) return null;
+        double somme = 0;
+        for (int i = 1; i <= nombreOrganise; i++) {
+            Double v = extraireValeur(notesEleve, type, i);
+            somme += v != null ? v : 0.0;
+        }
+        return somme / nombreOrganise;
+    }
+
+    /** Moyenne des interrogations = somme des interros de l'élève (0 pour une interro non composée)
+        ÷ nombre d'interros organisées pour la classe. Conservée pour l'affichage de la colonne
+        "Interro" du bulletin et de la feuille de saisie. */
+    public static Double calculerMoyenneInterrogations(List<Note> notesEleve, int nombreInterrosOrganisees) {
+        return moyenneComposante(notesEleve, INTERROGATION, nombreInterrosOrganisees);
+    }
+
+    /** Moyenne d'une matière = (moyenne des interrogations + moyenne des devoirs) ÷ 2.
+        - Chaque évaluation organisée mais non composée compte 0 (cf. moyenneComposante).
+        - Si une seule des deux composantes a été organisée, elle vaut à elle seule la moyenne.
+        - Matière jamais évaluée : moyenne = 0 (elle reste comptée, jamais simplement exclue).
+        - Conduite : une seule note, sa valeur telle quelle (0 si non notée). */
+    public static Double calculerMoyenneMatiere(Double moyenneInterrogations, Double moyenneDevoirs, boolean estConduite) {
         if (estConduite) return moyenneInterrogations != null ? moyenneInterrogations : 0.0;
-        double somme = (moyenneInterrogations != null ? moyenneInterrogations : 0)
-                + (devoir1 != null ? devoir1 : 0)
-                + (devoir2 != null ? devoir2 : 0);
-        return somme / 3;
+        if (moyenneInterrogations == null && moyenneDevoirs == null) return 0.0;
+        if (moyenneInterrogations == null) return moyenneDevoirs;
+        if (moyenneDevoirs == null) return moyenneInterrogations;
+        return (moyenneInterrogations + moyenneDevoirs) / 2.0;
     }
 
     /** Bloque toute saisie/modification de notes si le bulletin de cette classe/période est déjà
@@ -105,19 +125,29 @@ public class NoteService {
         List<Eleve> eleves = eleveRepository.findByClasseIdOrderByNomAscPrenomAsc(classeId);
         List<Long> eleveIds = eleves.stream().map(Eleve::getId).toList();
 
-        Map<Long, List<Note>> notesParEleve = noteRepository
-                .findByEleveIdInAndMatiereIdAndPeriodeIdAndClasseId(eleveIds, matiereId, periodeId, classeId).stream()
+        List<Note> toutesLesNotes = noteRepository
+                .findByEleveIdInAndMatiereIdAndPeriodeIdAndClasseId(eleveIds, matiereId, periodeId, classeId);
+        Map<Long, List<Note>> notesParEleve = toutesLesNotes.stream()
                 .collect(Collectors.groupingBy(Note::getEleveId));
 
         boolean valide = validationBulletinRepository.findByClasseIdAndPeriodeId(classeId, periodeId)
                 .map(v -> Boolean.TRUE.equals(v.getValide()))
                 .orElse(false);
 
+        boolean estConduite = Boolean.TRUE.equals(matiere.getEstConduite());
+
         // Nombre de colonnes d'interrogation à afficher : le plus grand numéro déjà saisi pour
         // cette classe/matière/période, au moins 1 pour laisser une colonne de départ.
         Integer maxNumero = eleveIds.isEmpty() ? null
                 : noteRepository.findMaxNumero(eleveIds, classeId, matiereId, periodeId, INTERROGATION);
         int nombreInterrogations = Math.min(maxNumero != null ? maxNumero : 1, MAX_INTERROGATIONS);
+
+        // Dénominateurs des moyennes : nombre d'évaluations réellement organisées pour la classe
+        // (une évaluation prévue mais non composée par l'élève comptera 0).
+        int nbInterrosOrganisees = estConduite ? 1
+                : nombreEvaluationsOrganisees(toutesLesNotes, INTERROGATION, MAX_INTERROGATIONS);
+        int nbDevoirsOrganises = estConduite ? 0
+                : nombreEvaluationsOrganisees(toutesLesNotes, DEVOIR, MAX_DEVOIRS);
 
         FeuilleSaisieNotesResponse response = new FeuilleSaisieNotesResponse();
         response.setClasseId(classeId);
@@ -128,7 +158,6 @@ public class NoteService {
         response.setPeriodeLibelle(periode.getLibelle());
         response.setValide(valide);
         response.setNombreInterrogations(nombreInterrogations);
-        boolean estConduite = Boolean.TRUE.equals(matiere.getEstConduite());
         response.setEstConduite(estConduite);
 
         int nbInterro = nombreInterrogations;
@@ -141,7 +170,9 @@ public class NoteService {
             }
             Double devoir1 = extraireValeur(notes, DEVOIR, 1);
             Double devoir2 = extraireValeur(notes, DEVOIR, 2);
-            Double moyenneInterro = calculerMoyenneInterrogations(notes);
+            Double moyenneInterro = calculerMoyenneInterrogations(notes, nbInterrosOrganisees);
+            Double moyenneDevoirs = estConduite ? null
+                    : moyenneComposante(notes, DEVOIR, nbDevoirsOrganises);
 
             // La matière "Conduite" n'a qu'une seule valeur (colonne Interrogation 1) — tant
             // qu'aucune note n'a encore été saisie pour cet élève, on propose une suggestion basée
@@ -160,7 +191,7 @@ public class NoteService {
             dto.setDevoir1(devoir1);
             dto.setDevoir2(devoir2);
             dto.setMoyenneInterrogations(moyenneInterro);
-            dto.setMoyenne(calculerMoyenne(moyenneInterro, devoir1, devoir2, estConduite));
+            dto.setMoyenne(calculerMoyenneMatiere(moyenneInterro, moyenneDevoirs, estConduite));
             return dto;
         }).collect(Collectors.toList()));
 

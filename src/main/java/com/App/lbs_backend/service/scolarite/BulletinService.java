@@ -157,6 +157,18 @@ public class BulletinService {
         Map<Long, Map<Long, List<Note>>> parMatiereParEleve = notes.stream()
                 .collect(Collectors.groupingBy(Note::getMatiereId, Collectors.groupingBy(Note::getEleveId)));
 
+        // Par matière : nombre d'interros / de devoirs réellement organisés pour la classe
+        // (dénominateur des moyennes ; une évaluation non composée par l'élève compte 0).
+        Map<Long, List<Note>> notesParMatiere = notes.stream().collect(Collectors.groupingBy(Note::getMatiereId));
+        Map<Long, Integer> nbInterrosParMatiere = new HashMap<>();
+        Map<Long, Integer> nbDevoirsParMatiere = new HashMap<>();
+        notesParMatiere.forEach((matiereId, notesMatiere) -> {
+            nbInterrosParMatiere.put(matiereId, NoteService.nombreEvaluationsOrganisees(
+                    notesMatiere, NoteService.INTERROGATION, NoteService.MAX_INTERROGATIONS));
+            nbDevoirsParMatiere.put(matiereId, NoteService.nombreEvaluationsOrganisees(
+                    notesMatiere, NoteService.DEVOIR, NoteService.MAX_DEVOIRS));
+        });
+
         // Le bulletin doit lister TOUTES les matières attribuées à cette classe (référentiel
         // Classes), pas seulement celles qui ont déjà au moins une note quelque part — une matière
         // jamais évaluée reste affichée, avec 0 et la mention "N'a pas composé". La liste de la
@@ -186,11 +198,13 @@ public class BulletinService {
         Map<Long, Map<Long, Double>> moyenneParMatiereParEleve = new HashMap<>();
         for (Long matiereId : toutesMatieresId) {
             boolean estConduite = Boolean.TRUE.equals(estConduiteParMatiere.get(matiereId));
+            int nbInterros = estConduite ? 1 : nbInterrosParMatiere.getOrDefault(matiereId, 0);
+            int nbDevoirs = estConduite ? 0 : nbDevoirsParMatiere.getOrDefault(matiereId, 0);
             Map<Long, List<Note>> parEleveNotes = parMatiereParEleve.getOrDefault(matiereId, Map.of());
             Map<Long, Double> parEleve = new HashMap<>();
             for (Long eleveId : eleveIds) {
                 List<Note> notesEleve = parEleveNotes.getOrDefault(eleveId, List.of());
-                parEleve.put(eleveId, extraireMoyenne(notesEleve, estConduite));
+                parEleve.put(eleveId, extraireMoyenne(notesEleve, nbInterros, nbDevoirs, estConduite));
             }
             moyenneParMatiereParEleve.put(matiereId, parEleve);
         }
@@ -250,13 +264,15 @@ public class BulletinService {
                 List<Note> notesEleveMatiere = parMatiereParEleve.getOrDefault(matiereId, Map.of())
                         .getOrDefault(eleve.getId(), List.of());
                 boolean nonCompose = notesEleveMatiere.isEmpty();
+                boolean estConduiteMat = Boolean.TRUE.equals(estConduiteParMatiere.get(matiereId));
                 Double coef = coefficientsParMatiere.get(matiereId);
+                int nbInterros = estConduiteMat ? 1 : nbInterrosParMatiere.getOrDefault(matiereId, 0);
 
                 BulletinMatiereResponse m = new BulletinMatiereResponse();
                 m.setMatiereId(matiereId);
                 m.setMatiereLibelle(matiereLibelles.get(matiereId));
                 m.setCoefficient(coef);
-                m.setInterrogation(NoteService.calculerMoyenneInterrogations(notesEleveMatiere));
+                m.setInterrogation(NoteService.calculerMoyenneInterrogations(notesEleveMatiere, nbInterros));
                 m.setDevoir1(NoteService.extraireValeur(notesEleveMatiere, NoteService.DEVOIR, 1));
                 m.setDevoir2(NoteService.extraireValeur(notesEleveMatiere, NoteService.DEVOIR, 2));
                 m.setMoyenne(moyenne);
@@ -370,6 +386,17 @@ public class BulletinService {
         Map<Long, Map<Long, List<Note>>> parEleveParMatiere = notes.stream()
                 .collect(Collectors.groupingBy(Note::getEleveId, Collectors.groupingBy(Note::getMatiereId)));
 
+        // Dénominateurs des moyennes, par matière, à l'échelle de la classe.
+        Map<Long, List<Note>> notesParMatiere = notes.stream().collect(Collectors.groupingBy(Note::getMatiereId));
+        Map<Long, Integer> nbInterrosParMatiere = new HashMap<>();
+        Map<Long, Integer> nbDevoirsParMatiere = new HashMap<>();
+        notesParMatiere.forEach((matiereId, notesMatiere) -> {
+            nbInterrosParMatiere.put(matiereId, NoteService.nombreEvaluationsOrganisees(
+                    notesMatiere, NoteService.INTERROGATION, NoteService.MAX_INTERROGATIONS));
+            nbDevoirsParMatiere.put(matiereId, NoteService.nombreEvaluationsOrganisees(
+                    notesMatiere, NoteService.DEVOIR, NoteService.MAX_DEVOIRS));
+        });
+
         Map<Long, Double> resultat = new HashMap<>();
         for (Long eleveId : eleveIds) {
             Map<Long, List<Note>> parMatiere = parEleveParMatiere.getOrDefault(eleveId, Map.of());
@@ -380,7 +407,9 @@ public class BulletinService {
                 Double coef = coefficientsParMatiere.get(e.getKey());
                 boolean estConduite = matiereRepository.findById(e.getKey())
                         .map(m -> Boolean.TRUE.equals(m.getEstConduite())).orElse(false);
-                Double moyenne = extraireMoyenne(e.getValue(), estConduite);
+                int nbInterros = estConduite ? 1 : nbInterrosParMatiere.getOrDefault(e.getKey(), 0);
+                int nbDevoirs = estConduite ? 0 : nbDevoirsParMatiere.getOrDefault(e.getKey(), 0);
+                Double moyenne = extraireMoyenne(e.getValue(), nbInterros, nbDevoirs, estConduite);
                 if (moyenne != null && coef != null) {
                     sommeCoef += coef;
                     sommePonderee += moyenne * coef;
@@ -392,11 +421,11 @@ public class BulletinService {
         return resultat;
     }
 
-    private Double extraireMoyenne(List<Note> notes, boolean estConduite) {
-        Double moyenneInterrogations = NoteService.calculerMoyenneInterrogations(notes);
-        Double devoir1 = NoteService.extraireValeur(notes, NoteService.DEVOIR, 1);
-        Double devoir2 = NoteService.extraireValeur(notes, NoteService.DEVOIR, 2);
-        return NoteService.calculerMoyenne(moyenneInterrogations, devoir1, devoir2, estConduite);
+    private Double extraireMoyenne(List<Note> notes, int nbInterros, int nbDevoirs, boolean estConduite) {
+        Double moyenneInterrogations = NoteService.calculerMoyenneInterrogations(notes, nbInterros);
+        Double moyenneDevoirs = estConduite ? null
+                : NoteService.moyenneComposante(notes, NoteService.DEVOIR, nbDevoirs);
+        return NoteService.calculerMoyenneMatiere(moyenneInterrogations, moyenneDevoirs, estConduite);
     }
 
     private static String appreciationPour(Double moyenne) {
