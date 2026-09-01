@@ -87,6 +87,13 @@ public class DossierEleveService extends AbstractBaseService<DossierEleve, Dossi
         return new PageResponse<>(items, MetaResponse.ofPage(page));
     }
 
+    /** Vrai si l'élève a déjà un dossier en cours (ni refusé ni annulé) pour cette année scolaire —
+        on interdit alors une nouvelle réinscription sur la même période d'inscription. */
+    public boolean aDejaUnDossierPourAnnee(Long eleveId, Long anneeScolaireId) {
+        if (eleveId == null || anneeScolaireId == null) return false;
+        return dossierEleveRepository.existsDossierVivantPourEleveEtAnnee(eleveId, anneeScolaireId);
+    }
+
     /** Retourne les dossiers d'un tuteur. */
     public List<DossierEleveResponse> getByTuteurId(Long tuteurId) {
         return dossierEleveRepository.findByTuteurId(tuteurId).stream()

@@ -90,4 +90,16 @@ public interface DossierEleveRepository extends BaseRepository<DossierEleve> {
     @EntityGraph(attributePaths = {"eleve", "classe", "anneeScolaire", "statut"})
     @Query("SELECT d FROM DossierEleve d WHERE d.tuteurId = :tuteurId ORDER BY d.id DESC")
     List<DossierEleve> findByTuteurId(@Param("tuteurId") Long tuteurId);
+
+    /** Un élève a-t-il déjà un dossier « vivant » (ni refusé ni annulé) pour une année scolaire
+        donnée ? Sert à empêcher une seconde réinscription sur la même période d'inscription
+        (une période d'inscription est rattachée à une seule année scolaire). */
+    @Query("""
+        SELECT COUNT(d) > 0 FROM DossierEleve d
+        WHERE d.eleveId = :eleveId
+          AND d.anneeScolaireId = :anneeScolaireId
+          AND (d.statut IS NULL OR upper(d.statut.code) NOT IN ('REFUSE', 'ANNULE'))
+        """)
+    boolean existsDossierVivantPourEleveEtAnnee(@Param("eleveId") Long eleveId,
+                                                @Param("anneeScolaireId") Long anneeScolaireId);
 }

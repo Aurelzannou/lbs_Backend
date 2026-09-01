@@ -63,6 +63,13 @@ public class DossierEleveController extends MasterController<DossierEleve, Dossi
         // Si un élève existant est sélectionné, on recopie son identité pour un affichage
         // cohérent dès le dépôt ; sinon on garde directement les champs saisis dans le formulaire.
         if (form.getEleveId() != null) {
+            // Réinscription : un élève ne peut pas avoir deux dossiers pour la même année scolaire
+            // (= la même période d'inscription). On bloque avant toute écriture.
+            if (dossierEleveService.aDejaUnDossierPourAnnee(form.getEleveId(), form.getAnneeScolaireId())) {
+                throw new IllegalArgumentException(
+                        "Cet élève a déjà un dossier d'inscription pour cette année scolaire — "
+                        + "une réinscription sur la même période n'est pas possible.");
+            }
             Eleve existant = eleveService.findById(form.getEleveId());
             dossier.setNom(existant.getNom());
             dossier.setPrenom(existant.getPrenom());
