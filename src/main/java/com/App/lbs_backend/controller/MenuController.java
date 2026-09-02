@@ -30,11 +30,7 @@ public class MenuController extends MasterController<Menu, MenuResponse, MenuReq
      */
     @GetMapping("/my-menu")
     public ResponseEntity<?> getMyMenu(@RequestParam(required = false) String profilCode) {
-        return sendResponse(
-                menuService.getMyMenus(profilCode).stream()
-                        .map(menuService.mapper()::toResponse)
-                        .collect(Collectors.toList())
-        );
+        return sendResponse(menuService.getMyMenusTree(profilCode));
     }
 
     @Override

@@ -120,15 +120,14 @@ public class InitialDataLoader implements CommandLineRunner {
         // Comptabilité (Parent, autonome, premier niveau) — écrans transactionnels ; les écrans de
         // configuration (Caisses, Frais scolaires, Types de frais, Modes de paiement, Catégories de
         // dépenses) restent sous Référentiel.
-        // Le profil CAISSIER a accès à toute la section Comptabilité (encaissement, dépenses,
-        // journal de caisse, suivi des paiements).
+        // Accès CAISSIER par défaut : uniquement l'encaissement des frais (Paiements). Les autres
+        // écrans comptables (dépenses, journal de caisse, suivi) restent réservés à l'admin, qui
+        // peut élargir l'accès du caissier depuis Administration ▸ Menus.
         Menu comptaGroup = createOrUpdateMenu("COMPTABILITE", "Comptabilité", "Paiements, dépenses et caisse", "credit-card-outline", null, 9, List.of(admin, caissier));
         createOrUpdateSubMenu("PAIEMENTS", "Paiements", "Encaissement des frais scolaires", "cash-outline", "/comptabilite/paiements", 1, comptaGroup, admin, caissier);
-        createOrUpdateSubMenu("DEPENSES_SCOLAIRES", "Dépenses", "Décaissements", "trending-down-outline", "/comptabilite/depenses", 2, comptaGroup, admin, caissier);
-        createOrUpdateSubMenu("MOUVEMENTS_CAISSE", "Journal de caisse", "Historique des mouvements", "list-outline", "/comptabilite/mouvements", 3, comptaGroup, admin, caissier);
-        createOrUpdateSubMenu("SUIVI_PAIEMENTS", "Suivi des paiements", "Reste à payer par élève", "pie-chart-outline", "/comptabilite/suivi", 4, comptaGroup, admin, caissier);
-        // Le caissier a besoin du référentiel Caisses pour voir sa caisse.
-        createOrUpdateSubMenu("CAISSES", "Caisses", "Gestion des caisses", "wallet-outline", "/referentiel/caisses", 10, refGroup, admin, caissier);
+        createOrUpdateSubMenu("DEPENSES_SCOLAIRES", "Dépenses", "Décaissements", "trending-down-outline", "/comptabilite/depenses", 2, comptaGroup, admin);
+        createOrUpdateSubMenu("MOUVEMENTS_CAISSE", "Journal de caisse", "Historique des mouvements", "list-outline", "/comptabilite/mouvements", 3, comptaGroup, admin);
+        createOrUpdateSubMenu("SUIVI_PAIEMENTS", "Suivi des paiements", "Reste à payer par élève", "pie-chart-outline", "/comptabilite/suivi", 4, comptaGroup, admin);
         createOrUpdateSubMenu("SAISIE_NOTES", "Saisie des notes", "Saisie des notes par classe et matière", "edit-2-outline", "/notes/saisie", 1, notesGroup, admin);
         createOrUpdateSubMenu("VALIDATION_BULLETINS", "Validation des bulletins", "Validation et impression des bulletins", "checkmark-square-2-outline", "/notes/validation", 2, notesGroup, admin);
 

@@ -43,6 +43,10 @@ public class PaiementController extends MasterController<Paiement, PaiementRespo
 
     @Override
     protected PaiementResponse doCreate(PaiementRequest form) {
+        // On n'encaisse jamais plus que le reste à payer du frais concerné.
+        paiementService.verifierPasDeSurpaiement(
+                form.getDossierEleveId(), form.getFraisScolaireId(), form.getMontant());
+
         Paiement paiement = new Paiement();
         mapFormToEntity(form, paiement);
         paiement.setCanal(form.getCanal() != null ? form.getCanal() : "SUR_PLACE");

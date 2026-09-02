@@ -22,11 +22,22 @@ public class MenuMapper implements Mapper<Menu, MenuResponse> {
                     .map(this::toResponse)
                     .toList();
         }
+        return toResponse(entity, enfants);
+    }
+
+    /** Variante utilisée pour construire l'arbre des menus autorisés : les enfants sont fournis
+        (déjà filtrés par profil) au lieu d'être dérivés récursivement de l'entité. */
+    public MenuResponse toResponse(Menu entity, List<MenuResponse> enfants) {
+        if (entity == null) return null;
 
         List<Long> profilIds = entity.getListeProfilMenu() == null ? List.of() :
                 entity.getListeProfilMenu().stream()
-                        .filter(pm -> pm.getProfilId() != null)
-                        .map(pm -> pm.getProfilId())
+                        // profilId (colonne en lecture seule) peut ne pas être encore hydraté juste
+                        // après un save : on retombe alors sur la relation profil.
+                        .map(pm -> pm.getProfilId() != null ? pm.getProfilId()
+                                : (pm.getProfil() != null ? pm.getProfil().getId() : null))
+                        .filter(java.util.Objects::nonNull)
+                        .distinct()
                         .collect(Collectors.toList());
 
         return new MenuResponse(

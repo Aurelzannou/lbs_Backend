@@ -75,7 +75,9 @@ public class SuiviPaiementService {
             double montantPaye = paiementRepository
                     .findByDossierEleveIdAndFraisScolaireIdAndStatutTransaction(dossierEleveId, frais.getId(), "SUCCES")
                     .stream().mapToDouble(Paiement::getMontant).sum();
-            double reste = montantDu - montantPaye;
+            // Le reste à payer ne descend jamais sous 0 (un éventuel trop-perçu se règle par
+            // annulation d'un paiement, pas par un « reste » négatif).
+            double reste = Math.max(0, montantDu - montantPaye);
 
             String typeFraisLibelle = typeFraisRepository.findById(frais.getTypeFraisId())
                     .map(TypeFrais::getLibelle).orElse(null);
@@ -114,6 +116,7 @@ public class SuiviPaiementService {
             totalPaye += montantPaye;
         }
 
-        return new SuiviPaiementResponse(dossierEleveId, totalDu, totalPaye, totalDu - totalPaye, fraisResponses);
+        return new SuiviPaiementResponse(dossierEleveId, totalDu, totalPaye,
+                Math.max(0, totalDu - totalPaye), fraisResponses);
     }
 }
