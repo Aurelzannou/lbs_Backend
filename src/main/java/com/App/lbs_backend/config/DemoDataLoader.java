@@ -96,12 +96,16 @@ public class DemoDataLoader implements CommandLineRunner {
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  Types de frais — INSCRIPTION est requis par le paiement FedaPay
-    //  (voir PaiementInscriptionService / fedapay.type-frais-inscription).
-    //  Ajouter d'autres lignes ici si besoin (SCOLARITE, CANTINE, ...).
+    //  Types de frais :
+    //   - INSCRIPTION : requis par le paiement FedaPay en ligne
+    //     (voir PaiementInscriptionService / fedapay.type-frais-inscription).
+    //   - SCOLARITE : seul type encaissé au guichet sur /comptabilite/paiements
+    //     (voir app.paiement.type-frais-code).
+    //  Ajouter d'autres lignes ici si besoin (CANTINE, TRANSPORT, ...).
     // ─────────────────────────────────────────────────────────────
     private void seedTypesFrais() {
         typeFrais("INSCRIPTION", "Frais d'inscription", true);
+        typeFrais("SCOLARITE", "Scolarité", true);
     }
 
     private void typeFrais(String code, String libelle, boolean obligatoire) {

@@ -31,7 +31,8 @@ public class FraisScolaireController extends MasterController<FraisScolaire, Fra
         entity.setClasseId(form.getClasseId());
         entity.setTypeFraisId(form.getTypeFraisId());
         entity.setMontant(form.getMontant());
-        entity.setActif(form.getActif());
+        // Le formulaire n'a pas de case "actif" : un frais est actif par défaut.
+        entity.setActif(form.getActif() != null ? form.getActif() : Boolean.TRUE);
         
         FraisScolaire saved = fraisScolaireService.create(entity);
         return fraisScolaireService.toResponse(saved.getId());
@@ -40,11 +41,13 @@ public class FraisScolaireController extends MasterController<FraisScolaire, Fra
     @GetMapping("/search")
     public ResponseEntity<?> search(
             @RequestParam Long classeId,
-            @RequestParam Long anneeScolaireId) {
+            @RequestParam Long anneeScolaireId,
+            @RequestParam(required = false, defaultValue = "false") boolean paiementGuichet) {
         // Enveloppe ApiResponse comme le reste de l'API : le front (ApiService) déballe
         // systématiquement `.data`, un tableau nu renvoyait donc `undefined` côté client.
+        // paiementGuichet=true : ne garde que le type de frais encaissé au guichet (SCOLARITE).
         return ResponseEntity.ok(ApiResponse.apiSuccess("OK",
-                fraisScolaireService.findByClasseAndAnnee(classeId, anneeScolaireId),
+                fraisScolaireService.findByClasseAndAnnee(classeId, anneeScolaireId, paiementGuichet),
                 request.getRequestURI()));
     }
 
@@ -56,7 +59,8 @@ public class FraisScolaireController extends MasterController<FraisScolaire, Fra
         entity.setClasseId(form.getClasseId());
         entity.setTypeFraisId(form.getTypeFraisId());
         entity.setMontant(form.getMontant());
-        entity.setActif(form.getActif());
+        // Le formulaire n'a pas de case "actif" : un frais est actif par défaut.
+        entity.setActif(form.getActif() != null ? form.getActif() : Boolean.TRUE);
         
         fraisScolaireService.update(entity);
         return fraisScolaireService.toResponse(entity.getId());

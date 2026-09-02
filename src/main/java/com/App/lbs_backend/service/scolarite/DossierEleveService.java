@@ -94,6 +94,29 @@ public class DossierEleveService extends AbstractBaseService<DossierEleve, Dossi
         return dossierEleveRepository.existsDossierVivantPourEleveEtAnnee(eleveId, anneeScolaireId);
     }
 
+    /**
+     * Contrôle unique appliqué à toute création de dossier (réinscription OU nouvelle inscription,
+     * portail parent OU admin) : un enfant ne peut avoir qu'un seul dossier vivant par année
+     * scolaire. Match sur eleveId si connu, sinon sur l'identité (nom + prénom).
+     */
+    public void verifierUnSeulDossierParAnnee(Long eleveId, String nom, String prenom,
+                                              Long anneeScolaireId, Long excludeDossierId) {
+        if (anneeScolaireId == null) return;
+
+        boolean doublon = false;
+        if (eleveId != null) {
+            doublon = dossierEleveRepository.existsDossierVivantPourEleveEtAnnee(eleveId, anneeScolaireId);
+        }
+        if (!doublon && nom != null && !nom.isBlank() && prenom != null && !prenom.isBlank()) {
+            doublon = dossierEleveRepository.existsDossierVivantPourIdentiteEtAnnee(
+                    nom, prenom, anneeScolaireId, excludeDossierId);
+        }
+        if (doublon) {
+            throw new IllegalArgumentException(
+                    "Cet élève a déjà un dossier d'inscription pour cette année scolaire.");
+        }
+    }
+
     /** Retourne les dossiers d'un tuteur. */
     public List<DossierEleveResponse> getByTuteurId(Long tuteurId) {
         return dossierEleveRepository.findByTuteurId(tuteurId).stream()

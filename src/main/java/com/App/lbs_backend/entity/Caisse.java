@@ -33,6 +33,11 @@ public class Caisse extends AuditableEntity implements Timestamps {
     @Column(name = "lbs_cais_actif")
     private Boolean actif;
 
+    /** Utilisateur (caissier) responsable de cette caisse. Sert à pré-sélectionner
+        automatiquement sa caisse sur l'écran d'encaissement quand il se connecte. */
+    @Column(name = "lbs_cais_utilisateur_id")
+    private Long utilisateurId;
+
     @PrePersist
     public void prePersist() {
         if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
@@ -57,4 +62,7 @@ public class Caisse extends AuditableEntity implements Timestamps {
 
     public Boolean getActif() { return actif; }
     public void setActif(Boolean actif) { this.actif = actif; }
+
+    public Long getUtilisateurId() { return utilisateurId; }
+    public void setUtilisateurId(Long utilisateurId) { this.utilisateurId = utilisateurId; }
 }

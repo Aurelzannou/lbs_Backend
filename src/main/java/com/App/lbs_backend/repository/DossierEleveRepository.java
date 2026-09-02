@@ -102,4 +102,21 @@ public interface DossierEleveRepository extends BaseRepository<DossierEleve> {
         """)
     boolean existsDossierVivantPourEleveEtAnnee(@Param("eleveId") Long eleveId,
                                                 @Param("anneeScolaireId") Long anneeScolaireId);
+
+    /** Même contrôle mais par IDENTITÉ (nom + prénom), pour bloquer aussi une « nouvelle
+        inscription » d'un enfant qui a déjà un dossier cette année (l'Eleve n'existe pas encore
+        au dépôt, donc on ne peut pas comparer sur eleveId). `excludeDossierId` permet d'exclure
+        le dossier lui-même lors d'une modification. */
+    @Query("""
+        SELECT COUNT(d) > 0 FROM DossierEleve d
+        WHERE d.anneeScolaireId = :anneeScolaireId
+          AND (:excludeDossierId IS NULL OR d.id <> :excludeDossierId)
+          AND lower(trim(d.nom)) = lower(trim(:nom))
+          AND lower(trim(d.prenom)) = lower(trim(:prenom))
+          AND (d.statut IS NULL OR upper(d.statut.code) NOT IN ('REFUSE', 'ANNULE'))
+        """)
+    boolean existsDossierVivantPourIdentiteEtAnnee(@Param("nom") String nom,
+                                                   @Param("prenom") String prenom,
+                                                   @Param("anneeScolaireId") Long anneeScolaireId,
+                                                   @Param("excludeDossierId") Long excludeDossierId);
 }

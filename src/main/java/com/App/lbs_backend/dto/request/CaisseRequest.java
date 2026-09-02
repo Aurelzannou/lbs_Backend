@@ -17,4 +17,7 @@ public class CaisseRequest implements FormRequest {
 
     private Double solde;
     private Boolean actif;
+
+    /** Utilisateur (caissier) responsable — optionnel. */
+    private Long utilisateurId;
 }

@@ -54,11 +54,13 @@ public class InitialDataLoader implements CommandLineRunner {
         keycloakAdminService.createRole("ADMIN", "Administrateur Système");
         keycloakAdminService.createRole("TUTEUR", "Parent / Tuteur");
         keycloakAdminService.createRole("PROFESSEUR", "Professeur");
+        keycloakAdminService.createRole("CAISSIER", "Caissier");
 
         // 1. Initialisation des Profils (DB locale)
         Profil admin = createProfilIfNotFound("ADMIN", "Administrateur Système");
         createProfilIfNotFound("TUTEUR", "Parent / Tuteur");
         createProfilIfNotFound("PROFESSEUR", "Professeur");
+        Profil caissier = createProfilIfNotFound("CAISSIER", "Caissier");
 
         // 1bis. Compte super-admin par défaut, pour pouvoir administrer dès le premier démarrage
         createSuperAdminIfNotFound(admin);
@@ -118,11 +120,15 @@ public class InitialDataLoader implements CommandLineRunner {
         // Comptabilité (Parent, autonome, premier niveau) — écrans transactionnels ; les écrans de
         // configuration (Caisses, Frais scolaires, Types de frais, Modes de paiement, Catégories de
         // dépenses) restent sous Référentiel.
-        Menu comptaGroup = createOrUpdateMenu("COMPTABILITE", "Comptabilité", "Paiements, dépenses et caisse", "credit-card-outline", null, 9, List.of(admin));
-        createOrUpdateSubMenu("PAIEMENTS", "Paiements", "Encaissement des frais scolaires", "cash-outline", "/comptabilite/paiements", 1, comptaGroup, admin);
-        createOrUpdateSubMenu("DEPENSES_SCOLAIRES", "Dépenses", "Décaissements", "trending-down-outline", "/comptabilite/depenses", 2, comptaGroup, admin);
-        createOrUpdateSubMenu("MOUVEMENTS_CAISSE", "Journal de caisse", "Historique des mouvements", "list-outline", "/comptabilite/mouvements", 3, comptaGroup, admin);
-        createOrUpdateSubMenu("SUIVI_PAIEMENTS", "Suivi des paiements", "Reste à payer par élève", "pie-chart-outline", "/comptabilite/suivi", 4, comptaGroup, admin);
+        // Le profil CAISSIER a accès à toute la section Comptabilité (encaissement, dépenses,
+        // journal de caisse, suivi des paiements).
+        Menu comptaGroup = createOrUpdateMenu("COMPTABILITE", "Comptabilité", "Paiements, dépenses et caisse", "credit-card-outline", null, 9, List.of(admin, caissier));
+        createOrUpdateSubMenu("PAIEMENTS", "Paiements", "Encaissement des frais scolaires", "cash-outline", "/comptabilite/paiements", 1, comptaGroup, admin, caissier);
+        createOrUpdateSubMenu("DEPENSES_SCOLAIRES", "Dépenses", "Décaissements", "trending-down-outline", "/comptabilite/depenses", 2, comptaGroup, admin, caissier);
+        createOrUpdateSubMenu("MOUVEMENTS_CAISSE", "Journal de caisse", "Historique des mouvements", "list-outline", "/comptabilite/mouvements", 3, comptaGroup, admin, caissier);
+        createOrUpdateSubMenu("SUIVI_PAIEMENTS", "Suivi des paiements", "Reste à payer par élève", "pie-chart-outline", "/comptabilite/suivi", 4, comptaGroup, admin, caissier);
+        // Le caissier a besoin du référentiel Caisses pour voir sa caisse.
+        createOrUpdateSubMenu("CAISSES", "Caisses", "Gestion des caisses", "wallet-outline", "/referentiel/caisses", 10, refGroup, admin, caissier);
         createOrUpdateSubMenu("SAISIE_NOTES", "Saisie des notes", "Saisie des notes par classe et matière", "edit-2-outline", "/notes/saisie", 1, notesGroup, admin);
         createOrUpdateSubMenu("VALIDATION_BULLETINS", "Validation des bulletins", "Validation et impression des bulletins", "checkmark-square-2-outline", "/notes/validation", 2, notesGroup, admin);
 
@@ -221,7 +227,7 @@ public class InitialDataLoader implements CommandLineRunner {
         return menuRepository.save(menu);
     }
 
-    private void createOrUpdateSubMenu(String code, String titre, String description, String icon, String path, int ordre, Menu parent, Profil profil) {
+    private void createOrUpdateSubMenu(String code, String titre, String description, String icon, String path, int ordre, Menu parent, Profil... profils) {
         Menu subMenu = menuRepository.findByCode(code).orElseGet(() -> {
             log.info("Création du sous-menu : {}", code);
             Menu newSubMenu = new Menu();
@@ -235,19 +241,20 @@ public class InitialDataLoader implements CommandLineRunner {
         subMenu.setPath(path);
         subMenu.setOrdre(ordre);
         subMenu.setMenuEnfantId(parent.getId());
-        
-        // Gestion de l'association (éviter les doublons)
-        boolean alreadyLinked = subMenu.getListeProfilMenu().stream()
-                .anyMatch(pm -> pm.getProfil() != null && profil.getCode().equals(pm.getProfil().getCode()));
-        
-        if (!alreadyLinked) {
-            log.info("Liaison du sous-menu {} au profil {}", code, profil.getCode());
-            ProfilMenu pm = new ProfilMenu();
-            pm.setProfil(profil);
-            pm.setMenu(subMenu);
-            subMenu.getListeProfilMenu().add(pm);
+
+        // Gestion des associations de profil (éviter les doublons)
+        for (Profil profil : profils) {
+            boolean alreadyLinked = subMenu.getListeProfilMenu().stream()
+                    .anyMatch(pm -> pm.getProfil() != null && profil.getCode().equals(pm.getProfil().getCode()));
+            if (!alreadyLinked) {
+                log.info("Liaison du sous-menu {} au profil {}", code, profil.getCode());
+                ProfilMenu pm = new ProfilMenu();
+                pm.setProfil(profil);
+                pm.setMenu(subMenu);
+                subMenu.getListeProfilMenu().add(pm);
+            }
         }
-        
+
         menuRepository.save(subMenu);
     }
 }

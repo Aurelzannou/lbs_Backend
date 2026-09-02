@@ -43,6 +43,17 @@ public class InscriptionService {
         dossier.setAnneeScolaireId(request.getAnneeScolaireId());
         dossier.setTuteurId(request.getTuteurId());
 
+        // Un enfant ne peut avoir qu'un seul dossier vivant par année scolaire.
+        String nomRef = request.getNom();
+        String prenomRef = request.getPrenom();
+        if (request.getEleveId() != null) {
+            Eleve ref = eleveService.findById(request.getEleveId());
+            nomRef = ref.getNom();
+            prenomRef = ref.getPrenom();
+        }
+        dossierEleveService.verifierUnSeulDossierParAnnee(
+                request.getEleveId(), nomRef, prenomRef, request.getAnneeScolaireId(), null);
+
         if (request.getEleveId() != null) {
             // Enfant déjà inscrit par le passé : on garde le lien direct et on recopie
             // son identité pour un affichage cohérent dès le dépôt.
@@ -64,7 +75,8 @@ public class InscriptionService {
         }
 
         dossierEleveService.setStatutDepose(dossier);
-        dossier.setNumero(dossierEleveService.genererNumero(request.getNom(), request.getPrenom()));
+        // Sur une réinscription, request.nom/prenom sont nuls — on prend l'identité du dossier.
+        dossier.setNumero(dossierEleveService.genererNumero(dossier.getNom(), dossier.getPrenom()));
 
         DossierEleve saved = dossierEleveService.create(dossier);
         log.info("Dossier créé — uuid:{}", saved.getUuid());

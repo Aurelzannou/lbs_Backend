@@ -43,6 +43,8 @@ public class EcheancierController extends MasterController<Echeancier, Echeancie
 
     @Override
     protected EcheancierResponse doCreate(EcheancierRequest form) {
+        echeancierService.verifierTotalTranches(form.getFraisScolaireId(), form.getMontant(), null);
+
         Echeancier entity = new Echeancier();
         mapFormToEntity(form, entity);
         entity.setCode("ECH-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
@@ -54,6 +56,7 @@ public class EcheancierController extends MasterController<Echeancier, Echeancie
     @Override
     protected EcheancierResponse doUpdate(String uuid, EcheancierRequest form) {
         Echeancier entity = echeancierService.findByUuid(uuid);
+        echeancierService.verifierTotalTranches(form.getFraisScolaireId(), form.getMontant(), uuid);
         mapFormToEntity(form, entity);
         echeancierService.update(entity);
         return echeancierService.toResponse(entity.getId());

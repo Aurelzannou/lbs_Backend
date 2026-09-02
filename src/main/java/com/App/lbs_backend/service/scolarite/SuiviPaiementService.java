@@ -35,15 +35,35 @@ public class SuiviPaiementService {
     private final PaiementRepository paiementRepository;
     private final TypeFraisRepository typeFraisRepository;
 
+    /** Code du type « frais d'inscription » (payé pendant le parcours d'inscription, pas ici). */
+    @org.springframework.beans.factory.annotation.Value("${fedapay.type-frais-inscription:INSCRIPTION}")
+    private String typeFraisInscriptionCode;
+
     @Transactional(readOnly = true)
     public SuiviPaiementResponse getSuiviParDossier(Long dossierEleveId) {
+        return getSuiviParDossier(dossierEleveId, false);
+    }
+
+    /**
+     * @param exclureInscription true pour le portail parent : les frais d'inscription se règlent
+     *                            pendant le parcours d'inscription, pas dans « Frais & paiements ».
+     */
+    @Transactional(readOnly = true)
+    public SuiviPaiementResponse getSuiviParDossier(Long dossierEleveId, boolean exclureInscription) {
         DossierEleve dossier = dossierEleveRepository.findById(dossierEleveId)
                 .orElseThrow(() -> new IllegalArgumentException("Dossier introuvable"));
+
+        Long typeInscriptionId = exclureInscription
+                ? typeFraisRepository.findByCode(typeFraisInscriptionCode).map(t -> ((com.App.lbs_backend.entity.TypeFrais) t).getId()).orElse(null)
+                : null;
 
         List<FraisScolaire> fraisList = fraisScolaireRepository
                 .findByClasseIdAndAnneeScolaireId(dossier.getClasseId(), dossier.getAnneeScolaireId())
                 .stream()
-                .filter(f -> Boolean.TRUE.equals(f.getActif()))
+                // Un frais est actif sauf s'il est explicitement désactivé (actif == false).
+                // Le formulaire n'ayant pas de case "actif", la plupart des frais ont actif == null.
+                .filter(f -> !Boolean.FALSE.equals(f.getActif()))
+                .filter(f -> typeInscriptionId == null || !typeInscriptionId.equals(f.getTypeFraisId()))
                 .toList();
 
         double totalDu = 0;

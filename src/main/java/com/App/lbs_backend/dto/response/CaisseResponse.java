@@ -9,6 +9,8 @@ public record CaisseResponse(
         String libelle,
         Double solde,
         Boolean actif,
+        Long utilisateurId,
+        String utilisateurNomComplet,
         LocalDateTime modifierLe,
         String modifierPar
 ) {}

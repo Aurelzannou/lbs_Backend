@@ -66,32 +66,92 @@ public class PaiementInscriptionService {
     public PaiementInitResponse init(Long dossierId, String telephonePaiement) {
         DossierEleve dossier = dossierEleveRepository.findById(dossierId)
                 .orElseThrow(() -> new IllegalArgumentException("Dossier d'inscription introuvable."));
-
         FraisScolaire frais = fraisInscription(dossier.getClasseId(), dossier.getAnneeScolaireId());
-        long montant = Math.round(frais.getMontant());
-        if (montant <= 0) {
-            throw new IllegalArgumentException("Le montant des frais d'inscription doit être supérieur à 0.");
+        return initTransaction(dossier, frais, null, telephonePaiement, false);
+    }
+
+    /**
+     * Paiement en ligne d'un frais scolaire quelconque depuis le portail parent (scolarité,
+     * cantine…). Le parent choisit le montant (une tranche, un montant libre, ou le reste) :
+     * {@code montantChoisi} doit être compris entre 1 et le reste à payer. {@code null} = solde
+     * du restant dû.
+     */
+    @Transactional
+    public PaiementInitResponse initPourFrais(Long dossierId, Long fraisScolaireId,
+                                              Long montantChoisi, String telephonePaiement) {
+        DossierEleve dossier = dossierEleveRepository.findById(dossierId)
+                .orElseThrow(() -> new IllegalArgumentException("Dossier introuvable."));
+        FraisScolaire frais = fraisScolaireRepository.findById(fraisScolaireId)
+                .orElseThrow(() -> new IllegalArgumentException("Frais scolaire introuvable."));
+
+        if (!java.util.Objects.equals(frais.getClasseId(), dossier.getClasseId())
+                || !java.util.Objects.equals(frais.getAnneeScolaireId(), dossier.getAnneeScolaireId())) {
+            throw new IllegalArgumentException("Ce frais ne correspond pas à la classe / année de ce dossier.");
+        }
+        // Les frais d'inscription se règlent pendant le parcours d'inscription, pas ici.
+        typeFraisRepository.findByCode(typeFraisInscriptionCode)
+                .map(t -> ((TypeFrais) t).getId())
+                .filter(id -> id.equals(frais.getTypeFraisId()))
+                .ifPresent(id -> {
+                    throw new IllegalArgumentException(
+                            "Les frais d'inscription se paient lors de l'inscription, pas depuis cet écran.");
+                });
+        return initTransaction(dossier, frais, montantChoisi, telephonePaiement, true);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    private PaiementInitResponse initTransaction(DossierEleve dossier, FraisScolaire frais,
+                                                 Long montantChoisi, String telephonePaiement,
+                                                 boolean paiementPartielAutorise) {
+        long montantFrais = frais.getMontant() != null ? Math.round(frais.getMontant()) : 0;
+        if (montantFrais <= 0) {
+            throw new IllegalArgumentException("Le montant de ce frais doit être supérieur à 0.");
         }
 
-        // Déjà réglé ?
-        boolean dejaPaye = paiementRepository
-                .findByDossierEleveIdAndFraisScolaireIdAndStatutTransaction(dossierId, frais.getId(), "SUCCES")
-                .stream().findAny().isPresent();
-        if (dejaPaye) {
-            throw new IllegalArgumentException("Les frais d'inscription de ce dossier sont déjà réglés.");
+        double dejaPaye = paiementRepository
+                .findByDossierEleveIdAndFraisScolaireIdAndStatutTransaction(dossier.getId(), frais.getId(), "SUCCES")
+                .stream().mapToDouble(p -> p.getMontant() != null ? p.getMontant() : 0.0).sum();
+
+        long montant;
+        if (paiementPartielAutorise) {
+            long reste = Math.round(montantFrais - dejaPaye);
+            if (reste <= 0) {
+                throw new IllegalArgumentException("Ce frais est déjà entièrement réglé.");
+            }
+            if (montantChoisi != null) {
+                if (montantChoisi < 1) {
+                    throw new IllegalArgumentException("Le montant à payer doit être d'au moins 1 FCFA.");
+                }
+                if (montantChoisi > reste) {
+                    throw new IllegalArgumentException(
+                            "Le montant saisi dépasse le reste à payer (" + reste + " FCFA).");
+                }
+                montant = montantChoisi;
+            } else {
+                montant = reste; // par défaut : solde du restant dû
+            }
+        } else {
+            if (dejaPaye > 0) {
+                throw new IllegalArgumentException("Les frais d'inscription de ce dossier sont déjà réglés.");
+            }
+            montant = montantFrais;
         }
+
+        String typeLibelle = typeFraisRepository.findById(frais.getTypeFraisId())
+                .map(t -> ((TypeFrais) t).getLibelle()).orElse("Frais scolaire");
 
         // Client (pour le reçu FedaPay)
+        final String tel = telephonePaiement;
         FedaPayClient.Customer customer = tuteurRepository.findById(dossier.getTuteurId() == null ? -1L : dossier.getTuteurId())
                 .map(t -> new FedaPayClient.Customer(
                         t.getPrenom(), t.getNom(), t.getEmail(),
-                        cleanPhone(telephonePaiement != null ? telephonePaiement : t.getTelephone1()), "bj"))
+                        cleanPhone(tel != null ? tel : t.getTelephone1()), "bj"))
                 .orElse(new FedaPayClient.Customer(
-                        dossier.getPrenom(), dossier.getNom(), null, cleanPhone(telephonePaiement), "bj"));
+                        dossier.getPrenom(), dossier.getNom(), null, cleanPhone(tel), "bj"));
 
-        String description = "Frais d'inscription - " + dossier.getNom() + " " + dossier.getPrenom()
+        String description = typeLibelle + " - " + dossier.getNom() + " " + dossier.getPrenom()
                 + " (dossier " + dossier.getNumero() + ")";
-        String callback = frontendUrl + "/portail/inscription";
+        String callback = frontendUrl + "/portail/dashboard";
 
         long txId = fedaPayClient.createTransaction(description, montant, callback, customer);
         String checkoutUrl = null;
@@ -103,21 +163,22 @@ public class PaiementInscriptionService {
 
         // Réutilise un Paiement INITIE existant pour ce dossier/frais, sinon en crée un
         Paiement paiement = paiementRepository
-                .findByDossierEleveIdAndFraisScolaireId(dossierId, frais.getId())
+                .findByDossierEleveIdAndFraisScolaireId(dossier.getId(), frais.getId())
                 .stream().filter(p -> !"SUCCES".equals(p.getStatutTransaction()))
                 .findFirst()
                 .orElseGet(Paiement::new);
 
-        paiement.setDossierEleveId(dossierId);
+        paiement.setDossierEleveId(dossier.getId());
         paiement.setFraisScolaireId(frais.getId());
         paiement.setMontant((double) montant);
         paiement.setReference(String.valueOf(txId));
         paiement.setCanal("EN_LIGNE");
         paiement.setStatutTransaction("INITIE");
-        paiement.setTelephonePaiement(cleanPhone(telephonePaiement));
+        paiement.setTelephonePaiement(cleanPhone(tel));
         paiementRepository.save(paiement);
 
-        log.info("[paiement-inscription] dossier={} tx={} montant={} XOF", dossierId, txId, montant);
+        log.info("[paiement-en-ligne] dossier={} frais={} tx={} montant={} XOF",
+                dossier.getId(), frais.getId(), txId, montant);
         return new PaiementInitResponse(txId, publicKey, montant, "XOF", description, checkoutUrl);
     }
 

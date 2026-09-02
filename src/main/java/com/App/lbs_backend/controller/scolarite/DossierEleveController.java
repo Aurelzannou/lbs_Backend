@@ -59,17 +59,22 @@ public class DossierEleveController extends MasterController<DossierEleve, Dossi
         DossierEleve dossier = new DossierEleve();
         mapFormToEntity(form, dossier);
 
+        // Un enfant ne peut avoir qu'un seul dossier vivant par année scolaire — que ce soit une
+        // réinscription (eleveId) ou une nouvelle inscription (identité). Bloqué avant écriture.
+        String nomRef = form.getEleveId() != null ? null : form.getNom();
+        String prenomRef = form.getEleveId() != null ? null : form.getPrenom();
+        if (form.getEleveId() != null) {
+            Eleve ref = eleveService.findById(form.getEleveId());
+            nomRef = ref.getNom();
+            prenomRef = ref.getPrenom();
+        }
+        dossierEleveService.verifierUnSeulDossierParAnnee(
+                form.getEleveId(), nomRef, prenomRef, form.getAnneeScolaireId(), null);
+
         // L'Eleve n'est créé qu'à l'acceptation du dossier (voir ValidationService.accepter()).
         // Si un élève existant est sélectionné, on recopie son identité pour un affichage
         // cohérent dès le dépôt ; sinon on garde directement les champs saisis dans le formulaire.
         if (form.getEleveId() != null) {
-            // Réinscription : un élève ne peut pas avoir deux dossiers pour la même année scolaire
-            // (= la même période d'inscription). On bloque avant toute écriture.
-            if (dossierEleveService.aDejaUnDossierPourAnnee(form.getEleveId(), form.getAnneeScolaireId())) {
-                throw new IllegalArgumentException(
-                        "Cet élève a déjà un dossier d'inscription pour cette année scolaire — "
-                        + "une réinscription sur la même période n'est pas possible.");
-            }
             Eleve existant = eleveService.findById(form.getEleveId());
             dossier.setNom(existant.getNom());
             dossier.setPrenom(existant.getPrenom());
@@ -82,8 +87,9 @@ public class DossierEleveController extends MasterController<DossierEleve, Dossi
         if (dossier.getStatutId() == null) {
             dossierEleveService.setStatutDepose(dossier);
         }
-        // Générer le numéro de dossier
-        String numero = dossierEleveService.genererNumero(form.getNom(), form.getPrenom());
+        // Numéro de dossier — sur une réinscription le formulaire n'envoie pas nom/prénom
+        // (uniquement l'eleveId), on prend donc l'identité déjà recopiée sur le dossier.
+        String numero = dossierEleveService.genererNumero(dossier.getNom(), dossier.getPrenom());
         dossier.setNumero(numero);
 
         DossierEleve saved = dossierEleveService.create(dossier);
