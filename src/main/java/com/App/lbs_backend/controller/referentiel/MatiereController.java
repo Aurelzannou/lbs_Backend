@@ -28,7 +28,7 @@ public class MatiereController extends MasterController<Matiere, MatiereResponse
         entity.setCode(form.getCode());
         entity.setLibelle(form.getLibelle());
         entity.setActif(form.getActif());
-        entity.setEstConduite(form.getEstConduite());
+        // estConduite est déduit automatiquement du code / libellé (voir Matiere#avantEcriture).
 
         Matiere saved = matiereService.create(entity);
         return matiereService.toResponse(saved.getId());
@@ -40,7 +40,7 @@ public class MatiereController extends MasterController<Matiere, MatiereResponse
         entity.setCode(form.getCode());
         entity.setLibelle(form.getLibelle());
         entity.setActif(form.getActif());
-        entity.setEstConduite(form.getEstConduite());
+        // estConduite est déduit automatiquement du code / libellé (voir Matiere#avantEcriture).
 
         matiereService.update(entity);
         return matiereService.toResponse(entity.getId());

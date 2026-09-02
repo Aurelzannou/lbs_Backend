@@ -24,5 +24,17 @@ public class ClasseRequest implements FormRequest {
     private Long profId;
     private Integer capaciteMax;
     private Boolean actif;
+
+    /** Ancien format : liste d'ids de matières sans coefficient (conservé pour compatibilité). */
     private List<Long> matiereIds;
+
+    /** Nouveau format : matière + coefficient, saisis directement sur le formulaire de la classe.
+        Les coefficients sont enregistrés au niveau de la classe (référentiel Coefficient par niveau). */
+    private List<MatiereCoefficientRequest> matieres;
+
+    @Data
+    public static class MatiereCoefficientRequest {
+        private Long matiereId;
+        private Double coefficient;
+    }
 }

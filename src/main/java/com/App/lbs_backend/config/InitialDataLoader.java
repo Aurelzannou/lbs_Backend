@@ -92,7 +92,7 @@ public class InitialDataLoader implements CommandLineRunner {
         createOrUpdateSubMenu("CLASSES", "Classes", "Gestion des classes", "grid-outline", "/referentiel/classes", 6, refGroup, admin);
         createOrUpdateSubMenu("PROFESSEURS", "Professeurs", "Gestion des professeurs", "briefcase-outline", "/referentiel/professeurs", 7, refGroup, admin);
         createOrUpdateSubMenu("MATIERES", "Matières", "Gestion des matières", "book-outline", "/referentiel/matieres", 8, refGroup, admin);
-        createOrUpdateSubMenu("COEFFICIENTS", "Coefficients", "Gestion des coefficients", "calculator-outline", "/referentiel/coefficients", 9, refGroup, admin);
+        // Les coefficients se saisissent désormais directement sur le formulaire de la classe.
         createOrUpdateSubMenu("CAISSES", "Caisses", "Gestion des caisses", "wallet-outline", "/referentiel/caisses", 10, refGroup, admin);
         createOrUpdateSubMenu("CATEGORIES_DEPENSES", "Catégories de dépenses", "Gestion des catégories de dépenses", "folder-outline", "/referentiel/categories-depenses", 11, refGroup, admin);
         createOrUpdateSubMenu("FRAIS_SCOLAIRES", "Frais scolaires", "Gestion des frais scolaires", "cash-outline", "/referentiel/frais-scolaires", 12, refGroup, admin);

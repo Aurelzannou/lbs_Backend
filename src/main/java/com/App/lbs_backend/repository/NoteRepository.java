@@ -47,4 +47,21 @@ public interface NoteRepository extends BaseRepository<Note> {
     Integer findMaxNumero(@Param("eleveIds") List<Long> eleveIds, @Param("classeId") Long classeId,
                           @Param("matiereId") Long matiereId, @Param("periodeId") Long periodeId,
                           @Param("typeEvaluation") String typeEvaluation);
+
+    /** Triplets (classeId, matiereId, periodeId) ayant au moins une note saisie, pour les périodes
+        données — sert au tableau de bord à repérer les matières « en cours de saisie ». */
+    @Query("""
+        SELECT DISTINCT n.classeId, n.matiereId, n.periodeId FROM Note n
+        WHERE n.periodeId IN :periodeIds AND n.valeur IS NOT NULL
+        """)
+    List<Object[]> findTripletsAvecNotes(@Param("periodeIds") java.util.Collection<Long> periodeIds);
+
+    /** Pour une période : (classeId, matiereId, typeEvaluation, plus grand numéro noté) — permet
+        de savoir si le professeur a verrouillé toutes ses colonnes. */
+    @Query("""
+        SELECT n.classeId, n.matiereId, n.typeEvaluation, MAX(n.numero) FROM Note n
+        WHERE n.periodeId = :periodeId AND n.valeur IS NOT NULL
+        GROUP BY n.classeId, n.matiereId, n.typeEvaluation
+        """)
+    List<Object[]> findMaxNumeroParMatiere(@Param("periodeId") Long periodeId);
 }
