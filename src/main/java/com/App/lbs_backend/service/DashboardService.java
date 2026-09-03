@@ -227,27 +227,15 @@ public class DashboardService {
         List<ProgressionSaisieNote> progPeriode = progressions.stream()
                 .filter(p -> periode.getId().equals(p.getPeriodeId()))
                 .toList();
-        Map<String, ProgressionSaisieNote> progParCleMat = progPeriode.stream()
-                .collect(Collectors.toMap(p -> p.getClasseId() + "_" + p.getMatiereId(), p -> p, (a, b) -> a));
 
         Set<String> soumisesOuValidees = progPeriode.stream()
                 .filter(p -> p.getEtapeId() != null && etapesSoumises.contains(p.getEtapeId()))
                 .map(p -> p.getClasseId() + "_" + p.getMatiereId())
                 .collect(Collectors.toSet());
 
-        // max numéro noté par (classe, matière, type) pour détecter « tout verrouillé »
-        Map<String, Integer> maxInterro = new java.util.HashMap<>();
-        Map<String, Integer> maxDevoir = new java.util.HashMap<>();
-        for (Object[] r : noteRepository.findMaxNumeroParMatiere(periode.getId())) {
-            String cle = r[0] + "_" + r[1];
-            int max = r[3] != null ? ((Number) r[3]).intValue() : 0;
-            if ("INTERROGATION".equals(r[2])) maxInterro.merge(cle, max, Math::max);
-            else if ("DEVOIR".equals(r[2])) maxDevoir.merge(cle, max, Math::max);
-        }
-
         List<MatiereATraiter> matieresATraiter = new java.util.ArrayList<>();
 
-        // 1) Soumises par les profs → à valider
+        // 1) Envoyées par les profs → à valider par l'administration
         for (ProgressionSaisieNote p : progPeriode) {
             if (p.getEtapeId() != null && etapeSoumiseId != null && etapeSoumiseId.equals(p.getEtapeId())) {
                 matieresATraiter.add(new MatiereATraiter(
@@ -257,23 +245,16 @@ public class DashboardService {
             }
         }
 
-        // 2) Notes présentes mais pas soumises → en cours de saisie
+        // 2) Notes présentes mais pas encore envoyées → le professeur est en cours de saisie
         Set<String> vues = new java.util.HashSet<>();
         for (Object[] triplet : noteRepository.findTripletsAvecNotes(Set.of(periode.getId()))) {
             String cle = triplet[0] + "_" + triplet[1];
             if (soumisesOuValidees.contains(cle) || !vues.add(cle)) continue;
 
-            ProgressionSaisieNote p = progParCleMat.get(cle);
-            int vInt = p != null && p.getInterrogationsVerroueesJusqua() != null ? p.getInterrogationsVerroueesJusqua() : 0;
-            int vDev = p != null && p.getDevoirsVerrouesJusqua() != null ? p.getDevoirsVerrouesJusqua() : 0;
-            int mInt = maxInterro.getOrDefault(cle, 0);
-            int mDev = maxDevoir.getOrDefault(cle, 0);
-            boolean toutVerrouille = mInt > 0 && vInt >= mInt && (mDev == 0 || vDev >= mDev);
-
             matieresATraiter.add(new MatiereATraiter(
                     classeLibelle.getOrDefault((Long) triplet[0], "—"),
                     matiereLibelle.getOrDefault((Long) triplet[1], "—"),
-                    "EN_SAISIE", toutVerrouille));
+                    "EN_SAISIE", false));
         }
 
         matieresATraiter.sort(Comparator

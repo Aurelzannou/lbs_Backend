@@ -61,9 +61,10 @@ public record DashboardStatsResponse(
 
     /**
      * Une matière qui demande une action, sur la période en cours.
-     * @param etat "A_VALIDER" (soumise par le prof) ou "EN_SAISIE" (notes présentes, pas soumise)
-     * @param pretePourSoumission true si le prof a verrouillé toutes les colonnes sans soumettre
-     *                            (état EN_SAISIE) — à relancer.
+     * @param etat "A_VALIDER" (envoyée par le prof à l'administration) ou "EN_SAISIE"
+     *             (notes présentes, le prof n'a pas encore envoyé)
+     * @param pretePourSoumission conservé pour compatibilité ; toujours false depuis la
+     *                            simplification du scénario (plus de verrouillage colonne par colonne)
      */
     public record MatiereATraiter(String classeLibelle, String matiereLibelle,
                                   String etat, boolean pretePourSoumission) {}

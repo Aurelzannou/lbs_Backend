@@ -14,6 +14,10 @@ public class FeuilleSaisieNotesResponse {
     private String periodeLibelle;
     /** true si le bulletin de cette classe/période est déjà validé — la saisie est alors bloquée. */
     private boolean valide;
+    /** true si un professeur est assigné à cette classe + matière (sinon la saisie relève de
+        l'administration, ex. la conduite). Sert à l'écran admin : tant que le professeur n'a pas
+        envoyé la matière, l'admin ne doit pas la modifier. */
+    private boolean professeurAssigne;
     /** Nombre de colonnes "Interrogation" à afficher (le professeur peut en ajouter d'autres). */
     private int nombreInterrogations;
     /** true pour la matière "Conduite" — sa moyenne n'est jamais divisée par 3 (une seule valeur

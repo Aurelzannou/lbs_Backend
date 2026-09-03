@@ -64,4 +64,16 @@ public interface NoteRepository extends BaseRepository<Note> {
         GROUP BY n.classeId, n.matiereId, n.typeEvaluation
         """)
     List<Object[]> findMaxNumeroParMatiere(@Param("periodeId") Long periodeId);
+
+    /** (typeEvaluation, plus grand numéro noté) pour une classe/matière/période — sert à figer
+        les colonnes au moment où l'enseignant envoie sa matière à l'administration. */
+    @Query("""
+        SELECT n.typeEvaluation, MAX(n.numero) FROM Note n
+        WHERE n.classeId = :classeId AND n.matiereId = :matiereId AND n.periodeId = :periodeId
+          AND n.valeur IS NOT NULL
+        GROUP BY n.typeEvaluation
+        """)
+    List<Object[]> findMaxNumeroParType(@Param("classeId") Long classeId,
+                                       @Param("matiereId") Long matiereId,
+                                       @Param("periodeId") Long periodeId);
 }

@@ -122,7 +122,8 @@ public class NoteController {
             return ResponseEntity.status(403).body(ApiResponse.apiError("Réservé aux professeurs", httpRequest.getRequestURI()));
         }
         ProgressionSaisieNoteResponse dto = progressionSaisieNoteService.soumettre(
-                form.getClasseId(), form.getMatiereId(), form.getPeriodeId(), professeur.getId());
+                form.getClasseId(), form.getMatiereId(), form.getPeriodeId(), professeur.getId(),
+                form.getInterrogationsJusqua(), form.getDevoirsJusqua());
         return ResponseEntity.ok(ApiResponse.apiSuccess("Matière soumise pour validation", dto, httpRequest.getRequestURI()));
     }
 
@@ -133,6 +134,38 @@ public class NoteController {
         ProgressionSaisieNoteResponse dto = progressionSaisieNoteService.valider(
                 form.getClasseId(), form.getMatiereId(), form.getPeriodeId(), email);
         return ResponseEntity.ok(ApiResponse.apiSuccess("Matière validée", dto, httpRequest.getRequestURI()));
+    }
+
+    /** Réservé à l'admin — approuve une sélection de colonnes reçues (interrogationsJusqua /
+        devoirsJusqua). Quand tout ce qui a été envoyé est approuvé, la matière passe VALIDEE. */
+    @PutMapping("/progression/approuver")
+    public ResponseEntity<?> approuverColonnes(@RequestBody ProgressionMatiereRequest form, @AuthenticationPrincipal Jwt jwt) {
+        ProgressionSaisieNoteResponse dto = progressionSaisieNoteService.approuverColonnes(
+                form.getClasseId(), form.getMatiereId(), form.getPeriodeId(),
+                form.getInterrogationsJusqua(), form.getDevoirsJusqua(), extraireEmail(jwt));
+        return ResponseEntity.ok(ApiResponse.apiSuccess("Colonnes approuvées", dto, httpRequest.getRequestURI()));
+    }
+
+    /** Réservé à l'admin côté frontend — renvoie une matière reçue à l'enseignant (SOUMISE → BROUILLON). */
+    @PutMapping("/progression/renvoyer")
+    public ResponseEntity<?> renvoyerAuProfesseur(@RequestBody ProgressionMatiereRequest form, @AuthenticationPrincipal Jwt jwt) {
+        ProgressionSaisieNoteResponse dto = progressionSaisieNoteService.renvoyerAuProfesseur(
+                form.getClasseId(), form.getMatiereId(), form.getPeriodeId(), extraireEmail(jwt));
+        return ResponseEntity.ok(ApiResponse.apiSuccess("Matière renvoyée à l'enseignant", dto, httpRequest.getRequestURI()));
+    }
+
+    /** Le professeur connecté reprend une matière qu'il a envoyée (SOUMISE → BROUILLON) — pour
+        ajouter une interrogation, tant que l'administration ne l'a pas validée. */
+    @PutMapping("/progression/reprendre")
+    public ResponseEntity<?> reprendre(@RequestBody ProgressionMatiereRequest form, @AuthenticationPrincipal Jwt jwt) {
+        String email = extraireEmail(jwt);
+        Professeur professeur = email != null ? professeurRepository.findByEmail(email).orElse(null) : null;
+        if (professeur == null) {
+            return ResponseEntity.status(403).body(ApiResponse.apiError("Réservé aux professeurs", httpRequest.getRequestURI()));
+        }
+        ProgressionSaisieNoteResponse dto = progressionSaisieNoteService.reprendre(
+                form.getClasseId(), form.getMatiereId(), form.getPeriodeId(), professeur.getId());
+        return ResponseEntity.ok(ApiResponse.apiSuccess("Saisie reprise", dto, httpRequest.getRequestURI()));
     }
 
     /** Réservé à l'admin côté frontend — annule la validation (repasse à SOUMISE). */

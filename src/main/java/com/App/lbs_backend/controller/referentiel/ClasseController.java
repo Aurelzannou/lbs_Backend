@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -58,16 +59,19 @@ public class ClasseController extends MasterController<Classe, ClasseResponse, C
         entity.setMatiereIds(matiereIdsDepuisForm(form));
     }
 
-    /** Liste des matières de la classe : priorité au nouveau format {matière, coefficient}. */
+    /** Liste des matières de la classe : priorité au nouveau format {matière, coefficient}.
+        Toujours renvoyer une liste MUTABLE — Hibernate remplace le contenu de la collection
+        {@code @ElementCollection} en place lors du flush (une liste immuable lève
+        UnsupportedOperationException au moment de l'enregistrement). */
     private List<Long> matiereIdsDepuisForm(ClasseRequest form) {
         if (form.getMatieres() != null && !form.getMatieres().isEmpty()) {
             return form.getMatieres().stream()
                     .map(MatiereCoefficientRequest::getMatiereId)
                     .filter(Objects::nonNull)
                     .distinct()
-                    .toList();
+                    .collect(Collectors.toCollection(ArrayList::new));
         }
-        return form.getMatiereIds() != null ? form.getMatiereIds() : List.of();
+        return form.getMatiereIds() != null ? new ArrayList<>(form.getMatiereIds()) : new ArrayList<>();
     }
 
     private Map<Long, Double> coefficientsDepuisForm(ClasseRequest form) {

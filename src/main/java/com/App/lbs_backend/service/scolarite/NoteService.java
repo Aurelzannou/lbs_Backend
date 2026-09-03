@@ -53,6 +53,7 @@ public class NoteService {
     private final ProgressionSaisieNoteRepository progressionSaisieNoteRepository;
     private final EtapeRepository etapeRepository;
     private final PresenceEleveRepository presenceEleveRepository;
+    private final ProgressionSaisieNoteService progressionSaisieNoteService;
 
     /** Base de la suggestion automatique de conduite : 18, moins 1 point par absence enregistrée
         sur la période (jamais persistée tant que l'admin n'a pas enregistré la feuille). */
@@ -159,6 +160,9 @@ public class NoteService {
         response.setValide(valide);
         response.setNombreInterrogations(nombreInterrogations);
         response.setEstConduite(estConduite);
+        response.setProfesseurAssigne(professeurRepository.findAll().stream().anyMatch(p ->
+                p.getClasseIds() != null && p.getClasseIds().contains(classeId)
+                        && p.getMatiereIds() != null && p.getMatiereIds().contains(matiereId)));
 
         int nbInterro = nombreInterrogations;
         response.setEleves(eleves.stream().map(el -> {
@@ -273,6 +277,10 @@ public class NoteService {
         // ni sauter directement à une colonne suivante sans avoir d'abord verrouillé la précédente.
         verifierColonnesModifiables(form);
         ecrireNotes(form);
+        // Modifier / compléter une matière déjà envoyée annule l'envoi : elle repasse en brouillon
+        // et l'enseignant devra la renvoyer une fois terminé.
+        progressionSaisieNoteService.reprendreSiEnvoyee(form.getClasseId(), form.getMatiereId(), form.getPeriodeId(),
+                professeur.getEmail() + " (modification après envoi)");
     }
 
     /** Service de saisie directe admin (écran "Saisie des notes") : mêmes restrictions de période
@@ -346,9 +354,12 @@ public class NoteService {
         if (progression == null || progression.getEtapeId() == null) return;
         String etape = etapeRepository.findById(progression.getEtapeId()).map(Etape::getCode).orElse(null);
         if (form.getProfesseurId() != null) {
-            if ("SOUMISE".equals(etape) || "VALIDEE".equals(etape)) {
+            // Scénario simplifié : l'enseignant garde la main tant que ce n'est pas VALIDÉ. S'il
+            // modifie une matière déjà envoyée (SOUMISE), l'envoi est simplement annulé
+            // (voir enregistrerFeuilleProfesseur → reprendreSiEnvoyee) et il devra la renvoyer.
+            if ("VALIDEE".equals(etape)) {
                 throw new IllegalArgumentException(
-                        "Cette matière a déjà été soumise pour validation, vous ne pouvez plus la modifier.");
+                        "Cette matière est validée par l'administration, vous ne pouvez plus la modifier.");
             }
         } else if ("VALIDEE".equals(etape)) {
             throw new IllegalArgumentException(
@@ -422,33 +433,15 @@ public class NoteService {
 
     private void verifierColonneModifiable(Long eleveId, Long classeId, Long matiereId, Long periodeId, String type,
                                             int numero, Double valeurSoumise, int verroueesJusqua, int valideesJusqua) {
-        // Une colonne encore vide (valeur null) n'est pas une tentative d'écriture — seul un
-        // brouillon avec une vraie valeur doit être bloqué s'il dépasse la prochaine colonne
-        // autorisée. Sans ce garde-fou, "Enregistrer" échouait dès qu'un devoir/interrogation futur
-        // restait simplement non renseigné (aucune valeur à protéger, donc rien à refuser).
-        //
-        // Ces deux gardes ne doivent bloquer qu'une VRAIE tentative de saisie (valeur différente de
-        // celle déjà en base) — le formulaire renvoie systématiquement l'état complet de la feuille,
-        // colonnes non modifiables comprises ; sans cette comparaison, une valeur résiduelle déjà
-        // enregistrée dans une colonne future non verrouillée bloquait "Enregistrer"/"Terminer" sur
-        // les colonnes précédentes, alors qu'aucune nouvelle donnée n'était réellement soumise.
-        if (valeurSoumise != null && numero > verroueesJusqua + 1 && aChange(eleveId, classeId, matiereId, periodeId, type, numero, valeurSoumise)) {
-            String label = INTERROGATION.equals(type) ? "l'interrogation " + numero : "le devoir " + numero;
-            throw new IllegalArgumentException(
-                    "Vous devez d'abord terminer la colonne précédente avant de renseigner " + label + ".");
-        }
-        // La colonne suivante (celle qui deviendrait la prochaine à verrouiller) reste totalement
-        // fermée à la saisie tant que la précédente n'est pas validée par l'administration — pas
-        // seulement au moment de cliquer "Terminer".
-        if (valeurSoumise != null && numero == verroueesJusqua + 1 && numero > 1 && valideesJusqua < numero - 1
-                && aChange(eleveId, classeId, matiereId, periodeId, type, numero, valeurSoumise)) {
-            String label = INTERROGATION.equals(type) ? "l'interrogation " + numero : "le devoir " + numero;
-            throw new IllegalArgumentException(
-                    "La colonne précédente doit d'abord être validée par l'administration avant de renseigner " + label + ".");
-        }
+        // Scénario simplifié : une colonne est modifiable tant qu'elle n'a pas été figée par un
+        // envoi à l'administration. Les colonnes 1..verroueesJusqua sont figées ; les suivantes,
+        // que l'enseignant vient d'ajouter, restent librement saisissables (dans n'importe quel
+        // ordre). Seule une VRAIE tentative de modification d'une colonne figée est refusée — le
+        // formulaire renvoie toujours l'état complet de la feuille, colonnes figées comprises.
         if (numero <= verroueesJusqua && aChange(eleveId, classeId, matiereId, periodeId, type, numero, valeurSoumise)) {
             String label = INTERROGATION.equals(type) ? "L'interrogation " + numero : "Le devoir " + numero;
-            throw new IllegalArgumentException(label + " est verrouillé(e) et ne peut plus être modifié(e).");
+            throw new IllegalArgumentException(
+                    label + " a déjà été envoyé(e) à l'administration et ne peut plus être modifié(e).");
         }
     }
 

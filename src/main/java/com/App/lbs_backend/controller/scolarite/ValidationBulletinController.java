@@ -55,8 +55,9 @@ public class ValidationBulletinController {
     }
 
     @PutMapping("/{classeId}/{periodeId}/devalider")
-    public ResponseEntity<?> devalider(@PathVariable Long classeId, @PathVariable Long periodeId) {
-        ValidationBulletinResponse resultat = validationBulletinService.devalider(classeId, periodeId);
+    public ResponseEntity<?> devalider(
+            @PathVariable Long classeId, @PathVariable Long periodeId, @AuthenticationPrincipal Jwt jwt) {
+        ValidationBulletinResponse resultat = validationBulletinService.devalider(classeId, periodeId, extraireEmail(jwt));
         return ResponseEntity.ok(ApiResponse.apiSuccess("Validation annulée", resultat, httpRequest.getRequestURI()));
     }
 

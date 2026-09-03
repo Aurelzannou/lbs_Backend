@@ -12,4 +12,9 @@ public class ProgressionMatiereRequest implements FormRequest {
     private Long matiereId;
     @NotNull
     private Long periodeId;
+
+    /** Envoi sélectif : figer les interrogations / devoirs jusqu'à ce numéro inclus.
+        null = figer toutes les colonnes qui portent une note. */
+    private Integer interrogationsJusqua;
+    private Integer devoirsJusqua;
 }

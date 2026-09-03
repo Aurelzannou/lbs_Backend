@@ -34,6 +34,7 @@ public class ProgressionSaisieNoteService {
     private final EtapeRepository etapeRepository;
     private final ProgressionEtapeHistoriqueRepository historiqueRepository;
     private final ClasseRepository classeRepository;
+    private final com.App.lbs_backend.repository.NoteRepository noteRepository;
 
     public static final String BROUILLON = "BROUILLON";
     public static final String SOUMISE = "SOUMISE";
@@ -77,6 +78,15 @@ public class ProgressionSaisieNoteService {
     public boolean soumettreAutomatiquementSiBrouillon(Long classeId, Long matiereId, Long periodeId) {
         ProgressionSaisieNote p = obtenirOuCreer(classeId, matiereId, periodeId);
         if (!BROUILLON.equals(codeEtape(p))) return false;
+        // Fin de période : on fige tout ce qui a été saisi.
+        for (Object[] r : noteRepository.findMaxNumeroParType(classeId, matiereId, periodeId)) {
+            int max = r[1] != null ? ((Number) r[1]).intValue() : 0;
+            if ("INTERROGATION".equals(r[0])) {
+                p.setInterrogationsVerroueesJusqua(Math.max(nz(p.getInterrogationsVerroueesJusqua()), max));
+            } else if ("DEVOIR".equals(r[0])) {
+                p.setDevoirsVerrouesJusqua(Math.max(nz(p.getDevoirsVerrouesJusqua()), max));
+            }
+        }
         p.setEtapeId(etapeIdPour(SOUMISE));
         p.setDateSoumission(LocalDateTime.now());
         progressionRepository.save(p);
@@ -84,32 +94,87 @@ public class ProgressionSaisieNoteService {
         return true;
     }
 
-    /** Le professeur soumet la matière entière pour validation admin — nécessite que toutes les
-        colonnes soient déjà verrouillées (au moins 1 interrogation, les 2 devoirs). */
+    /** L'enseignant envoie sa matière à l'administration. Les colonnes envoyées sont **figées**
+        (grisées de son côté) ; il peut toujours en ajouter de nouvelles ensuite, les remplir puis
+        renvoyer (l'envoi couvre alors aussi ces colonnes). Impossible si déjà VALIDÉE.
+
+        @param interrogationsJusqua / devoirsJusqua : envoi sélectif (l'enseignant choisit jusqu'où
+               figer). null → on fige toutes les colonnes qui portent une note. Ne peut jamais
+               reculer en-dessous de ce qui est déjà figé, ni dépasser ce qui est réellement saisi. */
     @Transactional
-    public ProgressionSaisieNoteResponse soumettre(Long classeId, Long matiereId, Long periodeId, Long profId) {
+    public ProgressionSaisieNoteResponse soumettre(Long classeId, Long matiereId, Long periodeId, Long profId,
+                                                   Integer interrogationsJusqua, Integer devoirsJusqua) {
         Professeur professeur = verifierAutorisationProfesseur(profId, classeId, matiereId);
         ProgressionSaisieNote p = obtenirOuCreer(classeId, matiereId, periodeId);
-        if (!BROUILLON.equals(codeEtape(p))) {
-            throw new IllegalArgumentException("Cette matière a déjà été soumise pour validation.");
+        if (VALIDEE.equals(codeEtape(p))) {
+            throw new IllegalArgumentException("Cette matière est déjà validée par l'administration.");
         }
-        int interroVerrouees = p.getInterrogationsVerroueesJusqua() != null ? p.getInterrogationsVerroueesJusqua() : 0;
-        int devoirsVerroues = p.getDevoirsVerrouesJusqua() != null ? p.getDevoirsVerrouesJusqua() : 0;
-        if (interroVerrouees < 1 || devoirsVerroues < 2) {
-            throw new IllegalArgumentException(
-                    "Vous devez d'abord terminer toutes les colonnes (interrogations et devoirs) avant de soumettre.");
+        // Plus grand numéro de colonne réellement noté, par type.
+        int maxInterro = 0, maxDevoir = 0;
+        for (Object[] r : noteRepository.findMaxNumeroParType(classeId, matiereId, periodeId)) {
+            int max = r[1] != null ? ((Number) r[1]).intValue() : 0;
+            if ("INTERROGATION".equals(r[0])) maxInterro = max;
+            else if ("DEVOIR".equals(r[0])) maxDevoir = max;
         }
-        int interroValidees = p.getInterrogationsValideesJusqua() != null ? p.getInterrogationsValideesJusqua() : 0;
-        int devoirsValidees = p.getDevoirsValideesJusqua() != null ? p.getDevoirsValideesJusqua() : 0;
-        if (interroValidees < interroVerrouees || devoirsValidees < devoirsVerroues) {
-            throw new IllegalArgumentException(
-                    "Toutes les colonnes doivent d'abord être validées par l'administration avant de soumettre la matière.");
+        int cibleInterro = interrogationsJusqua != null ? Math.min(interrogationsJusqua, maxInterro) : maxInterro;
+        int cibleDevoir = devoirsJusqua != null ? Math.min(devoirsJusqua, maxDevoir) : maxDevoir;
+
+        int nouvInterro = Math.max(nz(p.getInterrogationsVerroueesJusqua()), cibleInterro);
+        int nouvDevoir = Math.max(nz(p.getDevoirsVerrouesJusqua()), cibleDevoir);
+        if (nouvInterro == nz(p.getInterrogationsVerroueesJusqua())
+                && nouvDevoir == nz(p.getDevoirsVerrouesJusqua())
+                && SOUMISE.equals(codeEtape(p))) {
+            throw new IllegalArgumentException("Aucune nouvelle colonne à envoyer.");
         }
+        p.setInterrogationsVerroueesJusqua(nouvInterro);
+        p.setDevoirsVerrouesJusqua(nouvDevoir);
         p.setEtapeId(etapeIdPour(SOUMISE));
         p.setDateSoumission(LocalDateTime.now());
         progressionRepository.save(p);
         enregistrerHistorique(p, SOUMISE, professeur.getEmail());
         return getProgression(classeId, matiereId, periodeId);
+    }
+
+    private int nz(Integer v) {
+        return v != null ? v : 0;
+    }
+
+    /** L'administration valide en bloc toutes les matières d'une classe (déclenché depuis l'écran
+        "Validation des bulletins" en même temps que {@code ValidationBulletin}). Chaque matière
+        passe à VALIDEE, quel que soit son état de départ (une matière jamais renseignée est
+        ignorée : pas de progression, rien à valider). */
+    @Transactional
+    public void validerToutesMatieresClasse(Long classeId, Long periodeId, String adminEmail) {
+        Classe classe = classeRepository.findById(classeId).orElse(null);
+        if (classe == null || classe.getMatiereIds() == null) return;
+        for (Long matiereId : classe.getMatiereIds()) {
+            ProgressionSaisieNote p = progressionRepository
+                    .findByClasseIdAndMatiereIdAndPeriodeId(classeId, matiereId, periodeId).orElse(null);
+            if (p == null || VALIDEE.equals(codeEtape(p))) continue;
+            p.setEtapeId(etapeIdPour(VALIDEE));
+            p.setDateValidation(LocalDateTime.now());
+            p.setValideParEmail(adminEmail);
+            progressionRepository.save(p);
+            enregistrerHistorique(p, VALIDEE, adminEmail);
+        }
+    }
+
+    /** Inverse de {@link #validerToutesMatieresClasse} — repasse les matières VALIDEE à SOUMISE
+        (la saisie admin reste possible ; le professeur, lui, ne récupère pas la main). */
+    @Transactional
+    public void devaliderToutesMatieresClasse(Long classeId, Long periodeId, String adminEmail) {
+        Classe classe = classeRepository.findById(classeId).orElse(null);
+        if (classe == null || classe.getMatiereIds() == null) return;
+        for (Long matiereId : classe.getMatiereIds()) {
+            ProgressionSaisieNote p = progressionRepository
+                    .findByClasseIdAndMatiereIdAndPeriodeId(classeId, matiereId, periodeId).orElse(null);
+            if (p == null || !VALIDEE.equals(codeEtape(p))) continue;
+            p.setEtapeId(etapeIdPour(SOUMISE));
+            p.setDateValidation(null);
+            p.setValideParEmail(null);
+            progressionRepository.save(p);
+            enregistrerHistorique(p, SOUMISE, adminEmail);
+        }
     }
 
     /** L'admin valide la matière soumise — plus personne ne peut modifier tant qu'elle n'est pas
@@ -142,6 +207,94 @@ public class ProgressionSaisieNoteService {
         progressionRepository.save(p);
         enregistrerHistorique(p, SOUMISE, adminEmail);
         return getProgression(classeId, matiereId, periodeId);
+    }
+
+    /** L'administration approuve certaines colonnes reçues (validées jusqu'à interroJusqua /
+        devoirsJusqua). Les colonnes approuvées deviennent figées / grisées côté admin aussi.
+        Quand toutes les colonnes envoyées sont approuvées, la matière passe VALIDEE.
+        null = approuver tout ce qui a été envoyé. Ne peut jamais reculer. */
+    @Transactional
+    public ProgressionSaisieNoteResponse approuverColonnes(Long classeId, Long matiereId, Long periodeId,
+                                                          Integer interroJusqua, Integer devoirsJusqua, String adminEmail) {
+        ProgressionSaisieNote p = obtenirOuCreer(classeId, matiereId, periodeId);
+        if (!SOUMISE.equals(codeEtape(p))) {
+            throw new IllegalArgumentException("Cette matière n'est pas en attente d'approbation.");
+        }
+        int verrInterro = nz(p.getInterrogationsVerroueesJusqua());
+        int verrDevoir = nz(p.getDevoirsVerrouesJusqua());
+        int cibleInterro = interroJusqua != null ? Math.min(interroJusqua, verrInterro) : verrInterro;
+        int cibleDevoir = devoirsJusqua != null ? Math.min(devoirsJusqua, verrDevoir) : verrDevoir;
+
+        int nouvInterro = Math.max(nz(p.getInterrogationsValideesJusqua()), cibleInterro);
+        int nouvDevoir = Math.max(nz(p.getDevoirsValideesJusqua()), cibleDevoir);
+        if (nouvInterro == nz(p.getInterrogationsValideesJusqua())
+                && nouvDevoir == nz(p.getDevoirsValideesJusqua())) {
+            throw new IllegalArgumentException("Aucune nouvelle colonne à approuver.");
+        }
+        p.setInterrogationsValideesJusqua(nouvInterro);
+        p.setDevoirsValideesJusqua(nouvDevoir);
+
+        boolean toutApprouve = nouvInterro >= verrInterro && nouvDevoir >= verrDevoir;
+        if (toutApprouve) {
+            p.setEtapeId(etapeIdPour(VALIDEE));
+            p.setDateValidation(LocalDateTime.now());
+            p.setValideParEmail(adminEmail);
+            progressionRepository.save(p);
+            enregistrerHistorique(p, VALIDEE, adminEmail);
+        } else {
+            progressionRepository.save(p);
+        }
+        return getProgression(classeId, matiereId, periodeId);
+    }
+
+    /** L'administration renvoie une matière (reçue OU approuvée) à l'enseignant → BROUILLON : il
+        récupère la main pour corriger / ajouter une interrogation, puis la renvoie. */
+    @Transactional
+    public ProgressionSaisieNoteResponse renvoyerAuProfesseur(Long classeId, Long matiereId, Long periodeId, String adminEmail) {
+        ProgressionSaisieNote p = obtenirOuCreer(classeId, matiereId, periodeId);
+        remettreEnBrouillon(p, adminEmail != null ? adminEmail + " (renvoi à l'enseignant)" : "ADMIN (renvoi)");
+        return getProgression(classeId, matiereId, periodeId);
+    }
+
+    /** L'enseignant reprend lui-même une matière qu'il a envoyée trop tôt (SOUMISE → BROUILLON) —
+        typiquement pour ajouter une interrogation supplémentaire — tant que l'administration ne l'a
+        pas encore validée. */
+    @Transactional
+    public ProgressionSaisieNoteResponse reprendre(Long classeId, Long matiereId, Long periodeId, Long profId) {
+        Professeur professeur = verifierAutorisationProfesseur(profId, classeId, matiereId);
+        ProgressionSaisieNote p = obtenirOuCreer(classeId, matiereId, periodeId);
+        remettreEnBrouillon(p, professeur.getEmail() + " (reprise de la saisie)");
+        return getProgression(classeId, matiereId, periodeId);
+    }
+
+    /** Repasse silencieusement une matière SOUMISE en BROUILLON — appelé quand l'enseignant
+        remodifie/ajoute une interrogation après avoir envoyé (tant que ce n'est pas validé).
+        No-op si la matière n'est pas au stade SOUMISE. */
+    @Transactional
+    public void reprendreSiEnvoyee(Long classeId, Long matiereId, Long periodeId, String auteur) {
+        ProgressionSaisieNote p = progressionRepository
+                .findByClasseIdAndMatiereIdAndPeriodeId(classeId, matiereId, periodeId).orElse(null);
+        if (p == null || !SOUMISE.equals(codeEtape(p))) return;
+        p.setEtapeId(etapeIdPour(BROUILLON));
+        p.setDateSoumission(null);
+        progressionRepository.save(p);
+        enregistrerHistorique(p, BROUILLON, auteur);
+    }
+
+    private void remettreEnBrouillon(ProgressionSaisieNote p, String auteur) {
+        if (BROUILLON.equals(codeEtape(p))) {
+            throw new IllegalArgumentException("Cette matière n'a pas été envoyée.");
+        }
+        p.setEtapeId(etapeIdPour(BROUILLON));
+        p.setDateSoumission(null);
+        p.setDateValidation(null);
+        p.setValideParEmail(null);
+        p.setInterrogationsVerroueesJusqua(0);
+        p.setDevoirsVerrouesJusqua(0);
+        p.setInterrogationsValideesJusqua(0);
+        p.setDevoirsValideesJusqua(0);
+        progressionRepository.save(p);
+        enregistrerHistorique(p, BROUILLON, auteur);
     }
 
     /** Liste chronologique des transitions d'étape de cette matière — audit complet, jamais purgé. */

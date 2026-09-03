@@ -43,6 +43,7 @@ public class ValidationBulletinService {
     private final BulletinService bulletinService;
     private final MinioStorageService minioStorageService;
     private final NoteService noteService;
+    private final ProgressionSaisieNoteService progressionSaisieNoteService;
 
     /** Service de correction des notes propre à cet écran — voir
         {@link NoteService#enregistrerFeuilleCorrection}. Aucune restriction de période/année :
@@ -74,6 +75,15 @@ public class ValidationBulletinService {
                 dto.setDateValidation(existant.getDateValidation());
                 dto.setValideParEmail(existant.getValideParEmail());
             }
+
+            List<Long> matiereIds = classe.getMatiereIds() != null ? classe.getMatiereIds() : List.of();
+            dto.setMatieresTotal(matiereIds.size());
+            // "reçues" = approuvées par l'administration (étape VALIDEE) — c'est le prérequis pour
+            // valider le bulletin de la classe.
+            long approuvees = progressionSaisieNoteService.getProgressionsClasse(classe.getId(), periodeId).stream()
+                    .filter(p -> "VALIDEE".equals(p.getEtape()))
+                    .count();
+            dto.setMatieresRecues((int) approuvees);
             return dto;
         }).collect(Collectors.toList());
     }
@@ -107,6 +117,8 @@ public class ValidationBulletinService {
             vb.setCode("VAB-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT));
         }
         validationBulletinRepository.save(vb);
+        // Valider la classe = valider toutes ses matières (cohérence tableau de bord / écran notes).
+        progressionSaisieNoteService.validerToutesMatieresClasse(classeId, periodeId, email);
         archiverBulletinsClasse(classeId, periodeId);
         return getStatut(classeId, periodeId);
     }
@@ -151,11 +163,12 @@ public class ValidationBulletinService {
         }
     }
 
-    public ValidationBulletinResponse devalider(Long classeId, Long periodeId) {
+    public ValidationBulletinResponse devalider(Long classeId, Long periodeId, String email) {
         validationBulletinRepository.findByClasseIdAndPeriodeId(classeId, periodeId).ifPresent(vb -> {
             vb.setValide(false);
             validationBulletinRepository.save(vb);
         });
+        progressionSaisieNoteService.devaliderToutesMatieresClasse(classeId, periodeId, email);
         return getStatut(classeId, periodeId);
     }
 }
