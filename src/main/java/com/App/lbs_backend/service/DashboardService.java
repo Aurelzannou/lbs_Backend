@@ -57,7 +57,9 @@ public class DashboardService {
         LocalDate debutAnnee = anneeActive != null ? anneeActive.getDateDebut() : null;
         LocalDate finAnnee = anneeActive != null ? anneeActive.getDateFin() : null;
 
-        long nbProfesseurs = professeurRepository.count();
+        long nbProfesseurs = professeurRepository.findAll().stream()
+                .filter(p -> !Boolean.FALSE.equals(p.getActif()))
+                .count();
         long nbClasses = classeRepository.count();
 
         Map<Long, String> statutCode = statutInscriptionRepository.findAll().stream()
