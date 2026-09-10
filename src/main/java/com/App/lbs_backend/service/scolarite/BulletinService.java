@@ -52,6 +52,7 @@ public class BulletinService {
     private final BulletinMentionRepository bulletinMentionRepository;
     private final ValidationBulletinRepository validationBulletinRepository;
     private final TuteurRepository tuteurRepository;
+    private final TuteurLienService tuteurLienService;
     private final ReportService reportService;
 
     /** Génère le PDF d'un bulletin (un seul élève) via JasperReports. */
@@ -126,7 +127,7 @@ public class BulletinService {
                 .orElseThrow(() -> new IllegalArgumentException("Tuteur introuvable"));
         Eleve eleve = eleveRepository.findById(eleveId)
                 .orElseThrow(() -> new IllegalArgumentException("Élève introuvable"));
-        if (!tuteur.getId().equals(eleve.getTuteurId())) {
+        if (!tuteurLienService.eleveIdsDuTuteur(tuteur.getId()).contains(eleveId)) {
             throw new IllegalArgumentException("Accès refusé.");
         }
         boolean valide = validationBulletinRepository.findByClasseIdAndPeriodeId(eleve.getClasseId(), periodeId)

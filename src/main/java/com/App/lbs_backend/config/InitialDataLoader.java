@@ -107,6 +107,7 @@ public class InitialDataLoader implements CommandLineRunner {
         createOrUpdateSubMenu("ELEVES", "Élèves", "Gestion des élèves", "people-outline", "/scolarite/eleves", 1, scolariteGroup, admin);
         createOrUpdateSubMenu("INSCRIPTIONS", "Inscriptions", "Gestion des dossiers d'inscription", "file-text-outline", "/scolarite/inscriptions", 2, scolariteGroup, admin);
         createOrUpdateSubMenu("VALIDATIONS", "Validations", "Validation des dossiers d'inscription", "checkmark-circle-outline", "/scolarite/validations", 3, scolariteGroup, admin);
+        createOrUpdateSubMenu("PARENTS_ELEVES", "Parents & élèves", "Associer les parents aux élèves", "people-outline", "/scolarite/parents-eleves", 4, scolariteGroup, admin);
 
         // Gestion des emplois du temps (menu autonome, pas un sous-menu)
         createOrUpdateMenu("EMPLOI_DU_TEMPS", "Gestion des emplois du temps", "Planification des cours par classe", "clock-outline", "/emploi-du-temps", 6, List.of(admin));

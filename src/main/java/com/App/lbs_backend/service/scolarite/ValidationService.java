@@ -39,6 +39,7 @@ public class ValidationService {
     private final StatutInscriptionRepository statutRepository;
     private final EleveRepository             eleveRepository;
     private final TuteurRepository            tuteurRepository;
+    private final TuteurLienService           tuteurLienService;
     private final RabbitTemplate              rabbitTemplate;
     private final HistoriqueService           historiqueService;
 
@@ -84,7 +85,10 @@ public class ValidationService {
         return tuteurRepository.findByEmail(email)
                 .map(tuteur -> {
                     log.info("[mes-dossiers] tuteur trouvé : id={} email={}", tuteur.getId(), tuteur.getEmail());
-                    List<DossierEleve> dossiers = dossierEleveRepository.findByTuteurId(tuteur.getId());
+                    java.util.Set<Long> eleveIds = tuteurLienService.eleveIdsDuTuteur(tuteur.getId());
+                    List<DossierEleve> dossiers = eleveIds.isEmpty()
+                            ? dossierEleveRepository.findByTuteurId(tuteur.getId())
+                            : dossierEleveRepository.findByTuteurIdOrEleveIdIn(tuteur.getId(), eleveIds);
                     log.info("[mes-dossiers] {} dossier(s) trouvé(s) pour tuteurId={}", dossiers.size(), tuteur.getId());
                     return dossiers.stream()
                             .map(d -> dossierEleveService.mapper().toResponse(d))

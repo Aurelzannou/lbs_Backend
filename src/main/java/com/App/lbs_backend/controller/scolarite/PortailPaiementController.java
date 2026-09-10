@@ -8,6 +8,7 @@ import com.App.lbs_backend.repository.DossierEleveRepository;
 import com.App.lbs_backend.repository.TuteurRepository;
 import com.App.lbs_backend.service.paiement.PaiementInscriptionService;
 import com.App.lbs_backend.service.scolarite.SuiviPaiementService;
+import com.App.lbs_backend.service.scolarite.TuteurLienService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,7 @@ public class PortailPaiementController {
     private final PaiementInscriptionService paiementService;
     private final DossierEleveRepository dossierEleveRepository;
     private final TuteurRepository tuteurRepository;
+    private final TuteurLienService tuteurLienService;
     private final HttpServletRequest request;
 
     /** Détail des frais + tranches + reste à payer pour un dossier de l'enfant. */
@@ -65,7 +67,11 @@ public class PortailPaiementController {
         DossierEleve dossier = dossierEleveRepository.findById(dossierId)
                 .orElseThrow(() -> new IllegalArgumentException("Dossier introuvable."));
 
-        if (tuteurId == null || !tuteurId.equals(dossier.getTuteurId())) {
+        boolean autorise = tuteurId != null && (
+                tuteurId.equals(dossier.getTuteurId())
+                || (dossier.getEleveId() != null
+                    && tuteurLienService.eleveIdsDuTuteur(tuteurId).contains(dossier.getEleveId())));
+        if (!autorise) {
             throw new IllegalArgumentException(
                     "Accès refusé : ce dossier n'est pas rattaché à votre compte.");
         }

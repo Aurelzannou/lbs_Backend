@@ -41,6 +41,7 @@ public class PresenceService {
     private final PresenceProfesseurRepository presenceProfesseurRepository;
     private final EmploiDuTempsService emploiDuTempsService;
     private final TuteurRepository tuteurRepository;
+    private final TuteurLienService tuteurLienService;
 
     /** Convertit une date en nom de jour (LUNDI..SAMEDI) tel que stocké sur EmploiDuTemps. */
     public static String jourDeLaSemaine(LocalDate date) {
@@ -177,7 +178,9 @@ public class PresenceService {
         Tuteur tuteur = tuteurRepository.findByEmail(email).orElse(null);
         if (tuteur == null) return Collections.emptyList();
 
-        List<Eleve> enfants = eleveRepository.findByTuteurId(tuteur.getId());
+        java.util.Set<Long> eleveIds = tuteurLienService.eleveIdsDuTuteur(tuteur.getId());
+        if (eleveIds.isEmpty()) return Collections.emptyList();
+        List<Eleve> enfants = eleveRepository.findAllById(eleveIds);
         return enfants.stream().map(enfant -> {
             PresenceEnfantResponse dto = new PresenceEnfantResponse();
             dto.setEleveId(enfant.getId());
