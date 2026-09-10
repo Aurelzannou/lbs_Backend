@@ -9,6 +9,7 @@ import com.App.lbs_backend.dto.response.DossierEleveResponse;
 import com.App.lbs_backend.entity.DossierEleve;
 import com.App.lbs_backend.entity.Eleve;
 import com.App.lbs_backend.core.utils.ReportService;
+import com.App.lbs_backend.service.referentiel.PeriodeInscriptionService;
 import com.App.lbs_backend.service.scolarite.DossierEleveService;
 import com.App.lbs_backend.service.scolarite.EleveService;
 import lombok.RequiredArgsConstructor;
@@ -29,9 +30,10 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class DossierEleveController extends MasterController<DossierEleve, DossierEleveResponse, DossierEleveRequest> {
 
-    private final DossierEleveService dossierEleveService;
-    private final EleveService        eleveService;
-    private final ReportService       reportService;
+    private final DossierEleveService       dossierEleveService;
+    private final EleveService              eleveService;
+    private final ReportService             reportService;
+    private final PeriodeInscriptionService periodeInscriptionService;
 
     @Override
     protected AbstractBaseService<DossierEleve, DossierEleveResponse> service() {
@@ -56,6 +58,13 @@ public class DossierEleveController extends MasterController<DossierEleve, Dossi
 
     @Override
     protected DossierEleveResponse doCreate(DossierEleveRequest form) {
+        // Une nouvelle inscription / réinscription n'est possible que si une période
+        // d'inscription est ouverte pour l'année scolaire visée — même règle que le portail
+        // parent. Pour une inscription tardive, l'admin élargit la date de clôture de la période.
+        if (form.getAnneeScolaireId() != null) {
+            periodeInscriptionService.validerPeriode(form.getAnneeScolaireId());
+        }
+
         DossierEleve dossier = new DossierEleve();
         mapFormToEntity(form, dossier);
 

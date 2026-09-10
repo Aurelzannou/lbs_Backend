@@ -7,9 +7,7 @@ import com.App.lbs_backend.mapper.PeriodeInscriptionMapper;
 import com.App.lbs_backend.mapper.Mapper;
 import com.App.lbs_backend.repository.BaseRepository;
 import com.App.lbs_backend.repository.PeriodeInscriptionRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -43,7 +41,8 @@ public class PeriodeInscriptionService extends AbstractBaseService<PeriodeInscri
 
     public void validerPeriode(Long anneeScolaireId) {
         periodeInscriptionRepository.findPeriodeActive(anneeScolaireId, LocalDate.now())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN,
-                        "Aucune période d'inscription ouverte pour cette année scolaire"));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Aucune période d'inscription n'est ouverte pour cette année scolaire. "
+                        + "Élargissez la date de clôture de la période concernée pour enregistrer un dossier."));
     }
 }
