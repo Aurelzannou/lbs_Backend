@@ -11,8 +11,11 @@ import com.App.lbs_backend.dto.response.EmploiDuTempsResponse;
 import com.App.lbs_backend.entity.EmploiDuTemps;
 import com.App.lbs_backend.service.referentiel.EmploiDuTempsService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -76,6 +79,18 @@ public class EmploiDuTempsController extends MasterController<EmploiDuTemps, Emp
         mapFormToEntity(form, entity);
         emploiDuTempsService.update(entity);
         return emploiDuTempsService.toResponse(entity.getId());
+    }
+
+    /** Brouillon PDF (imprimable) de l'emploi du temps de la classe sélectionnée. */
+    @GetMapping("/classe/{classeId}/pdf")
+    public ResponseEntity<byte[]> exporterBrouillonPdf(
+            @PathVariable Long classeId, @RequestParam Long anneeScolaireId) {
+        byte[] pdf = emploiDuTempsService.genererBrouillonPdf(classeId, anneeScolaireId);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"emploi-du-temps-classe-" + classeId + ".pdf\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
     }
 
     @GetMapping("/count-prof")

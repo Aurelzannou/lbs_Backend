@@ -9,9 +9,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface AnneeScolaireRepository extends BaseRepository<AnneeScolaire> {
+
+    /** Année scolaire actuellement active (une seule à la fois). */
+    Optional<AnneeScolaire> findFirstByActifTrue();
 
     /** Années scolaires dont l'intervalle [dateDebut, dateFin] chevauche celui donné — deux années
         scolaires ne peuvent jamais se superposer dans le temps (un jour donné appartient à une seule

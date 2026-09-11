@@ -1,7 +1,9 @@
 package com.App.lbs_backend.service.referentiel;
 
 import com.App.lbs_backend.core.AbstractBaseService;
+import com.App.lbs_backend.core.utils.ReportService;
 import com.App.lbs_backend.dto.request.ReorganiserJourRequest;
+import com.App.lbs_backend.dto.response.EmploiDuTempsLignePdf;
 import com.App.lbs_backend.dto.response.EmploiDuTempsResponse;
 import com.App.lbs_backend.entity.AnneeScolaire;
 import com.App.lbs_backend.entity.EmploiDuTemps;
@@ -9,13 +11,19 @@ import com.App.lbs_backend.mapper.EmploiDuTempsMapper;
 import com.App.lbs_backend.mapper.Mapper;
 import com.App.lbs_backend.repository.AnneeScolaireRepository;
 import com.App.lbs_backend.repository.BaseRepository;
+import com.App.lbs_backend.repository.ClasseRepository;
 import com.App.lbs_backend.repository.EmploiDuTempsRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class EmploiDuTempsService extends AbstractBaseService<EmploiDuTemps, EmploiDuTempsResponse> {
@@ -23,12 +31,22 @@ public class EmploiDuTempsService extends AbstractBaseService<EmploiDuTemps, Emp
     private final EmploiDuTempsRepository emploiDuTempsRepository;
     private final EmploiDuTempsMapper emploiDuTempsMapper;
     private final AnneeScolaireRepository anneeScolaireRepository;
+    private final ClasseRepository classeRepository;
+    private final ReportService reportService;
 
-    public EmploiDuTempsService(EmploiDuTempsRepository emploiDuTempsRepository, EmploiDuTempsMapper emploiDuTempsMapper, AnneeScolaireRepository anneeScolaireRepository) {
+    /** Ordre d'affichage des jours dans le brouillon (les valeurs stockées sont en majuscules). */
+    private static final List<String> ORDRE_JOURS =
+            List.of("LUNDI", "MARDI", "MERCREDI", "JEUDI", "VENDREDI", "SAMEDI", "DIMANCHE");
+
+    public EmploiDuTempsService(EmploiDuTempsRepository emploiDuTempsRepository, EmploiDuTempsMapper emploiDuTempsMapper,
+                                AnneeScolaireRepository anneeScolaireRepository, ClasseRepository classeRepository,
+                                ReportService reportService) {
         super(EmploiDuTemps.class);
         this.emploiDuTempsRepository = emploiDuTempsRepository;
         this.emploiDuTempsMapper = emploiDuTempsMapper;
         this.anneeScolaireRepository = anneeScolaireRepository;
+        this.classeRepository = classeRepository;
+        this.reportService = reportService;
     }
 
     @Override
@@ -43,6 +61,59 @@ public class EmploiDuTempsService extends AbstractBaseService<EmploiDuTemps, Emp
 
     public List<EmploiDuTemps> findByClasseIdAndAnnee(Long classeId, Long anneeScolaireId) {
         return emploiDuTempsRepository.findByClasseIdAndAnneeScolaireIdOrderByJourAscHeureDebutAsc(classeId, anneeScolaireId);
+    }
+
+    /**
+     * Brouillon PDF de l'emploi du temps d'une classe : les séances regroupées par jour (dans
+     * l'ordre naturel de la semaine, pas l'ordre alphabétique), puis par heure. Sert de support
+     * de travail imprimable — d'où la mention « BROUILLON » en en-tête.
+     */
+    @Transactional(readOnly = true)
+    public byte[] genererBrouillonPdf(Long classeId, Long anneeScolaireId) {
+        List<EmploiDuTemps> seances = new ArrayList<>(findByClasseIdAndAnnee(classeId, anneeScolaireId));
+        seances.sort(Comparator
+                .comparingInt((EmploiDuTemps s) -> {
+                    int i = ORDRE_JOURS.indexOf(s.getJour() == null ? "" : s.getJour().toUpperCase());
+                    return i < 0 ? Integer.MAX_VALUE : i;
+                })
+                .thenComparing(s -> s.getHeureDebut() == null ? LocalTime.MIN : s.getHeureDebut()));
+
+        DateTimeFormatter hf = DateTimeFormatter.ofPattern("HH:mm");
+        List<EmploiDuTempsLignePdf> lignes = seances.stream()
+                .map(s -> new EmploiDuTempsLignePdf(
+                        capitaliser(s.getJour()),
+                        (s.getHeureDebut() != null ? hf.format(s.getHeureDebut()) : "?")
+                                + " - " + (s.getHeureFin() != null ? hf.format(s.getHeureFin()) : "?"),
+                        s.getMatiere() != null ? s.getMatiere().getLibelle() : "—",
+                        s.getProfesseur() != null
+                                ? s.getProfesseur().getNom() + " " + s.getProfesseur().getPrenom()
+                                : "Non attribué"))
+                .toList();
+
+        String classeLibelle = classeRepository.findById(classeId)
+                .map(c -> c.getLibelle() + (c.getCode() != null ? " (" + c.getCode() + ")" : ""))
+                .orElse("Classe #" + classeId);
+        String anneeLibelle = anneeScolaireRepository.findById(anneeScolaireId)
+                .map(AnneeScolaire::getLibelle).orElse("");
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("classe", classeLibelle);
+        params.put("anneeScolaire", anneeLibelle);
+        params.put("dateGeneration", LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        params.put("nbSeances", String.valueOf(lignes.size()));
+
+        try {
+            return reportService.generatePdfReport("emploi-du-temps", params, lignes);
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                    "Impossible de générer le PDF de l'emploi du temps : " + e.getMessage(), e);
+        }
+    }
+
+    private String capitaliser(String s) {
+        if (s == null || s.isBlank()) return "";
+        String low = s.toLowerCase();
+        return Character.toUpperCase(low.charAt(0)) + low.substring(1);
     }
 
     /** Nombre de cours (toutes classes/années confondues) actuellement attribués à ce professeur. */

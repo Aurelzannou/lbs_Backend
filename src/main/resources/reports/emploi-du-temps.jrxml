@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports
+              http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="emploi-du-temps"
+              pageWidth="595" pageHeight="842"
+              columnWidth="535" leftMargin="30" rightMargin="30"
+              topMargin="30" bottomMargin="30"
+              uuid="c7d8e9f0-a1b2-3c4d-5e6f-708192a3b4c5">
+
+  <!-- Informations d'en-tête, communes à toutes les lignes -->
+  <parameter name="classe"         class="java.lang.String"/>
+  <parameter name="anneeScolaire"  class="java.lang.String"/>
+  <parameter name="dateGeneration" class="java.lang.String"/>
+  <parameter name="nbSeances"      class="java.lang.String"/>
+
+  <queryString><![CDATA[]]></queryString>
+
+  <!-- Une ligne = une séance de cours -->
+  <field name="jour"       class="java.lang.String"/>
+  <field name="horaire"    class="java.lang.String"/>
+  <field name="matiere"    class="java.lang.String"/>
+  <field name="professeur" class="java.lang.String"/>
+
+  <!-- Regroupement par jour : un bandeau sombre introduit chaque journée. -->
+  <group name="jourGroup">
+    <groupExpression><![CDATA[$F{jour}]]></groupExpression>
+    <groupHeader>
+      <band height="24">
+        <rectangle>
+          <reportElement x="0" y="6" width="535" height="18" backcolor="#0f172a" mode="Opaque" forecolor="#0f172a"/>
+          <graphicElement><pen lineWidth="0"/></graphicElement>
+        </rectangle>
+        <textField>
+          <reportElement x="6" y="6" width="529" height="18" forecolor="#FFFFFF"/>
+          <textElement verticalAlignment="Middle"><font size="9" isBold="true"/></textElement>
+          <textFieldExpression><![CDATA[$F{jour}]]></textFieldExpression>
+        </textField>
+      </band>
+    </groupHeader>
+  </group>
+
+  <title>
+    <band height="118">
+      <staticText>
+        <reportElement x="0" y="0" width="535" height="18" forecolor="#0f172a"/>
+        <textElement textAlignment="Center"><font size="12" isBold="true"/></textElement>
+        <text><![CDATA[COLLÈGE LA BONNE SEMENCE]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="0" y="18" width="535" height="12" forecolor="#475569"/>
+        <textElement textAlignment="Center"><font size="7"/></textElement>
+        <text><![CDATA[Tél: 97-07-91-64]]></text>
+      </staticText>
+      <line><reportElement x="0" y="34" width="535" height="2" forecolor="#d97706"/><graphicElement><pen lineWidth="2"/></graphicElement></line>
+
+      <staticText>
+        <reportElement x="0" y="44" width="535" height="22" forecolor="#b45309"/>
+        <textElement textAlignment="Center"><font size="14" isBold="true"/></textElement>
+        <text><![CDATA[EMPLOI DU TEMPS]]></text>
+      </staticText>
+
+      <textField>
+        <reportElement x="0" y="72" width="535" height="14" forecolor="#0f172a"/>
+        <textElement textAlignment="Center"><font size="10" isBold="true"/></textElement>
+        <textFieldExpression><![CDATA["Classe : " + $P{classe} + "     " + $P{anneeScolaire}]]></textFieldExpression>
+      </textField>
+      <textField>
+        <reportElement x="0" y="88" width="535" height="12" forecolor="#64748b"/>
+        <textElement textAlignment="Center"><font size="7" isItalic="true"/></textElement>
+        <textFieldExpression><![CDATA["Généré le " + $P{dateGeneration} + " — " + $P{nbSeances} + " séance(s)"]]></textFieldExpression>
+      </textField>
+      <line><reportElement x="0" y="104" width="535" height="1" forecolor="#e2e8f0"/></line>
+    </band>
+  </title>
+
+  <columnHeader>
+    <band height="20">
+      <staticText>
+        <reportElement x="0" y="2" width="110" height="16" backcolor="#f1f5f9" mode="Opaque" forecolor="#0f172a"/>
+        <box leftPadding="6"><pen lineWidth="0.5" lineColor="#cbd5e1"/></box>
+        <textElement verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Horaire]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="110" y="2" width="220" height="16" backcolor="#f1f5f9" mode="Opaque" forecolor="#0f172a"/>
+        <box leftPadding="6"><pen lineWidth="0.5" lineColor="#cbd5e1"/></box>
+        <textElement verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Matière]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="330" y="2" width="205" height="16" backcolor="#f1f5f9" mode="Opaque" forecolor="#0f172a"/>
+        <box leftPadding="6"><pen lineWidth="0.5" lineColor="#cbd5e1"/></box>
+        <textElement verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Professeur]]></text>
+      </staticText>
+    </band>
+  </columnHeader>
+
+  <detail>
+    <band height="16">
+      <rectangle>
+        <reportElement x="0" y="0" width="535" height="16" backcolor="#f8fafc" mode="Opaque" forecolor="#f8fafc">
+          <printWhenExpression><![CDATA[$V{REPORT_COUNT} % 2 == 0]]></printWhenExpression>
+        </reportElement>
+        <graphicElement><pen lineWidth="0"/></graphicElement>
+      </rectangle>
+      <textField>
+        <reportElement x="0" y="0" width="110" height="16"/>
+        <box leftPadding="6"><pen lineWidth="0.5" lineColor="#e2e8f0"/></box>
+        <textElement verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <textFieldExpression><![CDATA[$F{horaire}]]></textFieldExpression>
+      </textField>
+      <textField>
+        <reportElement x="110" y="0" width="220" height="16"/>
+        <box leftPadding="6"><pen lineWidth="0.5" lineColor="#e2e8f0"/></box>
+        <textElement verticalAlignment="Middle"><font size="8"/></textElement>
+        <textFieldExpression><![CDATA[$F{matiere}]]></textFieldExpression>
+      </textField>
+      <textField>
+        <reportElement x="330" y="0" width="205" height="16"/>
+        <box leftPadding="6"><pen lineWidth="0.5" lineColor="#e2e8f0"/></box>
+        <textElement verticalAlignment="Middle"><font size="8"/></textElement>
+        <textFieldExpression><![CDATA[$F{professeur}]]></textFieldExpression>
+      </textField>
+    </band>
+  </detail>
+
+  <pageFooter>
+    <band height="24">
+      <line><reportElement x="0" y="0" width="535" height="1" forecolor="#e2e8f0"/></line>
+      <staticText>
+        <reportElement x="0" y="6" width="400" height="14" forecolor="#94a3b8"/>
+        <textElement><font size="7"/></textElement>
+        <text><![CDATA[Collège La Bonne Semence — Emploi du temps]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="400" y="6" width="135" height="14" forecolor="#94a3b8"/>
+        <textElement textAlignment="Right"><font size="7"/></textElement>
+        <textFieldExpression><![CDATA["Page " + $V{PAGE_NUMBER}]]></textFieldExpression>
+      </textField>
+    </band>
+  </pageFooter>
+
+</jasperReport>

@@ -28,11 +28,18 @@ public interface EleveRepository extends BaseRepository<Eleve> {
           AND (:filter IS NULL OR :filter = ''
                OR LOWER(e.nom) LIKE LOWER(CONCAT('%', :filter, '%'))
                OR LOWER(e.prenom) LIKE LOWER(CONCAT('%', :filter, '%')))
+          AND (:anneeScolaireId IS NULL OR EXISTS (
+                SELECT 1 FROM DossierEleve d
+                WHERE d.eleveId = e.id
+                  AND d.anneeScolaireId = :anneeScolaireId
+                  AND (d.statut IS NULL OR UPPER(d.statut.code) NOT IN ('REFUSE', 'ANNULE'))
+              ))
         ORDER BY e.id DESC
         """)
     Page<Eleve> searchFiltered(
         @Param("classeId") Long classeId,
         @Param("filter")   String filter,
+        @Param("anneeScolaireId") Long anneeScolaireId,
         Pageable pageable
     );
 }

@@ -12,8 +12,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -39,10 +42,23 @@ public class EleveController extends MasterController<Eleve, EleveResponse, Elev
         String filter = criteria.filter() != null ? criteria.filter()   : "";
         String classeIdParam = request.getParameter("classeId");
         Long classeId = classeIdParam != null ? Long.parseLong(classeIdParam) : null;
+        String anneeIdParam = request.getParameter("anneeScolaireId");
+        Long anneeScolaireId = anneeIdParam != null ? Long.parseLong(anneeIdParam) : null;
         PageRequest pageable = PageRequest.of(page, size, Sort.by("id").descending());
-        Page<Eleve> result = eleveService.searchFiltered(classeId, filter, pageable);
+        Page<Eleve> result = eleveService.searchFiltered(classeId, filter, anneeScolaireId, pageable);
         return ResponseEntity.ok(ApiResponse.apiSuccess("OK",
             eleveService.toPageResponse(result), request.getRequestURI()));
+    }
+
+    /** Liste PDF (imprimable) de tous les élèves d'une classe. */
+    @GetMapping("/classe/{classeId}/liste-pdf")
+    public ResponseEntity<byte[]> exporterListeClassePdf(@PathVariable Long classeId) {
+        byte[] pdf = eleveService.genererListeClassePdf(classeId);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"liste-eleves-classe-" + classeId + ".pdf\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
     }
 
     @Override

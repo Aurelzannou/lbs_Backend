@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports
+              http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="liste-eleves-classe"
+              pageWidth="595" pageHeight="842"
+              columnWidth="535" leftMargin="30" rightMargin="30"
+              topMargin="30" bottomMargin="30"
+              uuid="d8e9f0a1-b2c3-4d5e-6f70-8192a3b4c5d6">
+
+  <parameter name="classe"         class="java.lang.String"/>
+  <parameter name="anneeScolaire"  class="java.lang.String"/>
+  <parameter name="effectif"       class="java.lang.String"/>
+  <parameter name="dateGeneration" class="java.lang.String"/>
+
+  <queryString><![CDATA[]]></queryString>
+
+  <!-- Une ligne = un élève -->
+  <field name="numero"        class="java.lang.Integer"/>
+  <field name="nomComplet"    class="java.lang.String"/>
+  <field name="sexe"          class="java.lang.String"/>
+  <field name="dateNaissance" class="java.lang.String"/>
+
+  <title>
+    <band height="118">
+      <staticText>
+        <reportElement x="0" y="0" width="535" height="18" forecolor="#0f172a"/>
+        <textElement textAlignment="Center"><font size="12" isBold="true"/></textElement>
+        <text><![CDATA[COLLÈGE LA BONNE SEMENCE]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="0" y="18" width="535" height="12" forecolor="#475569"/>
+        <textElement textAlignment="Center"><font size="7"/></textElement>
+        <text><![CDATA[Tél: 97-07-91-64]]></text>
+      </staticText>
+      <line><reportElement x="0" y="34" width="535" height="2" forecolor="#d97706"/><graphicElement><pen lineWidth="2"/></graphicElement></line>
+
+      <staticText>
+        <reportElement x="0" y="44" width="535" height="22" forecolor="#b45309"/>
+        <textElement textAlignment="Center"><font size="14" isBold="true"/></textElement>
+        <text><![CDATA[LISTE DES ÉLÈVES]]></text>
+      </staticText>
+
+      <textField>
+        <reportElement x="0" y="72" width="535" height="14" forecolor="#0f172a"/>
+        <textElement textAlignment="Center"><font size="10" isBold="true"/></textElement>
+        <textFieldExpression><![CDATA["Classe : " + $P{classe} + "     " + $P{anneeScolaire}]]></textFieldExpression>
+      </textField>
+      <textField>
+        <reportElement x="0" y="88" width="535" height="12" forecolor="#64748b"/>
+        <textElement textAlignment="Center"><font size="7" isItalic="true"/></textElement>
+        <textFieldExpression><![CDATA["Effectif : " + $P{effectif} + " élève(s) — généré le " + $P{dateGeneration}]]></textFieldExpression>
+      </textField>
+      <line><reportElement x="0" y="104" width="535" height="1" forecolor="#e2e8f0"/></line>
+    </band>
+  </title>
+
+  <columnHeader>
+    <band height="22">
+      <staticText>
+        <reportElement x="0" y="3" width="40" height="18" backcolor="#0f172a" mode="Opaque" forecolor="#FFFFFF"/>
+        <box><pen lineWidth="0.5" lineColor="#334155"/></box>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[N°]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="40" y="3" width="355" height="18" backcolor="#0f172a" mode="Opaque" forecolor="#FFFFFF"/>
+        <box leftPadding="6"><pen lineWidth="0.5" lineColor="#334155"/></box>
+        <textElement verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Nom et prénom(s)]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="395" y="3" width="60" height="18" backcolor="#0f172a" mode="Opaque" forecolor="#FFFFFF"/>
+        <box><pen lineWidth="0.5" lineColor="#334155"/></box>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Sexe]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="455" y="3" width="80" height="18" backcolor="#0f172a" mode="Opaque" forecolor="#FFFFFF"/>
+        <box><pen lineWidth="0.5" lineColor="#334155"/></box>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Né(e) le]]></text>
+      </staticText>
+    </band>
+  </columnHeader>
+
+  <detail>
+    <band height="17">
+      <rectangle>
+        <reportElement x="0" y="0" width="535" height="17" backcolor="#f8fafc" mode="Opaque" forecolor="#f8fafc">
+          <printWhenExpression><![CDATA[$V{REPORT_COUNT} % 2 == 0]]></printWhenExpression>
+        </reportElement>
+        <graphicElement><pen lineWidth="0"/></graphicElement>
+      </rectangle>
+      <textField>
+        <reportElement x="0" y="0" width="40" height="17"/>
+        <box><pen lineWidth="0.5" lineColor="#e2e8f0"/></box>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="8"/></textElement>
+        <textFieldExpression><![CDATA[$F{numero}]]></textFieldExpression>
+      </textField>
+      <textField>
+        <reportElement x="40" y="0" width="355" height="17"/>
+        <box leftPadding="6"><pen lineWidth="0.5" lineColor="#e2e8f0"/></box>
+        <textElement verticalAlignment="Middle"><font size="8"/></textElement>
+        <textFieldExpression><![CDATA[$F{nomComplet}]]></textFieldExpression>
+      </textField>
+      <textField>
+        <reportElement x="395" y="0" width="60" height="17"/>
+        <box><pen lineWidth="0.5" lineColor="#e2e8f0"/></box>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="8"/></textElement>
+        <textFieldExpression><![CDATA[$F{sexe}]]></textFieldExpression>
+      </textField>
+      <textField>
+        <reportElement x="455" y="0" width="80" height="17"/>
+        <box><pen lineWidth="0.5" lineColor="#e2e8f0"/></box>
+        <textElement textAlignment="Center" verticalAlignment="Middle"><font size="8"/></textElement>
+        <textFieldExpression><![CDATA[$F{dateNaissance}]]></textFieldExpression>
+      </textField>
+    </band>
+  </detail>
+
+  <pageFooter>
+    <band height="24">
+      <line><reportElement x="0" y="0" width="535" height="1" forecolor="#e2e8f0"/></line>
+      <staticText>
+        <reportElement x="0" y="6" width="400" height="14" forecolor="#94a3b8"/>
+        <textElement><font size="7"/></textElement>
+        <text><![CDATA[Collège La Bonne Semence — Liste des élèves]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="400" y="6" width="135" height="14" forecolor="#94a3b8"/>
+        <textElement textAlignment="Right"><font size="7"/></textElement>
+        <textFieldExpression><![CDATA["Page " + $V{PAGE_NUMBER}]]></textFieldExpression>
+      </textField>
+    </band>
+  </pageFooter>
+
+  <summary>
+    <band height="46">
+      <staticText>
+        <reportElement x="335" y="16" width="200" height="14" forecolor="#0f172a"/>
+        <textElement textAlignment="Center"><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Signature et cachet de la Direction]]></text>
+      </staticText>
+    </band>
+  </summary>
+
+</jasperReport>
