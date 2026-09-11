@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports
+              http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="liste-impayes"
+              pageWidth="595" pageHeight="842"
+              columnWidth="535" leftMargin="30" rightMargin="30"
+              topMargin="30" bottomMargin="30"
+              uuid="e9f0a1b2-c3d4-5e6f-7081-92a3b4c5d6e7">
+
+  <parameter name="classe"         class="java.lang.String"/>
+  <parameter name="anneeScolaire"  class="java.lang.String"/>
+  <parameter name="effectif"       class="java.lang.String"/>
+  <parameter name="totalDu"        class="java.lang.String"/>
+  <parameter name="totalPaye"      class="java.lang.String"/>
+  <parameter name="totalReste"     class="java.lang.String"/>
+  <parameter name="dateGeneration" class="java.lang.String"/>
+
+  <queryString><![CDATA[]]></queryString>
+
+  <!-- Une ligne = un dossier avec un reste à payer > 0 -->
+  <field name="eleve"         class="java.lang.String"/>
+  <field name="classe"        class="java.lang.String"/>
+  <field name="anneeScolaire" class="java.lang.String"/>
+  <field name="totalDu"       class="java.lang.String"/>
+  <field name="totalPaye"     class="java.lang.String"/>
+  <field name="totalReste"    class="java.lang.String"/>
+  <field name="statut"        class="java.lang.String"/>
+
+  <title>
+    <band height="150">
+      <staticText>
+        <reportElement x="0" y="0" width="535" height="18" forecolor="#0f172a"/>
+        <textElement textAlignment="Center"><font size="12" isBold="true"/></textElement>
+        <text><![CDATA[COLLÈGE LA BONNE SEMENCE]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="0" y="18" width="535" height="12" forecolor="#475569"/>
+        <textElement textAlignment="Center"><font size="7"/></textElement>
+        <text><![CDATA[Tél: 97-07-91-64]]></text>
+      </staticText>
+      <line><reportElement x="0" y="34" width="535" height="2" forecolor="#d97706"/><graphicElement><pen lineWidth="2"/></graphicElement></line>
+
+      <staticText>
+        <reportElement x="0" y="44" width="535" height="22" forecolor="#b45309"/>
+        <textElement textAlignment="Center"><font size="14" isBold="true"/></textElement>
+        <text><![CDATA[LISTE DES IMPAYÉS]]></text>
+      </staticText>
+
+      <textField>
+        <reportElement x="0" y="72" width="535" height="14" forecolor="#0f172a"/>
+        <textElement textAlignment="Center"><font size="10" isBold="true"/></textElement>
+        <textFieldExpression><![CDATA["Classe : " + $P{classe} + "     Année : " + $P{anneeScolaire}]]></textFieldExpression>
+      </textField>
+      <textField>
+        <reportElement x="0" y="88" width="535" height="12" forecolor="#64748b"/>
+        <textElement textAlignment="Center"><font size="7" isItalic="true"/></textElement>
+        <textFieldExpression><![CDATA["Effectif concerné : " + $P{effectif} + " élève(s) — généré le " + $P{dateGeneration}]]></textFieldExpression>
+      </textField>
+
+      <!-- Bandeau de synthèse -->
+      <rectangle>
+        <reportElement x="0" y="108" width="535" height="30" backcolor="#fef3c7" mode="Opaque" forecolor="#fef3c7"/>
+        <graphicElement><pen lineWidth="0"/></graphicElement>
+      </rectangle>
+      <staticText>
+        <reportElement x="10" y="114" width="160" height="16" forecolor="#0f172a"/>
+        <textElement><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Total dû :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="90" y="114" width="90" height="16" forecolor="#0f172a"/>
+        <textElement><font size="8"/></textElement>
+        <textFieldExpression><![CDATA[$P{totalDu} + " FCFA"]]></textFieldExpression>
+      </textField>
+      <staticText>
+        <reportElement x="195" y="114" width="120" height="16" forecolor="#0f172a"/>
+        <textElement><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Total payé :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="270" y="114" width="90" height="16" forecolor="#0f172a"/>
+        <textElement><font size="8"/></textElement>
+        <textFieldExpression><![CDATA[$P{totalPaye} + " FCFA"]]></textFieldExpression>
+      </textField>
+      <staticText>
+        <reportElement x="375" y="114" width="90" height="16" forecolor="#b45309"/>
+        <textElement><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Reste total :]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="450" y="114" width="80" height="16" forecolor="#b45309"/>
+        <textElement><font size="8" isBold="true"/></textElement>
+        <textFieldExpression><![CDATA[$P{totalReste} + " FCFA"]]></textFieldExpression>
+      </textField>
+
+      <line><reportElement x="0" y="144" width="535" height="1" forecolor="#e2e8f0"/></line>
+    </band>
+  </title>
+
+  <columnHeader>
+    <band height="20">
+      <staticText>
+        <reportElement x="0" y="2" width="140" height="16" backcolor="#0f172a" mode="Opaque" forecolor="#FFFFFF"/>
+        <box leftPadding="6"><pen lineWidth="0.5" lineColor="#334155"/></box>
+        <textElement verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Élève]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="140" y="2" width="70" height="16" backcolor="#0f172a" mode="Opaque" forecolor="#FFFFFF"/>
+        <box leftPadding="4"><pen lineWidth="0.5" lineColor="#334155"/></box>
+        <textElement verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Classe]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="210" y="2" width="75" height="16" backcolor="#0f172a" mode="Opaque" forecolor="#FFFFFF"/>
+        <box leftPadding="4"><pen lineWidth="0.5" lineColor="#334155"/></box>
+        <textElement verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Année]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="285" y="2" width="65" height="16" backcolor="#0f172a" mode="Opaque" forecolor="#FFFFFF"/>
+        <box rightPadding="4"><pen lineWidth="0.5" lineColor="#334155"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Dû]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="350" y="2" width="65" height="16" backcolor="#0f172a" mode="Opaque" forecolor="#FFFFFF"/>
+        <box rightPadding="4"><pen lineWidth="0.5" lineColor="#334155"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Payé]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="415" y="2" width="65" height="16" backcolor="#0f172a" mode="Opaque" forecolor="#FFFFFF"/>
+        <box rightPadding="4"><pen lineWidth="0.5" lineColor="#334155"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Reste]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="480" y="2" width="55" height="16" backcolor="#0f172a" mode="Opaque" forecolor="#FFFFFF"/>
+        <box leftPadding="4"><pen lineWidth="0.5" lineColor="#334155"/></box>
+        <textElement verticalAlignment="Middle"><font size="8" isBold="true"/></textElement>
+        <text><![CDATA[Statut]]></text>
+      </staticText>
+    </band>
+  </columnHeader>
+
+  <detail>
+    <band height="17">
+      <rectangle>
+        <reportElement x="0" y="0" width="535" height="17" backcolor="#f8fafc" mode="Opaque" forecolor="#f8fafc">
+          <printWhenExpression><![CDATA[$V{REPORT_COUNT} % 2 == 0]]></printWhenExpression>
+        </reportElement>
+        <graphicElement><pen lineWidth="0"/></graphicElement>
+      </rectangle>
+      <textField>
+        <reportElement x="0" y="0" width="140" height="17"/>
+        <box leftPadding="6"><pen lineWidth="0.5" lineColor="#e2e8f0"/></box>
+        <textElement verticalAlignment="Middle"><font size="7.5"/></textElement>
+        <textFieldExpression><![CDATA[$F{eleve}]]></textFieldExpression>
+      </textField>
+      <textField>
+        <reportElement x="140" y="0" width="70" height="17"/>
+        <box leftPadding="4"><pen lineWidth="0.5" lineColor="#e2e8f0"/></box>
+        <textElement verticalAlignment="Middle"><font size="7.5"/></textElement>
+        <textFieldExpression><![CDATA[$F{classe}]]></textFieldExpression>
+      </textField>
+      <textField>
+        <reportElement x="210" y="0" width="75" height="17"/>
+        <box leftPadding="4"><pen lineWidth="0.5" lineColor="#e2e8f0"/></box>
+        <textElement verticalAlignment="Middle"><font size="7.5"/></textElement>
+        <textFieldExpression><![CDATA[$F{anneeScolaire}]]></textFieldExpression>
+      </textField>
+      <textField>
+        <reportElement x="285" y="0" width="65" height="17"/>
+        <box rightPadding="4"><pen lineWidth="0.5" lineColor="#e2e8f0"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="7.5"/></textElement>
+        <textFieldExpression><![CDATA[$F{totalDu}]]></textFieldExpression>
+      </textField>
+      <textField>
+        <reportElement x="350" y="0" width="65" height="17"/>
+        <box rightPadding="4"><pen lineWidth="0.5" lineColor="#e2e8f0"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="7.5"/></textElement>
+        <textFieldExpression><![CDATA[$F{totalPaye}]]></textFieldExpression>
+      </textField>
+      <textField>
+        <reportElement x="415" y="0" width="65" height="17" forecolor="#b45309"/>
+        <box rightPadding="4"><pen lineWidth="0.5" lineColor="#e2e8f0"/></box>
+        <textElement textAlignment="Right" verticalAlignment="Middle"><font size="7.5" isBold="true"/></textElement>
+        <textFieldExpression><![CDATA[$F{totalReste}]]></textFieldExpression>
+      </textField>
+      <textField>
+        <reportElement x="480" y="0" width="55" height="17"/>
+        <box leftPadding="4"><pen lineWidth="0.5" lineColor="#e2e8f0"/></box>
+        <textElement verticalAlignment="Middle"><font size="7"/></textElement>
+        <textFieldExpression><![CDATA[$F{statut}]]></textFieldExpression>
+      </textField>
+    </band>
+  </detail>
+
+  <pageFooter>
+    <band height="24">
+      <line><reportElement x="0" y="0" width="535" height="1" forecolor="#e2e8f0"/></line>
+      <staticText>
+        <reportElement x="0" y="6" width="400" height="14" forecolor="#94a3b8"/>
+        <textElement><font size="7"/></textElement>
+        <text><![CDATA[Collège La Bonne Semence — Liste des impayés]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="400" y="6" width="135" height="14" forecolor="#94a3b8"/>
+        <textElement textAlignment="Right"><font size="7"/></textElement>
+        <textFieldExpression><![CDATA["Page " + $V{PAGE_NUMBER}]]></textFieldExpression>
+      </textField>
+    </band>
+  </pageFooter>
+
+</jasperReport>

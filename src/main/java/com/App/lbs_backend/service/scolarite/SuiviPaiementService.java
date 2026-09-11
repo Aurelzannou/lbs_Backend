@@ -1,13 +1,20 @@
 package com.App.lbs_backend.service.scolarite;
 
+import com.App.lbs_backend.core.utils.ReportService;
+import com.App.lbs_backend.dto.response.ImpayeLignePdf;
 import com.App.lbs_backend.dto.response.SuiviFraisResponse;
+import com.App.lbs_backend.dto.response.SuiviGlobalLigneResponse;
 import com.App.lbs_backend.dto.response.SuiviPaiementResponse;
 import com.App.lbs_backend.dto.response.SuiviTrancheResponse;
+import com.App.lbs_backend.entity.AnneeScolaire;
+import com.App.lbs_backend.entity.Classe;
 import com.App.lbs_backend.entity.DossierEleve;
 import com.App.lbs_backend.entity.Echeancier;
 import com.App.lbs_backend.entity.FraisScolaire;
 import com.App.lbs_backend.entity.Paiement;
 import com.App.lbs_backend.entity.TypeFrais;
+import com.App.lbs_backend.repository.AnneeScolaireRepository;
+import com.App.lbs_backend.repository.ClasseRepository;
 import com.App.lbs_backend.repository.DossierEleveRepository;
 import com.App.lbs_backend.repository.EcheancierRepository;
 import com.App.lbs_backend.repository.FraisScolaireRepository;
@@ -17,8 +24,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.NumberFormat;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * Calcul pur du reste à payer d'un dossier d'inscription : pour chaque FraisScolaire de la
@@ -34,6 +48,9 @@ public class SuiviPaiementService {
     private final EcheancierRepository echeancierRepository;
     private final PaiementRepository paiementRepository;
     private final TypeFraisRepository typeFraisRepository;
+    private final ClasseRepository classeRepository;
+    private final AnneeScolaireRepository anneeScolaireRepository;
+    private final ReportService reportService;
 
     /** Code du type « frais d'inscription » (payé pendant le parcours d'inscription, pas ici). */
     @org.springframework.beans.factory.annotation.Value("${fedapay.type-frais-inscription:INSCRIPTION}")
@@ -118,5 +135,95 @@ public class SuiviPaiementService {
 
         return new SuiviPaiementResponse(dossierEleveId, totalDu, totalPaye,
                 Math.max(0, totalDu - totalPaye), fraisResponses);
+    }
+
+    /**
+     * Vue globale « Tous les impayés » : tous les dossiers scolarisés (accepté/inscrit) dont le
+     * reste à payer est strictement positif, triés par reste décroissant — pour repérer les plus
+     * gros impayés en premier. `anneeScolaireId` null = toutes années confondues (c'est tout
+     * l'intérêt de cette vue par rapport au suivi élève par élève, cantonné à l'année active).
+     */
+    @Transactional(readOnly = true)
+    public List<SuiviGlobalLigneResponse> listerImpayes(Long anneeScolaireId, Long classeId, String statutFiltre) {
+        List<DossierEleve> dossiers = dossierEleveRepository.findDossiersActifsPourSuivi(anneeScolaireId, classeId);
+        List<SuiviGlobalLigneResponse> resultat = new ArrayList<>();
+
+        for (DossierEleve dossier : dossiers) {
+            SuiviPaiementResponse suivi = getSuiviParDossier(dossier.getId());
+            if (suivi.totalReste() == null || suivi.totalReste() <= 0) continue;
+
+            String statut = determinerStatutGlobal(suivi);
+            if (statutFiltre != null && !statutFiltre.isBlank() && !statutFiltre.equalsIgnoreCase(statut)) continue;
+
+            String nomComplet = ((dossier.getNom() != null ? dossier.getNom() : "") + " "
+                    + (dossier.getPrenom() != null ? dossier.getPrenom() : "")).trim();
+            String classeLibelle = dossier.getClasse() != null ? dossier.getClasse().getLibelle() : "—";
+            String anneeLibelle = dossier.getAnneeScolaire() != null ? dossier.getAnneeScolaire().getLibelle() : "—";
+
+            resultat.add(new SuiviGlobalLigneResponse(
+                    dossier.getId(), nomComplet, classeLibelle, anneeLibelle,
+                    suivi.totalDu(), suivi.totalPaye(), suivi.totalReste(), statut));
+        }
+
+        resultat.sort(Comparator.comparingDouble(SuiviGlobalLigneResponse::totalReste).reversed());
+        return resultat;
+    }
+
+    /** EN_RETARD si au moins une échéance est dépassée sans être soldée, PARTIELLE si une partie
+        a déjà été payée, EN_ATTENTE sinon (rien payé du tout, aucune échéance encore en retard). */
+    private String determinerStatutGlobal(SuiviPaiementResponse suivi) {
+        boolean enRetard = suivi.frais().stream()
+                .flatMap(f -> f.tranches().stream())
+                .anyMatch(t -> "EN_RETARD".equals(t.statut()));
+        if (enRetard) return "EN_RETARD";
+        return (suivi.totalPaye() != null && suivi.totalPaye() > 0) ? "PARTIELLE" : "EN_ATTENTE";
+    }
+
+    /** PDF de la liste des impayés (mêmes filtres que {@link #listerImpayes}). */
+    public byte[] genererImpayesPdf(Long anneeScolaireId, Long classeId, String statutFiltre) {
+        List<SuiviGlobalLigneResponse> lignes = listerImpayes(anneeScolaireId, classeId, statutFiltre);
+
+        NumberFormat montantFormat = NumberFormat.getIntegerInstance(Locale.FRANCE);
+        List<ImpayeLignePdf> lignesPdf = new ArrayList<>();
+        double totalDu = 0, totalPaye = 0, totalReste = 0;
+        for (SuiviGlobalLigneResponse l : lignes) {
+            lignesPdf.add(new ImpayeLignePdf(
+                    l.eleveNomComplet(), l.classeLibelle(), l.anneeScolaireLibelle(),
+                    montantFormat.format(l.totalDu()), montantFormat.format(l.totalPaye()),
+                    montantFormat.format(l.totalReste()), libelleStatut(l.statut())));
+            totalDu += l.totalDu() != null ? l.totalDu() : 0;
+            totalPaye += l.totalPaye() != null ? l.totalPaye() : 0;
+            totalReste += l.totalReste() != null ? l.totalReste() : 0;
+        }
+
+        String classeLibelle = classeId != null
+                ? classeRepository.findById(classeId).map(Classe::getLibelle).orElse("—")
+                : "Toutes les classes";
+        String anneeLibelle = anneeScolaireId != null
+                ? anneeScolaireRepository.findById(anneeScolaireId).map(AnneeScolaire::getLibelle).orElse("—")
+                : "Toutes les années";
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("classe", classeLibelle);
+        params.put("anneeScolaire", anneeLibelle);
+        params.put("effectif", String.valueOf(lignesPdf.size()));
+        params.put("totalDu", montantFormat.format(totalDu));
+        params.put("totalPaye", montantFormat.format(totalPaye));
+        params.put("totalReste", montantFormat.format(totalReste));
+        params.put("dateGeneration", LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+
+        try {
+            return reportService.generatePdfReport("liste-impayes", params, lignesPdf);
+        } catch (Exception e) {
+            throw new IllegalStateException("Impossible de générer la liste des impayés : " + e.getMessage(), e);
+        }
+    }
+
+    private String libelleStatut(String code) {
+        return switch (code) {
+            case "EN_RETARD" -> "En retard";
+            case "PARTIELLE" -> "Partiel";
+            default -> "En attente";
+        };
     }
 }

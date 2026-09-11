@@ -130,4 +130,16 @@ public interface DossierEleveRepository extends BaseRepository<DossierEleve> {
                                                    @Param("prenom") String prenom,
                                                    @Param("anneeScolaireId") Long anneeScolaireId,
                                                    @Param("excludeDossierId") Long excludeDossierId);
+
+    /** Dossiers réellement scolarisés (accepté ou inscrit) — base de la vue globale des impayés,
+        restreignable à une année scolaire et/ou une classe. */
+    @EntityGraph(attributePaths = {"eleve", "classe", "anneeScolaire", "statut"})
+    @Query("""
+        SELECT d FROM DossierEleve d
+        WHERE d.statut IS NOT NULL AND UPPER(d.statut.code) IN ('ACCEPTE', 'INSCRIT')
+          AND (:anneeId IS NULL OR d.anneeScolaireId = :anneeId)
+          AND (:classeId IS NULL OR d.classeId = :classeId)
+        ORDER BY d.nom ASC, d.prenom ASC
+        """)
+    List<DossierEleve> findDossiersActifsPourSuivi(@Param("anneeId") Long anneeId, @Param("classeId") Long classeId);
 }
