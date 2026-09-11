@@ -38,9 +38,11 @@ public class MouvementCaisseController extends MasterController<MouvementCaisse,
     @GetMapping
     public ResponseEntity<?> list(PaginationCriteria criteria) {
         String caisseIdParam = request.getParameter("caisseId");
+        String anneeIdParam = request.getParameter("anneeScolaireId");
+        Long anneeScolaireId = anneeIdParam != null ? Long.parseLong(anneeIdParam) : null;
         List<MouvementCaisseResponse> result = caisseIdParam == null
                 ? Collections.emptyList()
-                : mouvementCaisseService.listerParCaisse(Long.parseLong(caisseIdParam));
+                : mouvementCaisseService.listerParCaisse(Long.parseLong(caisseIdParam), anneeScolaireId);
         return ResponseEntity.ok(ApiResponse.apiSuccess("OK", result, request.getRequestURI()));
     }
 

@@ -1,6 +1,8 @@
 package com.App.lbs_backend.service.scolarite;
 
 import com.App.lbs_backend.core.AbstractBaseService;
+import com.App.lbs_backend.core.http.response.MetaResponse;
+import com.App.lbs_backend.core.http.response.PageResponse;
 import com.App.lbs_backend.repository.BaseRepository;
 import com.App.lbs_backend.dto.response.PaiementResponse;
 import com.App.lbs_backend.entity.FraisScolaire;
@@ -9,10 +11,14 @@ import com.App.lbs_backend.mapper.Mapper;
 import com.App.lbs_backend.mapper.PaiementMapper;
 import com.App.lbs_backend.repository.FraisScolaireRepository;
 import com.App.lbs_backend.repository.PaiementRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Service
 public class PaiementService extends AbstractBaseService<Paiement, PaiementResponse> {
@@ -59,6 +65,19 @@ public class PaiementService extends AbstractBaseService<Paiement, PaiementRespo
     @Override
     public BaseRepository<Paiement> repository() {
         return paiementRepository;
+    }
+
+    /** Recherche paginée avec filtre texte, restreignable à une année scolaire et/ou à un
+        utilisateur précis (un caissier ne voit que ses propres encaissements). */
+    public Page<Paiement> searchFiltered(String filter, Long anneeScolaireId, Long utilisateurId, Pageable pageable) {
+        return paiementRepository.searchFiltered(filter, anneeScolaireId, utilisateurId, pageable);
+    }
+
+    public PageResponse<PaiementResponse> toPageResponse(Page<Paiement> page) {
+        List<PaiementResponse> items = page.getContent().stream()
+                .map(p -> mapper().toResponse(p))
+                .collect(Collectors.toList());
+        return new PageResponse<>(items, MetaResponse.ofPage(page));
     }
 
     @Override

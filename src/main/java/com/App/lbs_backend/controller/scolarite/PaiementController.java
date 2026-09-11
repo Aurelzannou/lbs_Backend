@@ -4,18 +4,27 @@ import com.App.lbs_backend.core.AbstractBaseService;
 import com.App.lbs_backend.core.MasterController;
 import com.App.lbs_backend.core.http.request.UuidsRequest;
 import com.App.lbs_backend.core.http.response.ApiResponse;
+import com.App.lbs_backend.core.specs.PaginationCriteria;
 import com.App.lbs_backend.core.utils.ReportService;
 import com.App.lbs_backend.dto.request.PaiementRequest;
 import com.App.lbs_backend.dto.response.PaiementResponse;
 import com.App.lbs_backend.dto.response.SuiviPaiementResponse;
 import com.App.lbs_backend.entity.Paiement;
+import com.App.lbs_backend.entity.Utilisateur;
+import com.App.lbs_backend.repository.UtilisateurRepository;
 import com.App.lbs_backend.service.scolarite.CaisseMouvementService;
 import com.App.lbs_backend.service.scolarite.PaiementService;
 import com.App.lbs_backend.service.scolarite.SuiviPaiementService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -31,14 +40,39 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PaiementController extends MasterController<Paiement, PaiementResponse, PaiementRequest> {
 
+    private static final String ROLE_ADMIN = "ROLE_ADMIN";
+    private static final String ROLE_CAISSIER = "ROLE_CAISSIER";
+
     private final PaiementService paiementService;
     private final CaisseMouvementService caisseMouvementService;
     private final SuiviPaiementService suiviPaiementService;
     private final ReportService reportService;
+    private final UtilisateurRepository utilisateurRepository;
 
     @Override
     protected AbstractBaseService<Paiement, PaiementResponse> service() {
         return paiementService;
+    }
+
+    @Override
+    @GetMapping
+    public ResponseEntity<?> list(PaginationCriteria criteria) {
+        int rawPage = criteria.page() != null ? criteria.page() : 1;
+        int page = Math.max(rawPage - 1, 0);
+        int size = criteria.size() != null ? criteria.size() : 10;
+        String filter = criteria.filter() != null ? criteria.filter() : "";
+
+        String anneeIdParam = request.getParameter("anneeScolaireId");
+        Long anneeScolaireId = anneeIdParam != null ? Long.parseLong(anneeIdParam) : null;
+
+        // Un caissier (rôle CAISSIER, sans le rôle ADMIN) ne voit que les paiements qu'il a
+        // lui-même enregistrés — l'admin garde une vue globale sur tous les caissiers.
+        Long utilisateurId = estCaissierNonAdmin() ? utilisateurCourantIdOuIntrouvable() : null;
+
+        PageRequest pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        Page<Paiement> result = paiementService.searchFiltered(filter, anneeScolaireId, utilisateurId, pageable);
+        return ResponseEntity.ok(ApiResponse.apiSuccess("OK",
+            paiementService.toPageResponse(result), request.getRequestURI()));
     }
 
     @Override
@@ -53,6 +87,9 @@ public class PaiementController extends MasterController<Paiement, PaiementRespo
         // Saisie admin/caissier : validée immédiatement, aucune passerelle de paiement en ligne branchée.
         paiement.setStatutTransaction("SUCCES");
         paiement.setCode("PAI-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        // Le caissier réellement authentifié est toujours celui qui encaisse — jamais une valeur
+        // envoyée par le client — pour que la liste "mes paiements" reste fiable.
+        paiement.setUtilisateurId(utilisateurCourantId());
 
         Paiement saved = paiementService.create(paiement);
         caisseMouvementService.enregistrerMouvement(
@@ -60,6 +97,35 @@ public class PaiementController extends MasterController<Paiement, PaiementRespo
                 "PAIEMENT", saved.getId(), "Paiement " + saved.getCode());
 
         return paiementService.toResponse(saved.getId());
+    }
+
+    /** true si l'utilisateur connecté a le rôle CAISSIER sans avoir aussi le rôle ADMIN
+        (un admin qui serait aussi caissier garde la vue globale). */
+    private boolean estCaissierNonAdmin() {
+        return aRole(ROLE_CAISSIER) && !aRole(ROLE_ADMIN);
+    }
+
+    private boolean aRole(String role) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> role.equals(a.getAuthority()));
+    }
+
+    /** Utilisateur connecté, résolu via son identifiant Keycloak (jwt "sub"). */
+    private Long utilisateurCourantId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (!(auth instanceof JwtAuthenticationToken jwtAuth)) return null;
+        return utilisateurRepository.findByKeycloack(jwtAuth.getToken().getSubject())
+                .map(Utilisateur::getId)
+                .orElse(null);
+    }
+
+    /** Variante utilisée pour le filtrage "mes paiements" : si l'utilisateur connecté ne peut
+        pas être résolu, on renvoie un id garanti sans correspondance plutôt que null (qui
+        lèverait le filtre et exposerait tous les paiements). */
+    private Long utilisateurCourantIdOuIntrouvable() {
+        Long id = utilisateurCourantId();
+        return id != null ? id : -1L;
     }
 
     @Override
