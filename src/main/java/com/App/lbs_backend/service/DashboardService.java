@@ -73,9 +73,13 @@ public class DashboardService {
         Set<Long> dossierIdsAnnee = dossiers.stream()
                 .map(DossierEleve::getId).collect(Collectors.toSet());
 
+        // Élève « de l'année » = a un dossier vivant (ni refusé, ni annulé) sur l'année — même
+        // règle que la liste /scolarite/eleves. Se limiter au statut INSCRIT sous-comptait les
+        // élèves acceptés mais pas encore formellement "inscrits" (cas le plus courant en début
+        // d'année, avant la validation finale des dossiers).
         long nbEleves = anneeId == null ? eleveRepository.count()
                 : dossiers.stream()
-                        .filter(d -> "INSCRIT".equals(statutCode.getOrDefault(d.getStatutId(), "")))
+                        .filter(d -> !List.of("REFUSE", "ANNULE").contains(statutCode.getOrDefault(d.getStatutId(), "")))
                         .map(DossierEleve::getEleveId).filter(Objects::nonNull).distinct().count();
 
         Map<String, Long> parStatut = dossiers.stream()
