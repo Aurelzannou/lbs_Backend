@@ -63,6 +63,7 @@ public class MenuService extends AbstractBaseService<Menu, MenuResponse> {
      * AUSSI aux sous-menus : un caissier ne voit sous « Comptabilité » que les écrans qui lui
      * sont explicitement autorisés, pas tous les enfants du groupe.
      */
+    @Transactional(readOnly = true)
     public List<MenuResponse> getMyMenusTree(String profilCode) {
         Set<Long> allowed = allowedMenuIds(profilCode); // null = accès total (admin)
 
