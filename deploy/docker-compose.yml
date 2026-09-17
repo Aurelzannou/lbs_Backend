@@ -125,6 +125,10 @@ services:
       POSTGRES_DB: ${APP_DB_NAME}
       POSTGRES_USER: ${APP_DB_USER}
       POSTGRES_PASSWORD: ${APP_DB_PASSWORD}
+    ports:
+      # Lié à 127.0.0.1 du serveur uniquement (pas exposé sur Internet) — accès via tunnel SSH
+      # pour un client type DBeaver.
+      - "127.0.0.1:5432:5432"
     volumes:
       - pg_app_data:/var/lib/postgresql/data
     healthcheck:
