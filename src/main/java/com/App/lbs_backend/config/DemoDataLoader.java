@@ -8,7 +8,6 @@ import com.App.lbs_backend.repository.TypeFraisRepository;
 import com.App.lbs_backend.repository.TypeOperationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -20,11 +19,16 @@ import java.util.function.Supplier;
  * Données de référence minimales chargées au démarrage :
  *  - les étapes du workflow d'inscription (BROUILLON / SOUMISE / VALIDEE)
  *  - les types d'opération de caisse (ENCAISSEMENT / DECAISSEMENT / ...)
+ *  - les types de frais (INSCRIPTION / SCOLARITE)
+ *
+ * Malgré son nom, ce n'est PAS de la donnée de démo/test — ce sont des références
+ * structurelles requises pour que l'inscription et les paiements fonctionnent (le paiement
+ * FedaPay en ligne dépend de TypeFrais.INSCRIPTION, le guichet /comptabilite/paiements de
+ * TypeFrais.SCOLARITE). D'où l'exécution inconditionnelle, y compris en production.
  *
  * Idempotent (repère par `code`) : ne crée jamais de doublon et ne supprime rien.
- * Activation : app.demo-data.enabled=true (par défaut en local, false en prod).
  *
- * Toutes les autres données (années, niveaux, classes, frais, élèves, caisses,
+ * Toutes les autres données (années, niveaux, classes, élèves, caisses,
  * modes de paiement, catégories de dépense…) se saisissent via l'application.
  */
 @Component
@@ -37,15 +41,9 @@ public class DemoDataLoader implements CommandLineRunner {
     private final TypeOperationRepository typeOperationRepository;
     private final TypeFraisRepository typeFraisRepository;
 
-    @Value("${app.demo-data.enabled:false}")
-    private boolean enabled;
-
     @Override
     @Transactional
     public void run(String... args) {
-        if (!enabled) {
-            return;
-        }
         log.info("[demo-data] Initialisation des données de référence minimales...");
 
         seedEtapes();
