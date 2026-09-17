@@ -20,11 +20,11 @@ volumes:
 services:
   # ---------- Reverse-proxy + HTTPS automatique ----------
   traefik:
-    image: traefik:v3.3
+    # v3.3 négociait une version d'API Docker trop ancienne pour un démon Docker récent
+    # ("client version 1.24 is too old") — v3.6 embarque un client Docker plus récent.
+    image: traefik:v3.6
     restart: unless-stopped
     environment:
-      # Le démon Docker (très récent sur ce serveur) refuse la version d'API par défaut
-      # que Traefik v3.3 négocie ("client version 1.24 is too old") — on la force.
       - DOCKER_API_VERSION=1.40
     command:
       - --providers.docker=true
