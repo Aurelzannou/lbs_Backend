@@ -170,8 +170,10 @@ services:
       - traefik.http.services.keycloak.loadbalancer.server.port=8080
 
   # ---------- Stockage de fichiers ----------
+  # MinIO n'est plus distribué sur Docker Hub (minio/minio a été retiré) — l'image
+  # officielle vit désormais sur Quay.io.
   minio:
-    image: minio/minio:latest
+    image: quay.io/minio/minio:latest
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
