@@ -89,6 +89,8 @@ public class ProfesseurController extends MasterController<Professeur, Professeu
         verifierEmailUnique(form.getEmail(), entity.getId());
         verifierCompteConnexionDisponible(form.getEmail(), entity.getId());
         Boolean ancienActif = entity.getActif();
+        String ancienEmail = entity.getEmail();
+        boolean emailModifie = !isBlank(form.getEmail()) && !form.getEmail().equalsIgnoreCase(ancienEmail);
 
         // Le formulaire ne renvoie plus de code — on garde celui déjà en base tel quel.
         if (!isBlank(form.getCode())) entity.setCode(form.getCode());
@@ -102,7 +104,13 @@ public class ProfesseurController extends MasterController<Professeur, Professeu
         entity.setClasseIds(form.getClasseIds());
 
         boolean compteProvisionne = false;
-        if (!isBlank(entity.getEmail()) && isBlank(entity.getKeycloakId())) {
+        if (!isBlank(entity.getEmail()) && (isBlank(entity.getKeycloakId()) || emailModifie)) {
+            // Si l'email change, le keycloakId déjà enregistré (compte lié à l'ANCIEN email) ne
+            // correspond plus forcément à la nouvelle adresse : on le détache et on laisse
+            // provisionnerCompteKeycloak() retrouver ou créer le bon compte pour ce nouvel email,
+            // plutôt que de garder un compte de connexion silencieusement désynchronisé de
+            // l'email affiché (aucune activation n'était alors jamais envoyée).
+            entity.setKeycloakId(null);
             compteProvisionne = provisionnerCompteKeycloak(entity);
         } else if (entity.getKeycloakId() != null
                 && ancienActif != null && !ancienActif.equals(form.getActif())) {
