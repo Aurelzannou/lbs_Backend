@@ -114,7 +114,11 @@ public class NoteService {
                 });
     }
 
-    /** Charge la feuille de saisie (roster + notes déjà saisies) pour une classe/matière/période. */
+    /** Charge la feuille de saisie (roster + notes déjà saisies) pour une classe/matière/période.
+        Accède aux collections LAZY classeIds/matiereIds des professeurs — nécessite une session
+        Hibernate ouverte (appelé aussi directement par NoteController, hors de toute transaction
+        englobante). */
+    @Transactional(readOnly = true)
     public FeuilleSaisieNotesResponse getFeuille(Long classeId, Long matiereId, Long periodeId) {
         Classe classe = classeRepository.findById(classeId)
                 .orElseThrow(() -> new IllegalArgumentException("Classe introuvable"));
@@ -480,6 +484,10 @@ public class NoteService {
     /** Couples (classe, matière) que ce professeur peut noter — produit du produit cartésien de
         ses classes affectées et de ses matières enseignées (affectation explicite, indépendante
         de l'emploi du temps : le professeur peut saisir des notes à tout moment). */
+    /** Accède aux collections LAZY (@ElementCollection) classeIds/matiereIds du professeur —
+        nécessite une session Hibernate ouverte, sans quoi l'appel plante en 500 (silencieusement
+        avalé par le dashboard professeur, affiché comme "aucune classe"). */
+    @Transactional(readOnly = true)
     public List<ClasseMatiereANoterResponse> getMesClassesANoter(Long profId) {
         Professeur professeur = professeurRepository.findById(profId)
                 .orElseThrow(() -> new IllegalArgumentException("Professeur introuvable"));
