@@ -12,6 +12,7 @@ import com.App.lbs_backend.repository.TuteurRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,6 +39,7 @@ public class TuteurService extends AbstractBaseService<Tuteur, TuteurResponse> {
         return tuteurMapper;
     }
 
+    @Transactional(readOnly = true)
     public PageResponse<TuteurResponse> rechercher(String filter, Pageable pageable) {
         Page<Tuteur> page = tuteurRepository.searchFiltered(filter, pageable);
         List<TuteurResponse> items = page.getContent().stream()

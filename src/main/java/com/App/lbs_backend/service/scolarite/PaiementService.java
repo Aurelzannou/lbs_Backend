@@ -80,6 +80,15 @@ public class PaiementService extends AbstractBaseService<Paiement, PaiementRespo
         return new PageResponse<>(items, MetaResponse.ofPage(page));
     }
 
+    /** Combine recherche + mapping dans UNE seule transaction : le mapper accède à des relations
+        LAZY qui nécessitent une session Hibernate ouverte — appeler searchFiltered() puis
+        toPageResponse() séparément échoue en prod (open-in-view=false) dès que ces relations sont
+        renseignées. */
+    @Transactional(readOnly = true)
+    public PageResponse<PaiementResponse> searchFilteredResponse(String filter, Long anneeScolaireId, Long utilisateurId, Pageable pageable) {
+        return toPageResponse(searchFiltered(filter, anneeScolaireId, utilisateurId, pageable));
+    }
+
     @Override
     public Mapper<Paiement, PaiementResponse> mapper() {
         return paiementMapper;

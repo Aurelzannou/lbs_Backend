@@ -15,6 +15,7 @@ import com.App.lbs_backend.repository.StatutInscriptionRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -85,6 +86,15 @@ public class DossierEleveService extends AbstractBaseService<DossierEleve, Dossi
                 .map(d -> mapper().toResponse(d))
                 .collect(Collectors.toList());
         return new PageResponse<>(items, MetaResponse.ofPage(page));
+    }
+
+    /** Combine recherche + mapping dans UNE seule transaction : le mapper accède à des relations
+        LAZY qui nécessitent une session Hibernate ouverte — appeler searchFiltered() puis
+        toPageResponse() séparément échoue en prod (open-in-view=false) dès que ces relations sont
+        renseignées. */
+    @Transactional(readOnly = true)
+    public PageResponse<DossierEleveResponse> searchFilteredResponse(Long anneeId, String filter, Pageable pageable) {
+        return toPageResponse(searchFiltered(anneeId, filter, pageable));
     }
 
     /** Vrai si l'élève a déjà un dossier en cours (ni refusé ni annulé) pour cette année scolaire —

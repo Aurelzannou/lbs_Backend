@@ -74,6 +74,15 @@ public class EleveService extends AbstractBaseService<Eleve, EleveResponse> {
         return new PageResponse<>(items, MetaResponse.ofPage(page));
     }
 
+    /** Combine recherche + mapping dans UNE seule transaction : le mapper accède à des relations
+        LAZY (classe, utilisateur) qui nécessitent une session Hibernate ouverte — appeler
+        searchFiltered() puis toPageResponse() séparément échoue en prod (open-in-view=false) dès
+        que ces relations sont renseignées. */
+    @Transactional(readOnly = true)
+    public PageResponse<EleveResponse> searchFilteredResponse(Long classeId, String filter, Long anneeScolaireId, Pageable pageable) {
+        return toPageResponse(searchFiltered(classeId, filter, anneeScolaireId, pageable));
+    }
+
     /**
      * PDF « Liste des élèves » d'une classe : tous les élèves de la classe, triés par nom puis
      * prénom, numérotés. Sert de liste de classe imprimable (appel, trombinoscope papier…).

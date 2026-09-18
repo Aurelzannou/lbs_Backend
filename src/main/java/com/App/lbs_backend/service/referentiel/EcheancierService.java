@@ -10,6 +10,7 @@ import com.App.lbs_backend.repository.BaseRepository;
 import com.App.lbs_backend.repository.EcheancierRepository;
 import com.App.lbs_backend.repository.FraisScolaireRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Locale;
@@ -39,6 +40,7 @@ public class EcheancierService extends AbstractBaseService<Echeancier, Echeancie
         return echeancierMapper;
     }
 
+    @Transactional(readOnly = true)
     public List<EcheancierResponse> listerParFraisScolaire(Long fraisScolaireId) {
         return echeancierRepository.findByFraisScolaireIdOrderByNumeroAsc(fraisScolaireId).stream()
                 .map(echeancierMapper::toResponse)

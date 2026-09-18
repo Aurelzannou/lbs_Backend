@@ -45,10 +45,8 @@ public class EmploiDuTempsController extends MasterController<EmploiDuTemps, Emp
         String anneeIdParam = request.getParameter("anneeScolaireId");
         List<EmploiDuTempsResponse> result = (classeIdParam == null || anneeIdParam == null)
                 ? Collections.emptyList()
-                : emploiDuTempsService.findByClasseIdAndAnnee(
-                        Long.parseLong(classeIdParam), Long.parseLong(anneeIdParam)).stream()
-                    .map(e -> emploiDuTempsService.mapper().toResponse(e))
-                    .toList();
+                : emploiDuTempsService.listerResponses(
+                        Long.parseLong(classeIdParam), Long.parseLong(anneeIdParam));
         return ResponseEntity.ok(ApiResponse.apiSuccess("OK", result, request.getRequestURI()));
     }
 

@@ -70,9 +70,8 @@ public class PaiementController extends MasterController<Paiement, PaiementRespo
         Long utilisateurId = estCaissierNonAdmin() ? utilisateurCourantIdOuIntrouvable() : null;
 
         PageRequest pageable = PageRequest.of(page, size, Sort.by("id").descending());
-        Page<Paiement> result = paiementService.searchFiltered(filter, anneeScolaireId, utilisateurId, pageable);
         return ResponseEntity.ok(ApiResponse.apiSuccess("OK",
-            paiementService.toPageResponse(result), request.getRequestURI()));
+            paiementService.searchFilteredResponse(filter, anneeScolaireId, utilisateurId, pageable), request.getRequestURI()));
     }
 
     @Override

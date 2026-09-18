@@ -11,6 +11,7 @@ import com.App.lbs_backend.repository.PeriodeAcademiqueRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
@@ -38,6 +39,7 @@ public class PeriodeAcademiqueService extends AbstractBaseService<PeriodeAcademi
 
     /** Liste paginée des périodes, filtrable par année scolaire (utilisé par l'écran de gestion
         des périodes, qui affiche par défaut l'année scolaire active). */
+    @Transactional(readOnly = true)
     public PageResponse<?> searchFiltered(Long anneeScolaireId, String filter, Pageable pageable) {
         Page<PeriodeAcademique> page = periodeAcademiqueRepository.searchFiltered(anneeScolaireId, filter, pageable);
         return paginateResponse(page);

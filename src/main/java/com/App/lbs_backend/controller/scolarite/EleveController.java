@@ -45,9 +45,8 @@ public class EleveController extends MasterController<Eleve, EleveResponse, Elev
         String anneeIdParam = request.getParameter("anneeScolaireId");
         Long anneeScolaireId = anneeIdParam != null ? Long.parseLong(anneeIdParam) : null;
         PageRequest pageable = PageRequest.of(page, size, Sort.by("id").descending());
-        Page<Eleve> result = eleveService.searchFiltered(classeId, filter, anneeScolaireId, pageable);
         return ResponseEntity.ok(ApiResponse.apiSuccess("OK",
-            eleveService.toPageResponse(result), request.getRequestURI()));
+            eleveService.searchFilteredResponse(classeId, filter, anneeScolaireId, pageable), request.getRequestURI()));
     }
 
     /** Liste PDF (imprimable) de tous les élèves d'une classe. */

@@ -63,6 +63,17 @@ public class EmploiDuTempsService extends AbstractBaseService<EmploiDuTemps, Emp
         return emploiDuTempsRepository.findByClasseIdAndAnneeScolaireIdOrderByJourAscHeureDebutAsc(classeId, anneeScolaireId);
     }
 
+    /** Combine recherche + mapping dans UNE seule transaction : le mapper accède à des relations
+        LAZY (classe, année scolaire, matière, professeur) qui nécessitent une session Hibernate
+        ouverte — fetch puis mapping séparés (ex. directement dans un controller) échoue en prod
+        (open-in-view=false) dès que ces relations sont renseignées. */
+    @Transactional(readOnly = true)
+    public List<EmploiDuTempsResponse> listerResponses(Long classeId, Long anneeScolaireId) {
+        return findByClasseIdAndAnnee(classeId, anneeScolaireId).stream()
+                .map(e -> mapper().toResponse(e))
+                .toList();
+    }
+
     /**
      * Brouillon PDF de l'emploi du temps d'une classe : les séances regroupées par jour (dans
      * l'ordre naturel de la semaine, pas l'ordre alphabétique), puis par heure. Sert de support

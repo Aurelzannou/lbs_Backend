@@ -10,6 +10,7 @@ import com.App.lbs_backend.repository.AnneeScolaireRepository;
 import com.App.lbs_backend.repository.BaseRepository;
 import com.App.lbs_backend.repository.MouvementCaisseRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -47,6 +48,7 @@ public class MouvementCaisseService extends AbstractBaseService<MouvementCaisse,
      * (dateDebut/dateFin) — les mouvements n'étant pas eux-mêmes rattachés à une année (dépenses
      * comprises), c'est le seul critère commun aux paiements et aux dépenses.
      */
+    @Transactional(readOnly = true)
     public java.util.List<MouvementCaisseResponse> listerParCaisse(Long caisseId, Long anneeScolaireId) {
         java.util.List<MouvementCaisse> mouvements;
         if (anneeScolaireId == null) {

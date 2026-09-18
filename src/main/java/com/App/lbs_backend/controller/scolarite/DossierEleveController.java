@@ -51,9 +51,8 @@ public class DossierEleveController extends MasterController<DossierEleve, Dossi
         String anneeIdParam = request.getParameter("anneeId");
         Long anneeId  = anneeIdParam != null ? Long.parseLong(anneeIdParam) : null;
         PageRequest pageable = PageRequest.of(page, size, Sort.by("id").descending());
-        Page<DossierEleve> result = dossierEleveService.searchFiltered(anneeId, filter, pageable);
         return ResponseEntity.ok(ApiResponse.apiSuccess("OK",
-            dossierEleveService.toPageResponse(result), request.getRequestURI()));
+            dossierEleveService.searchFilteredResponse(anneeId, filter, pageable), request.getRequestURI()));
     }
 
     @Override
