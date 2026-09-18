@@ -56,6 +56,7 @@ public class BulletinService {
     private final ReportService reportService;
 
     /** Génère le PDF d'un bulletin (un seul élève) via JasperReports. */
+    @Transactional(readOnly = true)
     public byte[] genererBulletinPdfBytes(Long eleveId, Long periodeId) throws Exception {
         BulletinResponse bulletin = genererBulletin(eleveId, periodeId);
         return reportService.generatePdfReport("bulletin", construirePdfParams(bulletin), bulletin.getMatieres());
@@ -111,6 +112,7 @@ public class BulletinService {
         return Boolean.TRUE.equals(valeur) ? "Oui" : "Non";
     }
 
+    @Transactional(readOnly = true)
     public BulletinResponse genererBulletin(Long eleveId, Long periodeId) {
         Eleve eleve = eleveRepository.findById(eleveId)
                 .orElseThrow(() -> new IllegalArgumentException("Élève introuvable"));
@@ -122,6 +124,7 @@ public class BulletinService {
 
     /** Bulletin d'un élève pour son tuteur — refusé tant que la période n'est pas validée pour la
         classe de l'enfant. */
+    @Transactional(readOnly = true)
     public BulletinResponse genererBulletinPourTuteur(Long eleveId, Long periodeId, String email) {
         Tuteur tuteur = tuteurRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Tuteur introuvable"));
@@ -139,6 +142,7 @@ public class BulletinService {
         return genererBulletin(eleveId, periodeId);
     }
 
+    @Transactional(readOnly = true)
     public List<BulletinResponse> genererBulletinsClasse(Long classeId, Long periodeId) {
         Classe classe = classeRepository.findById(classeId)
                 .orElseThrow(() -> new IllegalArgumentException("Classe introuvable"));

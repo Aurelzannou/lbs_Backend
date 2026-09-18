@@ -9,6 +9,7 @@ import com.App.lbs_backend.repository.BaseRepository;
 import com.App.lbs_backend.repository.FraisScolaireRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -48,6 +49,7 @@ public class FraisScolaireService extends AbstractBaseService<FraisScolaire, Fra
      * @param paiementGuichetSeul true pour ne renvoyer que le type de frais encaissé au guichet
      *                            ({@code app.paiement.type-frais-code}, « SCOLARITE » par défaut).
      */
+    @Transactional(readOnly = true)
     public List<FraisScolaireResponse> findByClasseAndAnnee(Long classeId, Long anneeScolaireId,
                                                             boolean paiementGuichetSeul) {
         return fraisScolaireRepository

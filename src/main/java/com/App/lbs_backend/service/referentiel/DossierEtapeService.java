@@ -20,18 +20,22 @@ public class DossierEtapeService {
     private final DossierEtapeRepository dossierEtapeRepository;
     private final DossierEtapeMapper dossierEtapeMapper;
 
+    // Le mapper accède aux relations LAZY etape/utilisateur — nécessite une session ouverte.
+    @Transactional(readOnly = true)
     public List<DossierEtapeResponse> getAll() {
         return dossierEtapeRepository.findAll().stream()
                 .map(dossierEtapeMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<DossierEtapeResponse> getByDossierEleveId(Long dossierEleveId) {
         return dossierEtapeRepository.findByDossierEleveId(dossierEleveId).stream()
                 .map(dossierEtapeMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public DossierEtapeResponse getByUuid(String uuid) {
         return dossierEtapeRepository.findByUuid(uuid)
                 .map(dossierEtapeMapper::toResponse)

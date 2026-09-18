@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -27,6 +28,9 @@ public class ClotureAutomatiqueService {
     private final ClasseRepository classeRepository;
     private final ProgressionSaisieNoteService progressionSaisieNoteService;
 
+    // PAS readOnly : soumettreAutomatiquementSiBrouillon() écrit (rejoint cette transaction).
+    // classe.getMatiereIds() (LAZY) exige aussi une session ouverte.
+    @Transactional
     @Scheduled(cron = "0 0 2 * * *")
     public void autoSoumettrePeriodesTerminees() {
         List<PeriodeAcademique> periodesTerminees = periodeAcademiqueRepository.findByDateFinBefore(LocalDate.now());

@@ -19,6 +19,7 @@ import com.App.lbs_backend.service.MinioStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -54,7 +55,9 @@ public class ValidationBulletinService {
         return noteService.enregistrerFeuilleCorrection(form);
     }
 
-    /** Statut de validation de chaque classe pour une période — alimente l'écran de validation. */
+    /** Statut de validation de chaque classe pour une période — alimente l'écran de validation.
+        Accède à la collection LAZY Classe.matiereIds — nécessite une session Hibernate ouverte. */
+    @Transactional(readOnly = true)
     public List<ValidationBulletinResponse> listerParPeriode(Long periodeId, Long anneeScolaireId) {
         Map<Long, ValidationBulletin> parClasse = validationBulletinRepository
                 .findByPeriodeIdAndAnneeScolaireId(periodeId, anneeScolaireId).stream()
