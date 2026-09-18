@@ -63,6 +63,8 @@ public class ProgressionSaisieNoteService {
     /** Étape de chaque matière de la classe pour cette période — alimente l'écran de validation
         des bulletins, qui n'autorise l'admin à ouvrir/modifier une matière qu'une fois que le
         professeur l'a soumise (étape SOUMISE ou VALIDEE), jamais tant qu'elle est en BROUILLON. */
+    // Classe.matiereIds est une collection LAZY — nécessite une session Hibernate ouverte.
+    @Transactional(readOnly = true)
     public List<ProgressionSaisieNoteResponse> getProgressionsClasse(Long classeId, Long periodeId) {
         Classe classe = classeRepository.findById(classeId).orElse(null);
         List<Long> matiereIds = classe != null && classe.getMatiereIds() != null ? classe.getMatiereIds() : List.of();
