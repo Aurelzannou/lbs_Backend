@@ -63,7 +63,12 @@ public class MenuService extends AbstractBaseService<Menu, MenuResponse> {
      * AUSSI aux sous-menus : un caissier ne voit sous « Comptabilité » que les écrans qui lui
      * sont explicitement autorisés, pas tous les enfants du groupe.
      */
-    @Transactional(readOnly = true)
+    // PAS readOnly : allowedMenuIds() → getCurrentUser() auto-provisionne (INSERT) l'utilisateur
+    // à sa toute première connexion — un appel imbriqué hérite de CETTE transaction (propagation
+    // REQUIRED), donc readOnly=true ferait échouer cet INSERT avec "cannot execute INSERT in a
+    // read-only transaction". @Transactional simple suffit pour l'accès lazy qui motivait ce
+    // wrapping au départ.
+    @Transactional
     public List<MenuResponse> getMyMenusTree(String profilCode) {
         Set<Long> allowed = allowedMenuIds(profilCode); // null = accès total (admin)
 
