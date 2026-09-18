@@ -127,10 +127,16 @@ public abstract class AbstractBaseService<E, R> {
         return "";
     }
 
+    // Les mappers accèdent souvent à des relations LAZY (ex: Classe.niveau, Menu.listeProfilMenu)
+    // — sans transaction ouverte ici, ça lève LazyInitializationException dès que
+    // spring.jpa.open-in-view=false (le cas en production). find*() + mapper().toResponse()
+    // doivent donc rester dans la MÊME session, d'où ce @Transactional englobant les deux appels.
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public R toResponse(Long id) {
         return mapper().toResponse(findById(id));
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public R toResponse(String uuid) {
         return mapper().toResponse(findByUuid(uuid));
     }
@@ -140,6 +146,7 @@ public abstract class AbstractBaseService<E, R> {
     }
 
     @SuppressWarnings("unused")
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public PageResponse<?> customPagination(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         List<E> list = repository().findAll();
@@ -156,11 +163,13 @@ public abstract class AbstractBaseService<E, R> {
         return paginateResponse(paginated);
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public PageResponse<?> findAll(PaginationCriteria criteria) {
         Page<E> paginated = repository().findAll(criteria.pageable());
         return paginateResponse(paginated);
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public PageResponse<?> searchByTerm(PaginationCriteria criteria) {
         String filter = criteria.filter() == null ? "" : criteria.filter();
         Page<E> paginated = repository().findByLabelContaining(filter, criteria.pageable());
@@ -171,6 +180,7 @@ public abstract class AbstractBaseService<E, R> {
         return (new FilterSpecification<E>()).applyFilters(filters);
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public PageResponse<?> applyFilters(List<FilterCriteria> filters, PaginationCriteria criteria) {
         Page<E> paginated = repository().findAll(applySpecification(filters), criteria.pageable());
         return paginateResponse(paginated);
