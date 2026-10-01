@@ -7,7 +7,6 @@ import com.App.lbs_backend.dto.request.ForgotPasswordRequest;
 import com.App.lbs_backend.dto.request.ResetPasswordRequest;
 import com.App.lbs_backend.service.PasswordResetService;
 import com.App.lbs_backend.dto.response.UtilisateurResponse;
-import com.App.lbs_backend.mapper.UtilisateurMapper;
 import com.App.lbs_backend.service.KeycloakAdminService;
 import com.App.lbs_backend.service.UtilisateurSyncService;
 import com.App.lbs_backend.service.referentiel.ProfesseurService;
@@ -33,7 +32,6 @@ import java.util.Map;
 public class AuthController {
 
     private final UtilisateurSyncService utilisateurSyncService;
-    private final UtilisateurMapper utilisateurMapper;
     private final AuthService authService;
     private final KeycloakAdminService keycloakAdminService;
     private final ProfesseurService professeurService;
@@ -45,8 +43,7 @@ public class AuthController {
      */
     @GetMapping("/me")
     public ResponseEntity<UtilisateurResponse> getCurrentUser() {
-        var user = utilisateurSyncService.getCurrentUser();
-        return ResponseEntity.ok(utilisateurMapper.toResponse(user));
+        return ResponseEntity.ok(utilisateurSyncService.getCurrentUserResponse());
     }
 
     /**

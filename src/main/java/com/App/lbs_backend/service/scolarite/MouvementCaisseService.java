@@ -55,10 +55,14 @@ public class MouvementCaisseService extends AbstractBaseService<MouvementCaisse,
             mouvements = mouvementCaisseRepository.findByCaisseIdOrderByDateMouvementDesc(caisseId);
         } else {
             AnneeScolaire annee = anneeScolaireRepository.findById(anneeScolaireId).orElse(null);
+            // Bornes toujours renseignées (jamais null) : PostgreSQL ne sait pas déterminer le
+            // type d'un paramètre lié à NULL dans "(:p IS NULL OR ...)" — on retombe sur des
+            // bornes larges (MIN/MAX) plutôt que de filtrer par null, ce qui revient au même
+            // résultat ("pas de restriction") sans jamais lier un paramètre NULL.
             LocalDateTime debut = annee != null && annee.getDateDebut() != null
-                    ? annee.getDateDebut().atStartOfDay() : null;
+                    ? annee.getDateDebut().atStartOfDay() : LocalDateTime.MIN;
             LocalDateTime fin = annee != null && annee.getDateFin() != null
-                    ? annee.getDateFin().plusDays(1).atStartOfDay() : null;
+                    ? annee.getDateFin().plusDays(1).atStartOfDay() : LocalDateTime.MAX;
             mouvements = mouvementCaisseRepository.findByCaisseIdAndPeriode(caisseId, debut, fin);
         }
         return mouvements.stream().map(mouvementCaisseMapper::toResponse).toList();

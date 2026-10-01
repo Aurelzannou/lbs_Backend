@@ -14,12 +14,15 @@ public interface MouvementCaisseRepository extends BaseRepository<MouvementCaiss
     List<MouvementCaisse> findByCaisseIdOrderByDateMouvementDesc(Long caisseId);
 
     /** Mouvements d'une caisse survenus dans un intervalle de dates — sert à restreindre le
-        journal à une année scolaire (bornes = dateDebut/dateFin de l'année, `fin` exclusive). */
+        journal à une année scolaire (bornes = dateDebut/dateFin de l'année, `fin` exclusive).
+        Bornes toujours non nulles côté appelant (cf. MouvementCaisseService) : un pattern
+        "(:p IS NULL OR ... >= :p)" fait planter PostgreSQL ("could not determine data type of
+        parameter") dès que :p est effectivement lié à NULL, faute de contexte de type. */
     @Query("""
         SELECT m FROM MouvementCaisse m
         WHERE m.caisseId = :caisseId
-          AND (:debut IS NULL OR m.dateMouvement >= :debut)
-          AND (:fin IS NULL OR m.dateMouvement < :fin)
+          AND m.dateMouvement >= :debut
+          AND m.dateMouvement < :fin
         ORDER BY m.dateMouvement DESC
         """)
     List<MouvementCaisse> findByCaisseIdAndPeriode(

@@ -1,6 +1,8 @@
 package com.App.lbs_backend.service;
 
+import com.App.lbs_backend.dto.response.UtilisateurResponse;
 import com.App.lbs_backend.entity.Utilisateur;
+import com.App.lbs_backend.mapper.UtilisateurMapper;
 import com.App.lbs_backend.repository.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UtilisateurSyncService {
 
     private final UtilisateurRepository utilisateurRepository;
+    private final UtilisateurMapper utilisateurMapper;
 
     /**
      * Récupère l'utilisateur actuellement connecté depuis le contexte de sécurité.
@@ -39,6 +42,15 @@ public class UtilisateurSyncService {
         
         return utilisateurRepository.findByKeycloack(keycloakId)
                 .orElseGet(() -> syncNewUserFromJwt(jwt));
+    }
+
+    /** Combine résolution + mapping dans UNE seule transaction : UtilisateurMapper accède à des
+        relations LAZY (profils) qui nécessitent une session Hibernate ouverte — getCurrentUser()
+        puis toResponse() séparés (ex. directement dans AuthController) échoue en prod
+        (open-in-view=false) dès qu'un profil est réellement attribué à l'utilisateur. */
+    @Transactional
+    public UtilisateurResponse getCurrentUserResponse() {
+        return utilisateurMapper.toResponse(getCurrentUser());
     }
 
     /**
